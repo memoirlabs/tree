@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, MouseEvent, RefObject } from "react";
+import type { JSX, KeyboardEvent, MouseEvent, RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Mail, Plus, User } from "lucide-react";
@@ -41,6 +41,7 @@ export function FamilyNodeCard({
   resolveAvatarUrl,
   isRoot,
   canEdit = true,
+  relationOptions,
 }: FamilyNodeCardProps): JSX.Element {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);

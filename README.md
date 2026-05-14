@@ -1,15 +1,15 @@
-# 4ever Tree
+# Memoir Tree
 
-[![JSR](https://jsr.io/badges/@4everlabs/tree)](https://jsr.io/@4everlabs/tree)
-[![JSR Score](https://jsr.io/badges/@4everlabs/tree/score)](https://jsr.io/@4everlabs/tree)
-[![JSR Weekly Downloads](https://jsr.io/badges/@4everlabs/tree/weekly-downloads)](https://jsr.io/@4everlabs/tree)
+[![JSR](https://jsr.io/badges/@memoir/tree)](https://jsr.io/@memoir/tree)
+[![JSR Score](https://jsr.io/badges/@memoir/tree/score)](https://jsr.io/@memoir/tree)
+[![JSR Weekly Downloads](https://jsr.io/badges/@memoir/tree/weekly-downloads)](https://jsr.io/@memoir/tree)
 
 Official React components for rendering interactive family trees with relationship-aware connectors. Data fetching and persistence are intentionally left to the host app.
 
 ## Install (Bun + JSR)
 
 ```bash
-bunx jsr add @4everlabs/tree
+bunx jsr add @memoir/tree
 ```
 
 ## Requirements
@@ -20,8 +20,8 @@ bunx jsr add @4everlabs/tree
 ## Quick Start
 
 ```tsx
-import { FamilyTree } from "@4everlabs/tree";
-import type { FamilyMember, AddMemberPayload } from "@4everlabs/tree";
+import { FamilyTree } from "@memoir/tree";
+import type { FamilyMember, AddMemberPayload } from "@memoir/tree";
 
 const rootMember: FamilyMember = {
   id: "root",
@@ -117,7 +117,7 @@ Connector styling is controlled by presets or overrides:
 Example override:
 
 ```tsx
-import { getFamilyTreeConfig } from "@4everlabs/tree";
+import { getFamilyTreeConfig } from "@memoir/tree";
 
 const config = getFamilyTreeConfig("compact", {
   statusColors: {
@@ -134,7 +134,7 @@ const config = getFamilyTreeConfig("compact", {
 If you want to render your own card UI while keeping layout and connectors, provide `renderNode`:
 
 ```tsx
-import type { FamilyMember, FamilyTreeRenderNodeOptions } from "@4everlabs/tree";
+import type { FamilyMember, FamilyTreeRenderNodeOptions } from "@memoir/tree";
 
 const renderNode = (member: FamilyMember, options: FamilyTreeRenderNodeOptions) => (
   <div className="custom-card">

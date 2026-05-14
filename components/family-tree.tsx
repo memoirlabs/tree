@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FamilyNodeCard } from "./node-card";
 import { AddMemberDialog } from "./add-member-dialog";

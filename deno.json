@@ -1,5 +1,5 @@
 {
-  "name": "@4everlabs/tree",
+  "name": "@memoir/tree",
   "version": "0.1.2",
   "exports": "./mod.ts",
   "nodeModulesDir": "auto",
@@ -13,10 +13,10 @@
     ]
   },
   "imports": {
-    "react": "npm:react@19.0.0",
-    "react-dom": "npm:react-dom@19.0.0",
-    "react/jsx-runtime": "npm:react@19.0.0/jsx-runtime",
-    "lucide-react": "npm:lucide-react@0.300.0"
+    "react": "npm:react@19.2.5",
+    "react-dom": "npm:react-dom@19.2.5",
+    "react/jsx-runtime": "npm:react@19.2.5/jsx-runtime",
+    "lucide-react": "npm:lucide-react@1.14.0"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

@@ -58,7 +58,7 @@ export function AddMemberDialog({
   parentId,
   searchProfiles,
   resolveAvatarUrl,
-}: AddMemberDialogProps): JSX.Element | null {
+}: AddMemberDialogProps): React.JSX.Element | null {
   const searchEnabled = Boolean(searchProfiles);
   const [mode, setMode] = useState<"search" | "manual" | "invite">(searchEnabled ? "search" : "manual");
   const [searchQuery, setSearchQuery] = useState("");

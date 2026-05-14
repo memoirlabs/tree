@@ -1,5 +1,5 @@
 {
-  "name": "@4everlabs/tree",
+  "name": "@memoir/tree",
   "version": "0.1.2",
   "description": "Family tree UI components with relationship-aware connectors.",
   "keywords": [
@@ -30,22 +30,22 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
-    "prepublishOnly": "tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun run build",
     "release": "npm version patch && npm publish --access public"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.8",
-    "@types/react": "^19.2.13",
+    "@types/bun": "^1.3.13",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "lucide-react": "^0.563.0",
-    "typescript": "^5"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "lucide-react": "^1.14.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@std/log": "npm:@jsr/std__log"
