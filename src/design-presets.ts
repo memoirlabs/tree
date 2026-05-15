@@ -1,4 +1,4 @@
-import type { FamilyTreeConnectorConfig, FamilyTreePresetName } from "./types";
+import type { FamilyTreeConnectorConfig, FamilyTreeConnectorOverrides, FamilyTreePresetName } from "./types";
 
 const baseStatusColors = {
   linked: "bg-stroke-default",
@@ -85,6 +85,11 @@ const contrastPreset: FamilyTreeConnectorConfig = {
   },
 };
 
+const withoutUndefined = <T extends object>(value: T | undefined): Partial<T> => {
+  if (!value) return {};
+  return Object.fromEntries(Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined)) as Partial<T>;
+};
+
 /**
  * Built-in connector presets keyed by `FamilyTreePresetName`.
  */
@@ -99,7 +104,7 @@ export const familyTreePresets: Record<FamilyTreePresetName, FamilyTreeConnector
  */
 export function getFamilyTreeConfig(
   preset: FamilyTreePresetName = "default",
-  override?: Partial<FamilyTreeConnectorConfig>,
+  override?: FamilyTreeConnectorOverrides,
 ): FamilyTreeConnectorConfig {
   const base = familyTreePresets[preset] ?? familyTreePresets.default;
   return {
@@ -107,27 +112,27 @@ export function getFamilyTreeConfig(
     ...override,
     statusColors: {
       ...base.statusColors,
-      ...(override?.statusColors ?? {}),
+      ...withoutUndefined(override?.statusColors),
     },
     coupleLine: {
       ...base.coupleLine,
-      ...(override?.coupleLine ?? {}),
+      ...withoutUndefined(override?.coupleLine),
     },
     trunk: {
       ...base.trunk,
-      ...(override?.trunk ?? {}),
+      ...withoutUndefined(override?.trunk),
     },
     siblingBus: {
       ...base.siblingBus,
-      ...(override?.siblingBus ?? {}),
+      ...withoutUndefined(override?.siblingBus),
     },
     drop: {
       ...base.drop,
-      ...(override?.drop ?? {}),
+      ...withoutUndefined(override?.drop),
     },
     anchors: {
       ...base.anchors,
-      ...(override?.anchors ?? {}),
+      ...withoutUndefined(override?.anchors),
     },
   };
 }

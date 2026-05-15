@@ -4,21 +4,28 @@ import type { JSX, ReactNode } from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FamilyNodeCard } from "./node-card";
 import { AddMemberDialog } from "./add-member-dialog";
+import { buildFamilyMemberFromRelationshipRows } from "../adapters";
 import type {
   AddMemberPayload,
+  FamilyTreeCardConfig,
   FamilyMember,
   FamilyMemberStatus,
   FamilyTreeConnectorConfig,
+  FamilyTreeConnectorOverrides,
   FamilyTreePresetName,
   FamilyTreeRenderNodeOptions,
   ProfileSearchResult,
   RelationType,
 } from "../types";
-import { getFamilyTreeConfig } from "../design-presets";
-import { cn } from "../utils";
+import type { RelationshipTableRow } from "../adapters";
+import type { FamilyTreeSchema } from "../schema";
+import { parseFamilyTreeYaml, resolveFamilyTreeSchema } from "../schema";
+import { buildFamilyTreeLayout } from "../layout";
 
-interface FamilyTreeProps {
-  rootMember: FamilyMember;
+export interface FamilyTreeProps {
+  rootMember?: FamilyMember;
+  relationshipRows?: RelationshipTableRow[];
+  rootId?: string;
   title?: string;
   showTitle?: boolean;
   className?: string;
@@ -30,7 +37,10 @@ interface FamilyTreeProps {
   searchProfiles?: (query: string) => Promise<ProfileSearchResult[]>;
   resolveAvatarUrl?: (url?: string | null) => string;
   designPreset?: FamilyTreePresetName;
-  designOverrides?: Partial<FamilyTreeConnectorConfig>;
+  designOverrides?: FamilyTreeConnectorOverrides;
+  schema?: FamilyTreeSchema;
+  schemaYaml?: string;
+  cardConfig?: FamilyTreeCardConfig;
   relationOptions?: RelationType[] | ((member: FamilyMember, isRoot: boolean) => RelationType[]);
   renderNode?: (member: FamilyMember, options: FamilyTreeRenderNodeOptions) => ReactNode;
 }
@@ -50,6 +60,9 @@ type LineSegment = {
   stroke: string;
   strokeWidth: number;
 };
+
+const defaultRootRelationOptions: RelationType[] = ["parent", "sibling", "spouse", "child"];
+const defaultMemberRelationOptions: RelationType[] = ["child"];
 
 const colorCache = new Map<string, string>();
 
@@ -73,8 +86,9 @@ const resolveColorFromClass = (className: string): string => {
       ? computed.stroke || computed.color
       : computed.backgroundColor;
   document.body.removeChild(probe);
-  colorCache.set(token, color);
-  return color;
+  const resolvedColor = !color || color === "rgba(0, 0, 0, 0)" || color === "transparent" ? "currentColor" : color;
+  colorCache.set(token, resolvedColor);
+  return resolvedColor;
 };
 
 const parseThicknessPx = (value: string): number => {
@@ -94,25 +108,57 @@ const parseThicknessPx = (value: string): number => {
  */
 export function FamilyTree({
   rootMember,
-  title = "Family Tree",
-  showTitle = true,
+  relationshipRows,
+  rootId,
+  title,
+  showTitle,
   className,
   containerClassName,
   titleClassName,
-  canEdit = false,
+  canEdit,
   onAddMember,
   onNavigateProfile,
   searchProfiles,
   resolveAvatarUrl,
-  designPreset = "default",
+  designPreset,
   designOverrides,
+  schema,
+  schemaYaml,
+  cardConfig,
   relationOptions,
   renderNode,
 }: FamilyTreeProps): JSX.Element {
-  const connectorConfig = useMemo(
-    () => getFamilyTreeConfig(designPreset, designOverrides),
-    [designPreset, designOverrides],
+  const resolvedRootMember = useMemo(
+    () => rootMember ?? (relationshipRows ? buildFamilyMemberFromRelationshipRows(relationshipRows, rootId) : null),
+    [relationshipRows, rootId, rootMember],
   );
+  if (!resolvedRootMember) {
+    throw new Error("FamilyTree requires either rootMember or relationshipRows with a resolvable root.");
+  }
+
+  const parsedSchema = useMemo(
+    () => (schemaYaml !== undefined ? parseFamilyTreeYaml(schemaYaml) : schema),
+    [schema, schemaYaml],
+  );
+  const resolvedSchema = useMemo(
+    () =>
+      resolveFamilyTreeSchema(parsedSchema, {
+        title,
+        showTitle,
+        canEdit,
+        designPreset,
+        designOverrides,
+        cardConfig,
+      }),
+    [cardConfig, canEdit, designOverrides, designPreset, parsedSchema, showTitle, title],
+  );
+  const connectorConfig = resolvedSchema.connectorConfig;
+  const layoutModel = useMemo(
+    () => buildFamilyTreeLayout(resolvedRootMember, resolvedSchema.layout),
+    [resolvedRootMember, resolvedSchema.layout.density, resolvedSchema.layout.strategy],
+  );
+  const horizontalGap = resolvedSchema.layout.density === "compact" ? 24 : 32;
+  const verticalGap = resolvedSchema.layout.density === "compact" ? 32 : 48;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [lineSegments, setLineSegments] = useState<LineSegment[]>([]);
@@ -283,15 +329,15 @@ export function FamilyTree({
       }
     };
 
-    const parents = rootMember.parents ?? [];
+    const parents = resolvedRootMember.parents ?? [];
     if (parents.length > 0) {
-      const parentChildren = [...(rootMember.siblings ?? []), rootMember];
+      const parentChildren = [...(resolvedRootMember.siblings ?? []), resolvedRootMember];
       drawParentUnit("parents", parents, parentChildren);
     }
 
-    const spouse = rootMember.spouse;
-    const rootUnitParents = spouse ? [rootMember, spouse] : [rootMember];
-    const children = rootMember.children ?? [];
+    const spouse = resolvedRootMember.spouse;
+    const rootUnitParents = spouse ? [resolvedRootMember, spouse] : [resolvedRootMember];
+    const children = resolvedRootMember.children ?? [];
 
     if (spouse) {
       drawParentUnit("root-couple", rootUnitParents, children);
@@ -300,7 +346,7 @@ export function FamilyTree({
     }
 
     setLineSegments(segments);
-  }, [connectorConfig, resolveLineStroke, resolveLineWidth, rootMember]);
+  }, [connectorConfig, resolveLineStroke, resolveLineWidth, resolvedRootMember]);
 
   useLayoutEffect(() => {
     computeLineSegments();
@@ -335,19 +381,19 @@ export function FamilyTree({
   }>({
     isOpen: false,
     relation: "parent",
-    parentId: rootMember.id,
+    parentId: resolvedRootMember.id,
   });
 
   useEffect(() => {
     setDialogState((prev: { isOpen: boolean; relation: RelationType; parentId: string }) =>
-      prev.isOpen ? prev : { ...prev, parentId: rootMember.id },
+      prev.isOpen ? prev : { ...prev, parentId: resolvedRootMember.id },
     );
-  }, [rootMember.id]);
+  }, [resolvedRootMember.id]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddMember = (relation: RelationType, parentId: string) => {
-    if (!canEdit || !onAddMember) return;
+    if (!resolvedSchema.canEdit || !onAddMember) return;
     setDialogState({ isOpen: true, relation, parentId });
   };
 
@@ -365,21 +411,27 @@ export function FamilyTree({
     (member: FamilyMember, isRoot: boolean): RelationType[] => {
       if (typeof relationOptions === "function") {
         const resolved = relationOptions(member, isRoot);
-        return resolved.length > 0 ? resolved : isRoot ? ["parent", "sibling", "spouse", "child"] : ["child"];
+        return resolved.length > 0 ? resolved : isRoot ? defaultRootRelationOptions : defaultMemberRelationOptions;
       }
       if (Array.isArray(relationOptions) && relationOptions.length > 0) {
         return relationOptions;
       }
-      return isRoot ? ["parent", "sibling", "spouse", "child"] : ["child"];
+      if (isRoot && resolvedSchema.rootRelations && resolvedSchema.rootRelations.length > 0) {
+        return resolvedSchema.rootRelations;
+      }
+      if (!isRoot && resolvedSchema.memberRelations && resolvedSchema.memberRelations.length > 0) {
+        return resolvedSchema.memberRelations;
+      }
+      return isRoot ? defaultRootRelationOptions : defaultMemberRelationOptions;
     },
-    [relationOptions],
+    [relationOptions, resolvedSchema.memberRelations, resolvedSchema.rootRelations],
   );
 
   const renderMemberNode = useCallback(
     (member: FamilyMember, isRoot: boolean) => {
       const options: FamilyTreeRenderNodeOptions = {
         isRoot,
-        canEdit: Boolean(canEdit),
+        canEdit: resolvedSchema.canEdit,
         onAddMember: handleAddMember,
         onNavigateProfile,
         resolveAvatarUrl,
@@ -393,35 +445,49 @@ export function FamilyTree({
           member={member}
           onAddMember={handleAddMember}
           onNavigateProfile={onNavigateProfile}
-          resolveAvatarUrl={resolveAvatarUrl}
-          canEdit={canEdit}
+          canEdit={resolvedSchema.canEdit}
           isRoot={isRoot}
           relationOptions={options.relationOptions}
+          cardConfig={resolvedSchema.cardConfig}
         />
       );
     },
-    [canEdit, handleAddMember, onNavigateProfile, renderNode, resolveAvatarUrl, resolveRelationOptions],
+    [
+      handleAddMember,
+      onNavigateProfile,
+      renderNode,
+      resolvedSchema.canEdit,
+      resolvedSchema.cardConfig,
+      resolveAvatarUrl,
+      resolveRelationOptions,
+    ],
   );
 
   return (
-    <div className={cn("min-h-screen bg-canvas-base", className)} data-family-tree>
-      <div className={cn("surface-section--padded", containerClassName)}>
+    <div className={className} data-family-tree>
+      <div className={containerClassName}>
         {/* Header */}
-        {showTitle ? (
-          <div className="mb-12 text-center space-y-3">
-            <h1 className={cn("type-display-lg text-copy-primary", titleClassName)}>{title}</h1>
+        {resolvedSchema.showTitle ? (
+          <div style={{ marginBottom: verticalGap, textAlign: "center" }}>
+            <h1 className={titleClassName}>{resolvedSchema.title}</h1>
           </div>
         ) : null}
 
         {/* Tree Visualization */}
-        <div ref={containerRef} className="relative w-full">
+        <div ref={containerRef} style={{ position: "relative", width: "100%", overflow: "auto" }}>
           <svg
             aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-0"
             width={canvasSize.width}
             height={canvasSize.height}
             viewBox={canvasSize.width && canvasSize.height ? `0 0 ${canvasSize.width} ${canvasSize.height}` : "0 0 0 0"}
             fill="none"
+            style={{
+              pointerEvents: "none",
+              position: "absolute",
+              left: 0,
+              top: 0,
+              overflow: "visible",
+            }}
           >
             {lineSegments.map((segment) => (
               <path
@@ -435,99 +501,50 @@ export function FamilyTree({
             ))}
           </svg>
 
-          <div className="relative flex flex-col items-center gap-12">
-            {/* Parents Generation */}
-            {rootMember.parents && rootMember.parents.length > 0 ? (
-              <div className="flex gap-8 justify-center">
-                {rootMember.parents.map((parent) => (
-                  <div
-                    key={parent.id}
-                    data-family-node-id={parent.id}
-                    data-family-role="parent"
-                    className="relative animate-in fade-in slide-in-from-top-4 duration-500"
-                  >
-                    {renderMemberNode(parent, false)}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            {/* Current Generation (Root + Siblings + Spouse) */}
-            <div className="flex items-center justify-center gap-8">
-              <div className="relative inline-flex items-center gap-8">
-                {/* Left siblings */}
-                {(() => {
-                  const leftSiblings = rootMember.siblings?.slice(0, Math.ceil((rootMember.siblings?.length || 0) / 2)) || [];
-                  return leftSiblings.map((sibling) => (
-                    <div
-                      key={sibling.id}
-                      data-family-node-id={sibling.id}
-                      data-family-role="sibling"
-                  className="relative animate-in fade-in slide-in-from-left-4 duration-500"
-                >
-                      {renderMemberNode(sibling, false)}
-                    </div>
-                  ));
-                })()}
-
-                {/* Root Member */}
+          <div
+            style={{
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: verticalGap,
+            }}
+          >
+            {layoutModel.rows.map((row) => {
+              const rowContent = row.items.map((item) => (
                 <div
-                  data-family-node-id={rootMember.id}
-                  data-family-role="root"
-                  className="relative animate-in fade-in zoom-in-95 duration-500"
+                  key={item.member.id}
+                  data-family-node-id={item.member.id}
+                  data-family-role={item.role}
+                  className={item.className}
                 >
-                  {renderMemberNode(rootMember, true)}
+                  {renderMemberNode(item.member, item.isRoot)}
                 </div>
-
-                {/* Spouse */}
-                {rootMember.spouse ? (
-                  <div
-                    data-family-node-id={rootMember.spouse.id}
-                    data-family-role="spouse"
-                    className="relative animate-in fade-in slide-in-from-right-4 duration-500"
-                  >
-                    {renderMemberNode(rootMember.spouse, false)}
-                  </div>
-                ) : null}
-
-                {/* Right siblings */}
-                {(() => {
-                  const leftCount = Math.ceil((rootMember.siblings?.length || 0) / 2);
-                  const rightSiblings = rootMember.siblings?.slice(leftCount) || [];
-                  return rightSiblings.map((sibling) => (
+              ));
+              return (
+                <div
+                  key={row.id}
+                  className={row.className}
+                  style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: horizontalGap }}
+                >
+                  {row.innerClassName ? (
                     <div
-                      key={sibling.id}
-                      data-family-node-id={sibling.id}
-                    data-family-role="sibling"
-                    className="relative animate-in fade-in slide-in-from-right-4 duration-500"
-                  >
-                      {renderMemberNode(sibling, false)}
+                      className={row.innerClassName}
+                      style={{ display: "inline-flex", alignItems: "center", gap: horizontalGap }}
+                    >
+                      {rowContent}
                     </div>
-                  ));
-                })()}
-              </div>
-            </div>
-
-            {/* Children Generation */}
-            {rootMember.children && rootMember.children.length > 0 ? (
-              <div className="flex gap-8 justify-center">
-                {rootMember.children.map((child) => (
-                  <div
-                    key={child.id}
-                    data-family-node-id={child.id}
-                    data-family-role="child"
-                    className="relative animate-in fade-in slide-in-from-bottom-4 duration-500"
-                  >
-                    {renderMemberNode(child, false)}
-                  </div>
-                ))}
-              </div>
-            ) : null}
+                  ) : (
+                    rowContent
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Add Member Dialog */}
-        {canEdit && onAddMember ? (
+        {resolvedSchema.canEdit && onAddMember ? (
           <AddMemberDialog
             isOpen={dialogState.isOpen}
             onClose={() => setDialogState({ ...dialogState, isOpen: false })}
@@ -535,7 +552,6 @@ export function FamilyTree({
             relation={dialogState.relation}
             parentId={dialogState.parentId}
             searchProfiles={searchProfiles}
-            resolveAvatarUrl={resolveAvatarUrl}
           />
         ) : null}
 

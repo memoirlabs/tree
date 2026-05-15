@@ -13,10 +13,9 @@
     ]
   },
   "imports": {
-    "react": "npm:react@19.2.5",
-    "react-dom": "npm:react-dom@19.2.5",
-    "react/jsx-runtime": "npm:react@19.2.5/jsx-runtime",
-    "lucide-react": "npm:lucide-react@1.14.0"
+    "react": "npm:react@19.2.6",
+    "react-dom": "npm:react-dom@19.2.6",
+    "react/jsx-runtime": "npm:react@19.2.6/jsx-runtime"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

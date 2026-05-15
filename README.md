@@ -15,7 +15,7 @@ bunx jsr add @memoir/tree
 ## Requirements
 
 - React 18 or 19.
-- Tailwind classes are used for styling. Define the design tokens referenced by the library (examples below).
+- Styling is intentionally minimal. Bring your own CSS or custom renderers.
 
 ## Quick Start
 
@@ -51,7 +51,6 @@ export function FamilyTreePage() {
         // Route using your app router
         console.log("Navigate", member, target);
       }}
-      resolveAvatarUrl={(url) => url || ""}
       designPreset="contrast"
     />
   );
@@ -107,6 +106,98 @@ Use `relationOptions` to control which relationship types appear in the add menu
 
 ## Customization
 
+### YAML Schema
+
+Use `schemaYaml` when you want the built-in UI to be driven by a declarative schema:
+
+```tsx
+const schemaYaml = `
+version: 1
+tree:
+  title: Family Tree
+layout:
+  strategy: auto
+  density: compact
+connectors:
+  preset: contrast
+  anchors:
+    verticalGapPx: 24
+card:
+  fields: [name, birthday, relation, status]
+editing:
+  enabled: true
+  rootRelations: [parent, sibling, spouse, former_spouse, child]
+  memberRelations: [child, spouse, former_spouse]
+`;
+
+<FamilyTree
+  rootMember={rootMember}
+  schemaYaml={schemaYaml}
+  onAddMember={handleAddMember}
+/>;
+```
+
+Runtime callbacks and data still come from your app: `rootMember`, `onAddMember`, `searchProfiles`,
+`onNavigateProfile`, `resolveAvatarUrl` for custom renderers, and `renderNode`. If you provide both schema values and props,
+explicit props win.
+
+### Generic Relationship And Org Charts
+
+Use `RelationshipChart` when your data is an edge list instead of a nested family member shape:
+
+```tsx
+import { RelationshipChart } from "@memoir/tree";
+import type { RelationshipEdge, RelationshipNode } from "@memoir/tree";
+
+const nodes: RelationshipNode[] = [
+  { id: "ceo", label: "CEO" },
+  { id: "vp", label: "VP" },
+  { id: "lead", label: "Engineering Lead" },
+  { id: "frontend", label: "Frontend Engineer" },
+];
+
+const relationships: RelationshipEdge[] = [
+  { sourceId: "ceo", targetId: "vp", type: "ceo" },
+  { sourceId: "vp", targetId: "lead", type: "manager" },
+  { sourceId: "lead", targetId: "frontend", type: "manager" },
+];
+
+<RelationshipChart
+  nodes={nodes}
+  relationships={relationships}
+  rootId="lead"
+  mode="all"
+/>;
+```
+
+The graph helpers also work without React: `createRelationshipIndex`, `getUpstream`,
+`getDownstream`, `getSiblings`, `getSpouses`, `getFormerSpouses`, `getManagers`,
+`getReports`, `getPeers`, and `getCeoChain`.
+
+If your source of truth is a database relationship table, pass rows directly:
+
+```tsx
+import { FamilyTree, RelationshipChart } from "@memoir/tree";
+import type { RelationshipTableRow } from "@memoir/tree";
+
+const orgRows: RelationshipTableRow[] = [
+  { sourceId: "ceo", sourceLabel: "CEO", targetId: "vp", targetLabel: "VP", type: "ceo" },
+  { sourceId: "vp", sourceLabel: "VP", targetId: "lead", targetLabel: "Lead", type: "manager" },
+];
+
+<RelationshipChart rows={orgRows} mode="auto" />;
+```
+
+Family trees can be row-driven too:
+
+```tsx
+<FamilyTree relationshipRows={familyRows} rootId="alex" />;
+```
+
+The row adapter normalizes reverse edges like `child` and `direct_report`,
+infers family vs org mode, picks a deterministic root when omitted, and exposes
+line etiquette with `getRelationshipDisplaySemantics`.
+
 ### Presets And Overrides
 
 Connector styling is controlled by presets or overrides:
@@ -159,17 +250,15 @@ Use these props to integrate with your page layout:
 - `titleClassName`: applied to the title.
 - `showTitle`: set `false` to hide the header.
 
-## Styling Tokens
+## Playground
 
-The UI uses Tailwind class tokens you must define in your design system:
+Run the local playground with:
 
-- `bg-canvas-base`, `bg-canvas-muted`, `bg-bg`
-- `text-copy-primary`, `text-copy-secondary`, `text-copy-muted`, `text-copy-disabled`
-- `border-stroke-default`, `border-stroke-muted`
-- `bg-stroke-default`
-- `type-display-lg`, `type-heading-md`, `type-caption`
+```bash
+bun run playground
+```
 
-If you don’t use these names, map them to your own tokens or replace classes at build time.
+The playground lives in `site/` and is not included in the published package.
 
 ## API Reference
 
@@ -185,18 +274,25 @@ If you don’t use these names, map them to your own tokens or replace classes a
 - `onAddMember`: Called with `AddMemberPayload` when a member is added.
 - `searchProfiles`: Async search provider for the dialog.
 - `onNavigateProfile`: Called when a card with a profile ID or slug is clicked.
-- `resolveAvatarUrl`: Optional URL resolver for avatar images.
+- `resolveAvatarUrl`: Optional URL resolver passed to custom node renderers.
 - `designPreset`: Connector preset (`default`, `compact`, `contrast`).
 - `designOverrides`: Override connector sizing and colors.
 - `relationOptions`: Restrict add‑member relation choices.
 - `renderNode`: Render your own card UI.
+
+### Supported Relations
+
+`RelationType` supports family and org-chart use cases:
+
+- Family: `parent`, `child`, `sibling`, `spouse`, `former_spouse`, `grandparent`, `grandchild`.
+- Org: `manager`, `direct_report`, `peer`, `ceo`, `assistant`.
 
 ### `FamilyMember`
 
 - `id`: Unique string identifier.
 - `name`: Display name.
 - `birthday`: Optional display string.
-- `avatarUrl`: Optional avatar URL.
+- `avatarUrl`: Optional data field retained for host apps and custom renderers.
 - `relation`: Optional label for the card.
 - `status`: `linked`, `manual`, or `invite_pending` (affects connector color).
 - `profileId` / `profileSlug`: Used for navigation targets.

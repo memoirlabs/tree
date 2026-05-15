@@ -2,9 +2,7 @@
 
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Check, Loader2, Mail, Search, X } from "lucide-react";
 
-import { cn, getInitials } from "../utils";
 import type { RelationType, ProfileSearchResult, AddMemberPayload } from "../types";
 
 interface AddMemberDialogProps {
@@ -14,7 +12,6 @@ interface AddMemberDialogProps {
   relation: RelationType;
   parentId?: string;
   searchProfiles?: (query: string) => Promise<ProfileSearchResult[]>;
-  resolveAvatarUrl?: (url?: string | null) => string;
 }
 
 function useDebouncedValue<T>(value: T, delay: number) {
@@ -33,18 +30,14 @@ const relationLabels: Record<RelationType, string> = {
   child: "Child",
   sibling: "Sibling",
   spouse: "Spouse",
+  former_spouse: "Former spouse",
   grandparent: "Grandparent",
   grandchild: "Grandchild",
-};
-
-const avatarMd = {
-  size: 40,
-  className: "h-10 w-10",
-};
-
-const avatarLg = {
-  size: 56,
-  className: "h-14 w-14",
+  manager: "Manager",
+  direct_report: "Direct report",
+  peer: "Peer",
+  ceo: "CEO",
+  assistant: "Assistant",
 };
 
 /**
@@ -57,7 +50,6 @@ export function AddMemberDialog({
   relation,
   parentId,
   searchProfiles,
-  resolveAvatarUrl,
 }: AddMemberDialogProps): React.JSX.Element | null {
   const searchEnabled = Boolean(searchProfiles);
   const [mode, setMode] = useState<"search" | "manual" | "invite">(searchEnabled ? "search" : "manual");
@@ -182,15 +174,22 @@ export function AddMemberDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-(--z-modal) flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-(--z-modal) flex items-center justify-center"
+      data-add-member-overlay
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-fg/40 backdrop-blur-sm"
+        data-add-member-backdrop
         onClick={onClose}
       />
 
       {/* Dialog */}
-      <div className="relative w-full max-w-md mx-4 bg-bg rounded-3xl shadow-2xl border border-stroke-default overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div
+        className="relative w-full max-w-md mx-4 bg-bg rounded-3xl shadow-2xl border border-stroke-default overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        data-add-member-panel
+      >
         <form onSubmit={handleSubmit}>
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-stroke-muted">
@@ -202,7 +201,7 @@ export function AddMemberDialog({
               onClick={onClose}
               className="p-2 rounded-full hover:bg-canvas-muted transition-colors"
             >
-              <X className="w-5 h-5 text-copy-muted" />
+              Close
             </button>
           </div>
 
@@ -261,34 +260,6 @@ export function AddMemberDialog({
                 {/* Selected Profile Display */}
                 {selectedProfile ? (
                   <div className="flex items-center gap-3 p-4 bg-canvas-base rounded-2xl border border-stroke-muted">
-                    <span
-                      className={cn(
-                        "relative inline-flex overflow-hidden border border-stroke-muted bg-bg",
-                        avatarLg.className,
-                        "rounded-full",
-                      )}
-                    >
-                      {(() => {
-                        const resolvedAvatar = selectedProfile.avatarUrl
-                          ? resolveAvatarUrl
-                            ? resolveAvatarUrl(selectedProfile.avatarUrl)
-                            : selectedProfile.avatarUrl
-                          : "";
-                        return resolvedAvatar ? (
-                          <img
-                            src={resolvedAvatar}
-                            alt=""
-                            width={avatarLg.size}
-                            height={avatarLg.size}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center text-sm font-semibold text-copy-primary">
-                            {getInitials(selectedProfile.displayName)}
-                          </span>
-                        );
-                      })()}
-                    </span>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-copy-primary truncate">
                         {selectedProfile.displayName}
@@ -302,20 +273,19 @@ export function AddMemberDialog({
                       onClick={() => setSelectedProfile(null)}
                       className="p-2 rounded-full hover:bg-canvas-muted transition-colors"
                     >
-                      <X className="w-4 h-4 text-copy-muted" />
+                      Clear
                     </button>
                   </div>
                 ) : (
                   <>
                     {/* Search Input */}
                     <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-copy-muted" />
                       <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search for a user..."
-                        className="w-full pl-12 pr-4 py-3 rounded-full border border-stroke-default bg-bg text-copy-primary placeholder:text-copy-disabled focus:outline-none focus:border-copy-primary focus:ring-2 focus:ring-copy-primary/10 transition-all"
+                        className="w-full px-4 py-3 rounded-full border border-stroke-default bg-bg text-copy-primary placeholder:text-copy-disabled focus:outline-none focus:border-copy-primary focus:ring-2 focus:ring-copy-primary/10 transition-all"
                         autoFocus
                       />
                     </div>
@@ -339,38 +309,9 @@ export function AddMemberDialog({
                               onClick={() => handleSelectProfile(profile)}
                               className="group flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-canvas-muted transition-colors"
                             >
-                              <span
-                                className={cn(
-                                  "relative inline-flex overflow-hidden border border-stroke-muted bg-canvas-base",
-                                  avatarMd.className,
-                                  "rounded-full",
-                                )}
-                              >
-                                {(() => {
-                                  const resolvedAvatar = profile.avatarUrl
-                                    ? resolveAvatarUrl
-                                      ? resolveAvatarUrl(profile.avatarUrl)
-                                      : profile.avatarUrl
-                                    : "";
-                                  return resolvedAvatar ? (
-                                    <img
-                                      src={resolvedAvatar}
-                                      alt=""
-                                      width={avatarMd.size}
-                                      height={avatarMd.size}
-                                      className="h-full w-full object-cover"
-                                    />
-                                  ) : (
-                                    <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-copy-primary">
-                                      {getInitials(profile.displayName)}
-                                    </span>
-                                  );
-                                })()}
-                              </span>
                               <span className="flex-1 truncate font-medium text-copy-primary">
                                 {profile.displayName}
                               </span>
-                              <Check className="w-5 h-5 text-copy-muted opacity-0 group-hover:opacity-100" />
                             </button>
                           ))
                         )}
@@ -467,18 +408,17 @@ export function AddMemberDialog({
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-copy-muted" />
                     <input
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       placeholder="example@email.com"
-                      className="w-full pl-12 pr-4 py-3 rounded-full border border-stroke-default bg-bg text-copy-primary placeholder:text-copy-disabled focus:outline-none focus:border-copy-primary focus:ring-2 focus:ring-copy-primary/10 transition-all"
+                      className="w-full px-4 py-3 rounded-full border border-stroke-default bg-bg text-copy-primary placeholder:text-copy-disabled focus:outline-none focus:border-copy-primary focus:ring-2 focus:ring-copy-primary/10 transition-all"
                     />
                   </div>
                 </div>
                 <p className="text-sm text-copy-muted">
-                  We’ll email them an invite so they can claim their spot on your tree.
+                  We'll email them an invite so they can claim their spot on your tree.
                 </p>
               </div>
             )}
@@ -498,8 +438,7 @@ export function AddMemberDialog({
               disabled={!canSubmit || isSubmitting}
               className="flex-1 py-3 px-4 rounded-full bg-copy-primary text-bg font-medium hover:bg-copy-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Add {relationLabels[relation]}
+              {isSubmitting ? "Adding..." : `Add ${relationLabels[relation]}`}
             </button>
           </div>
         </form>

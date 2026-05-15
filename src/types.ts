@@ -6,8 +6,14 @@ export type RelationType =
   | "sibling"
   | "child"
   | "spouse"
+  | "former_spouse"
   | "grandparent"
-  | "grandchild";
+  | "grandchild"
+  | "manager"
+  | "direct_report"
+  | "peer"
+  | "ceo"
+  | "assistant";
 
 /**
  * Status for how a family member was added or linked.
@@ -139,6 +145,46 @@ export interface FamilyTreeConnectorConfig {
     coupleInsetPx: number;
     verticalGapPx: number;
   };
+}
+
+/**
+ * Deep partial shape accepted when overriding connector styling.
+ */
+export interface FamilyTreeConnectorOverrides {
+  statusColors?: Partial<FamilyTreeStatusColors>;
+  coupleLine?: Partial<FamilyTreeLineStyle>;
+  trunk?: Partial<FamilyTreeLineStyle>;
+  siblingBus?: Partial<FamilyTreeLineStyle>;
+  drop?: Partial<FamilyTreeLineStyle>;
+  anchors?: Partial<FamilyTreeConnectorConfig["anchors"]>;
+}
+
+/**
+ * Built-in layout strategies used to place tree generations.
+ */
+export type FamilyTreeLayoutStrategy = "auto" | "generation";
+
+/**
+ * Density tokens for built-in tree spacing.
+ */
+export type FamilyTreeLayoutDensity = "comfortable" | "compact";
+
+/**
+ * Fields that can be shown by the default member card.
+ */
+export type FamilyTreeCardField = "name" | "birthday" | "relation" | "status";
+
+/**
+ * Declarative display options for the default member card.
+ */
+export interface FamilyTreeCardConfig {
+  fields?: FamilyTreeCardField[];
+  showRootLabel?: boolean;
+  rootLabel?: string;
+  widthClassName?: string;
+  heightClassName?: string;
+  className?: string;
+  statusLabels?: Partial<Record<FamilyMemberStatus, string>>;
 }
 
 /**
