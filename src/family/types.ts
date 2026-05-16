@@ -91,7 +91,7 @@ export interface FamilyTreeProps<Person> {
   subject: PersonId;
   people: PeopleById<Person>;
   relationships: FamilyRelationship[];
-  card: ComponentType<FamilyCardProps<Person>>;
+  card?: ComponentType<FamilyCardProps<Person>>;
   className?: string;
   cardClassName?: string;
   edgeClassName?: string;

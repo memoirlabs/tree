@@ -52,6 +52,14 @@ export function Page() {
 }
 ```
 
+You can also omit `card` to use the built-in default card:
+
+```tsx
+export function Page() {
+  return <FamilyTree subject="alex" people={people} relationships={relationships} />;
+}
+```
+
 ## Styling
 
 Use normal CSS against stable data attributes:

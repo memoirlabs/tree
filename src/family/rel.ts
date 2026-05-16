@@ -30,6 +30,17 @@ export interface GuardianshipOptions {
   order?: number;
 }
 
+export interface RelationshipHelpers {
+  parents(child: PersonId, parents: PersonId[], options?: ParentageOptions): FamilyParentageRelationship;
+  children(
+    parents: PersonId | PersonId[],
+    children: PersonId | PersonId[],
+    options?: ParentageOptions,
+  ): FamilyParentageRelationship;
+  partner(a: PersonId, b: PersonId, options?: PartnershipOptions): FamilyPartnershipRelationship;
+  guardians(child: PersonId, guardians: PersonId[], options?: GuardianshipOptions): FamilyGuardianshipRelationship;
+}
+
 const arrayOf = (value: PersonId | PersonId[]): PersonId[] => (Array.isArray(value) ? value : [value]);
 
 const optionalFields = <T extends { id?: string; status?: FamilyRelationshipStatus; order?: number }>(options: T) => ({
@@ -38,7 +49,7 @@ const optionalFields = <T extends { id?: string; status?: FamilyRelationshipStat
   ...(options.order !== undefined ? { order: options.order } : {}),
 });
 
-export const rel = {
+export const rel: RelationshipHelpers = {
   parents(child: PersonId, parents: PersonId[], options: ParentageOptions = {}): FamilyParentageRelationship {
     return {
       type: "parentage",

@@ -1,17 +1,79 @@
 "use client";
 
-import type { JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 import { useCallback, useMemo, useRef } from "react";
 
 import { buildFamilyTreeLayout } from "./layout";
 import { useCardMeasurements } from "./use-card-measurements";
 import type { FamilyCardProps, FamilyTreeProps, PersonId } from "./types";
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
+
+const defaultCardStyle: CSSProperties = {
+  display: "grid",
+  gap: 4,
+  justifyItems: "center",
+  minWidth: 124,
+  padding: "8px 10px",
+  textAlign: "center",
+};
+
+const defaultNameStyle: CSSProperties = {
+  display: "block",
+  fontSize: "0.98rem",
+  lineHeight: 1.1,
+};
+
+const defaultRelationStyle: CSSProperties = {
+  display: "block",
+  fontSize: "0.8rem",
+  lineHeight: 1.2,
+  opacity: 0.68,
+};
+
+const defaultBadgeStyle: CSSProperties = {
+  display: "block",
+  fontSize: "0.68rem",
+  fontWeight: 700,
+  letterSpacing: "0.08em",
+  lineHeight: 1.2,
+  textTransform: "uppercase",
+};
+
+function getDefaultPersonLabel<Person>(person: Person, personId: PersonId): string {
+  if (!isRecord(person)) return personId;
+  if (typeof person.name === "string") return person.name;
+  if (typeof person.label === "string") return person.label;
+
+  const profile = person.profile;
+  if (isRecord(profile) && typeof profile.display === "string") return profile.display;
+
+  return personId;
+}
+
+export function DefaultFamilyCard<Person>({
+  person,
+  personId,
+  relation,
+  selected,
+  focused: _focused,
+  collapsed: _collapsed,
+  ...props
+}: FamilyCardProps<Person>): JSX.Element {
+  return (
+    <article {...props} style={{ ...defaultCardStyle, ...props.style }}>
+      <strong style={defaultNameStyle}>{getDefaultPersonLabel(person, personId)}</strong>
+      <small style={defaultRelationStyle}>{relation.label}</small>
+      {selected ? <span style={defaultBadgeStyle}>selected</span> : null}
+    </article>
+  );
+}
+
 export function FamilyTree<Person>({
   subject,
   people,
   relationships,
-  card: Card,
+  card: Card = DefaultFamilyCard,
   className,
   cardClassName,
   edgeClassName,

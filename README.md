@@ -22,7 +22,7 @@ Most family tree UIs force your app into a specific data model or a fixed card d
 
 - Bring your own person shape.
 - Describe family facts with `rel.parents`, `rel.children`, `rel.partner`, and `rel.guardians`.
-- Render any React card component.
+- Start with the built-in `DefaultFamilyCard`, then swap in any React card component.
 - Get computed labels like `self`, `parent`, `sibling`, `half-sibling`, `partner`, `grandparent`, and `grandchild`.
 - Style with stable data attributes instead of a bundled theme.
 - Use pure indexing and layout helpers in tests, previews, or custom renderers.
@@ -75,6 +75,12 @@ export function Page() {
 }
 ```
 
+For a quick first render, omit `card`. The built-in default card displays `name`, `label`, `profile.display`, or the person ID:
+
+```tsx
+<FamilyTree subject="henry" people={people} relationships={relationships} />
+```
+
 ## Relationship Facts
 
 Use helpers for examples, tests, demos, and small apps:
@@ -117,6 +123,7 @@ The card receives normal HTML props and stable data attributes:
 The public API is intentionally small:
 
 - `FamilyTree`
+- `DefaultFamilyCard`
 - `rel`
 - `FamilyCardProps`
 - `FamilyTreeProps`

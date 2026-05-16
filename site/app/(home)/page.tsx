@@ -22,26 +22,17 @@ export default function HomePage() {
           <div className="hero-copy">
             <div className="brand-kicker">
               <span className="brand-dot" aria-hidden="true" />
-              <p className="eyebrow">@memoir/tree</p>
             </div>
-            <h1>Ergonomic family trees for React apps.</h1>
+            <h1>
+              Ergonomic family <span className="text-red">trees</span> for{" "}
+              <span className="text-yellow">React apps</span>.
+            </h1>
             <p>
-              Render subject-centered family neighborhoods from app-owned people, relationship facts, and one card
-              component.
+              Render subject-centered family neighborhoods and org charts from app-owned people,
+              relationship facts, and one card component.
             </p>
-            <div className="hero-actions">
-              <Link href="/docs" className="primary-button">
-                Read the docs
-              </Link>
-              <a href="#playground" className="secondary-button">
-                View playground
-              </a>
-            </div>
-          </div>
-          <div className="hero-panel" aria-label="Memoir Tree logo and package highlights">
-            <Image src={logo} alt="Tree logo" priority placeholder="blur" className="hero-logo" />
-            <div className="hero-badges" aria-label="Package highlights">
-              <span>React 19</span>
+            <div className="hero-highlights" aria-label="Package highlights">
+              <span>React 18+</span>
               <span>TypeScript</span>
               <span>unstyled</span>
               <span>measured layout</span>
@@ -49,11 +40,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="playground" className="playground-section">
+        <section id="playground" className="playground-section" aria-label="Family tree playground">
           <div className="section-heading">
-            <p className="eyebrow">Playground</p>
-            <h2>See the library running in the docs site.</h2>
-            <p>The examples below reuse the local package source, so docs and visual verification live together.</p>
+            <p className="eyebrow">Live example</p>
+            <h2>Names, relationships, and layout. Nothing extra.</h2>
           </div>
           <Playground />
         </section>

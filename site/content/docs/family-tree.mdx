@@ -12,7 +12,7 @@ type FamilyTreeProps<Person> = {
   subject: string;
   people: Record<string, Person>;
   relationships: FamilyRelationship[];
-  card: React.ComponentType<FamilyCardProps<Person>>;
+  card?: React.ComponentType<FamilyCardProps<Person>>;
   className?: string;
   cardClassName?: string;
   edgeClassName?: string;
@@ -43,7 +43,9 @@ The helpers produce plain rows:
 
 ## Card Contract
 
-Your card receives the person object and computed relation metadata:
+If you omit `card`, `FamilyTree` uses `DefaultFamilyCard`, which displays `name`, `label`, `profile.display`, or the person ID.
+
+Your custom card receives the person object and computed relation metadata:
 
 ```tsx
 import type { FamilyCardProps } from "@memoir/tree";

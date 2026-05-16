@@ -1,5 +1,5 @@
-export { FamilyTree, rel } from "./family";
-export type { ParentageOptions, PartnershipOptions, GuardianshipOptions } from "./family";
+export { DefaultFamilyCard, FamilyTree, rel } from "./family";
+export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./family";
 
 export type {
   ComputedRelation,

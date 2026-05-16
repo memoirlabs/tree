@@ -35,7 +35,7 @@ const familyRelationships = [
 function PersonCard({
   person,
   relation,
-  selected,
+  selected: _selected,
   personId: _personId,
   focused: _focused,
   collapsed: _collapsed,
@@ -44,33 +44,22 @@ function PersonCard({
   return (
     <article {...props}>
       <strong>{person.name}</strong>
-      <small>{relation.label}</small>
-      {person.note ? <span>{person.note}</span> : null}
-      {selected ? <em>selected</em> : null}
+      <small>{person.note ?? relation.label}</small>
     </article>
   );
 }
 
 export function Playground() {
   return (
-    <div className="playground-grid">
-      <section className="playground-card" data-playground-section="family">
-        <div>
-          <p className="eyebrow">Family tree</p>
-          <h2>Subject-centered relationships</h2>
-        </div>
-        <div className="tree-frame">
-          <FamilyTree
-            subject="alex"
-            people={people}
-            relationships={familyRelationships}
-            card={PersonCard}
-            cardClassName="node-box"
-            edgeClassName="family-edge"
-          />
-        </div>
-      </section>
-
+    <div className="tree-frame">
+      <FamilyTree
+        subject="alex"
+        people={people}
+        relationships={familyRelationships}
+        card={PersonCard}
+        cardClassName="name-node"
+        edgeClassName="family-edge"
+      />
     </div>
   );
 }
