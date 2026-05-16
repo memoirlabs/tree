@@ -7,7 +7,7 @@ import {
   buildRelationshipChartInputFromRows,
   inferRelationshipChartMode,
   inferRelationshipRootId,
-} from "../adapters";
+} from "./adapters";
 import {
   createRelationshipIndex,
   getDownstream,
@@ -17,9 +17,9 @@ import {
   getSiblings,
   getSpouses,
   getUpstream,
-} from "../relationships";
-import type { RelationshipTableRow } from "../adapters";
-import type { RelationshipEdge, RelationshipNode } from "../relationships";
+} from "./relationships";
+import type { RelationshipTableRow } from "./adapters";
+import type { RelationshipEdge, RelationshipNode } from "./relationships";
 
 export type RelationshipChartMode = "auto" | "family" | "org" | "upstream" | "downstream" | "all";
 
@@ -147,9 +147,6 @@ export function buildRelationshipChartLevels(
   ].filter((level): level is RelationshipChartLevel => Boolean(level));
 }
 
-/**
- * Render an unstyled, schema-friendly relationship chart from generic nodes and edges.
- */
 export function RelationshipChart({
   nodes,
   relationships,

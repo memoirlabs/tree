@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 
 import {
-  buildFamilyMemberFromRelationshipRows,
   buildRelationshipChartInputFromRows,
   buildRelationshipGraphFromRows,
   getRelationshipDisplaySemantics,
@@ -25,14 +24,6 @@ test("normalizes flat family rows into graph edges", () => {
   expect(graph.relationships.map((relationship) => `${relationship.sourceId}->${relationship.targetId}:${relationship.type}`)).toContain(
     "alex->riley:parent",
   );
-});
-
-test("builds a nested FamilyMember from relationship rows", () => {
-  const member = buildFamilyMemberFromRelationshipRows(familyRows, "alex");
-
-  expect(member?.parents?.map((parent) => parent.id)).toEqual(["casey", "morgan"]);
-  expect(member?.spouse?.id).toBe("jordan");
-  expect(member?.children?.map((child) => child.id)).toEqual(["riley", "quinn"]);
 });
 
 test("infers org chart input from database-like rows", () => {

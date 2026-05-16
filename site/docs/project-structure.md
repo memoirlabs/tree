@@ -5,29 +5,33 @@ The repository is organized by purpose:
 ```text
 .
 ├── src/
-│   ├── components/
-│   │   ├── add-member-dialog.tsx
-│   │   ├── family-tree.tsx
-│   │   ├── node-card.tsx
-│   │   └── relationship-chart.tsx
-│   ├── design-presets.ts
+│   ├── FamilyTree.tsx
+│   ├── RelationshipChart.tsx
+│   ├── adapters.ts
+│   ├── family-index.ts
 │   ├── index.ts
 │   ├── layout.ts
+│   ├── rel.ts
 │   ├── relationships.ts
-│   ├── schema.ts
 │   ├── types.ts
 │   └── utils.ts
 ├── tests/
+│   ├── adapters.test.ts
+│   ├── family-index.test.ts
 │   ├── layout.test.ts
+│   ├── rel.test.ts
 │   ├── relationship-chart.test.ts
-│   ├── relationships.test.ts
-│   └── schema.test.ts
+│   └── relationships.test.ts
 ├── scripts/
 │   └── fix-dist-imports.ts
 ├── site/
-│   ├── *.md
+│   ├── docs/
+│   │   └── *.md
+│   ├── playground/
+│   │   ├── README.md
+│   │   └── playground.tsx
+│   ├── README.md
 │   ├── index.html
-│   ├── playground.tsx
 │   ├── server.ts
 │   └── styles.css
 ├── dist/
@@ -40,10 +44,14 @@ The repository is organized by purpose:
 ## Folder Responsibilities
 
 - `src/`: Published library source.
-- `src/components/`: React components only.
-- `tests/`: Bun tests for schema, layout, graph traversal, and chart levels.
+- `src/FamilyTree.tsx`: Ergonomic family tree renderer.
+- `src/RelationshipChart.tsx`: Generic org/relationship chart renderer.
+- `src/family-index.ts`: Relationship fact indexing and subject-relative labels.
+- `src/layout.ts`: Measured family layout and SVG edge routing.
+- `tests/`: Bun tests for helpers, layout, graph traversal, and chart levels.
 - `scripts/`: Local build utilities.
-- `site/`: Markdown docs and local visual playground. This folder is not published.
+- `site/docs/`: Local markdown docs. This folder is not published.
+- `site/playground/`: Local visual playground. This folder is not published.
 - `dist/`: Generated package output.
 
 ## Public Entrypoints

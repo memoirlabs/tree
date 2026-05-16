@@ -1,36 +1,35 @@
 import { createRoot } from "react-dom/client";
 
-import { FamilyTree, RelationshipChart } from "../src/index";
-import type { AddMemberPayload, RelationshipTableRow } from "../src/index";
+import { FamilyTree, RelationshipChart, rel } from "../../src/index";
+import type { FamilyCardProps, RelationshipTableRow } from "../../src/index";
 
-const schemaYaml = `
-version: 1
-tree:
-  title: YAML Family Tree
-layout:
-  strategy: auto
-  density: compact
-connectors:
-  preset: contrast
-  anchors:
-    verticalGapPx: 28
-card:
-  fields: [name, relation, status]
-  className: node-box
-editing:
-  enabled: true
-  rootRelations: [parent, sibling, spouse, former_spouse, child]
-  memberRelations: [child, spouse, former_spouse]
-`;
+type Person = {
+  id: string;
+  name: string;
+  note?: string;
+};
 
-const familyRows: RelationshipTableRow[] = [
-  { sourceId: "morgan", sourceLabel: "Morgan", targetId: "alex", targetLabel: "Alex", type: "parent" },
-  { sourceId: "casey", sourceLabel: "Casey", targetId: "alex", targetLabel: "Alex", type: "parent" },
-  { sourceId: "morgan", sourceLabel: "Morgan", targetId: "sam", targetLabel: "Sam", type: "parent", targetOrder: 1 },
-  { sourceId: "morgan", sourceLabel: "Morgan", targetId: "taylor", targetLabel: "Taylor", type: "parent", targetOrder: 3 },
-  { sourceId: "alex", sourceLabel: "Alex", targetId: "jordan", targetLabel: "Jordan", type: "spouse" },
-  { sourceId: "alex", sourceLabel: "Alex", targetId: "riley", targetLabel: "Riley", type: "parent", targetOrder: 1 },
-  { sourceId: "alex", sourceLabel: "Alex", targetId: "quinn", targetLabel: "Quinn", type: "parent", targetOrder: 2 },
+const people: Record<string, Person> = {
+  ruth: { id: "ruth", name: "Ruth", note: "grandparent" },
+  morgan: { id: "morgan", name: "Morgan", note: "parent" },
+  casey: { id: "casey", name: "Casey", note: "parent" },
+  alex: { id: "alex", name: "Alex", note: "subject" },
+  sam: { id: "sam", name: "Sam", note: "sibling" },
+  taylor: { id: "taylor", name: "Taylor", note: "half-sibling" },
+  jordan: { id: "jordan", name: "Jordan", note: "partner" },
+  riley: { id: "riley", name: "Riley", note: "child" },
+  quinn: { id: "quinn", name: "Quinn", note: "child" },
+  river: { id: "river", name: "River", note: "grandchild" },
+};
+
+const familyRelationships = [
+  rel.parents("morgan", ["ruth"]),
+  rel.parents("alex", ["morgan", "casey"]),
+  rel.parents("sam", ["morgan", "casey"]),
+  rel.parents("taylor", ["morgan"]),
+  rel.partner("alex", "jordan", { relation: "spouse" }),
+  rel.children(["alex", "jordan"], ["riley", "quinn"]),
+  rel.children(["riley"], ["river"]),
 ];
 
 const orgRows: RelationshipTableRow[] = [
@@ -43,9 +42,16 @@ const orgRows: RelationshipTableRow[] = [
   { sourceId: "assistant", sourceLabel: "Assistant", targetId: "ceo", targetLabel: "CEO", type: "assistant" },
 ];
 
-const handleAddMember = (payload: AddMemberPayload) => {
-  console.log("playground add member", payload);
-};
+function PersonCard({ person, relation, selected, ...props }: FamilyCardProps<Person>) {
+  return (
+    <article {...props}>
+      <strong>{person.name}</strong>
+      <small>{relation.label}</small>
+      {person.note ? <span>{person.note}</span> : null}
+      {selected ? <em>selected</em> : null}
+    </article>
+  );
+}
 
 function Playground() {
   return (
@@ -56,9 +62,16 @@ function Playground() {
       </section>
 
       <section className="section" data-playground-section="family">
-        <h2>YAML Family Tree</h2>
+        <h2>Ergonomic Family Tree</h2>
         <div className="tree-frame">
-          <FamilyTree relationshipRows={familyRows} rootId="alex" schemaYaml={schemaYaml} onAddMember={handleAddMember} />
+          <FamilyTree
+            subject="alex"
+            people={people}
+            relationships={familyRelationships}
+            card={PersonCard}
+            cardClassName="node-box"
+            edgeClassName="family-edge"
+          />
         </div>
       </section>
 
@@ -80,12 +93,7 @@ function Playground() {
 
       <section className="section" data-playground-section="downstream">
         <h2>CEO Downstream</h2>
-        <RelationshipChart
-          rows={orgRows}
-          rootId="ceo"
-          mode="downstream"
-          className="relationship-chart"
-        />
+        <RelationshipChart rows={orgRows} rootId="ceo" mode="downstream" className="relationship-chart" />
       </section>
     </main>
   );

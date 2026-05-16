@@ -1,6 +1,5 @@
-import type { FamilyMember, RelationType } from "./types";
-import { createRelationshipIndex } from "./relationships";
-import type { RelationshipEdge, RelationshipIndex, RelationshipNode } from "./relationships";
+import type { RelationType } from "./types";
+import type { RelationshipEdge, RelationshipNode } from "./relationships";
 
 export type RelationshipGraphDomain = "family" | "org" | "mixed";
 export type RelationshipLinePattern = "solid" | "dashed";
@@ -184,101 +183,6 @@ export function buildRelationshipGraphFromRows(rows: RelationshipTableRow[]): Re
     relationships,
     inferredDomain,
     inferredRootId: inferRelationshipRootId(nodes, relationships, inferredDomain),
-  };
-}
-
-const compactUnique = (nodes: RelationshipNode[]): RelationshipNode[] => {
-  const seen = new Set<string>();
-  const unique: RelationshipNode[] = [];
-  for (const node of nodes) {
-    if (seen.has(node.id)) continue;
-    seen.add(node.id);
-    unique.push(node);
-  }
-  return unique.toSorted(compareDisplayNodes);
-};
-
-const toFamilyMember = (node: RelationshipNode, relation?: RelationType): FamilyMember => ({
-  ...(typeof node.data === "object" && node.data !== null ? (node.data as Partial<FamilyMember>) : {}),
-  id: node.id,
-  name: node.label,
-  relation,
-});
-
-const getFamilyParents = (index: RelationshipIndex, nodeId: string): RelationshipNode[] => {
-  const parentNodes: RelationshipNode[] = [];
-  for (const edge of index.incomingById.get(nodeId) ?? []) {
-    if (parentLikeTypes.has(edge.type)) {
-      const node = index.nodesById.get(edge.sourceId);
-      if (node) parentNodes.push(node);
-    }
-  }
-  for (const edge of index.outgoingById.get(nodeId) ?? []) {
-    if (childLikeTypes.has(edge.type)) {
-      const node = index.nodesById.get(edge.targetId);
-      if (node) parentNodes.push(node);
-    }
-  }
-  return compactUnique(parentNodes);
-};
-
-const getFamilyChildren = (index: RelationshipIndex, nodeId: string): RelationshipNode[] => {
-  const childNodes: RelationshipNode[] = [];
-  for (const edge of index.outgoingById.get(nodeId) ?? []) {
-    if (parentLikeTypes.has(edge.type)) {
-      const node = index.nodesById.get(edge.targetId);
-      if (node) childNodes.push(node);
-    }
-  }
-  for (const edge of index.incomingById.get(nodeId) ?? []) {
-    if (childLikeTypes.has(edge.type)) {
-      const node = index.nodesById.get(edge.sourceId);
-      if (node) childNodes.push(node);
-    }
-  }
-  return compactUnique(childNodes);
-};
-
-const getSymmetricFamilyNodes = (index: RelationshipIndex, nodeId: string, relation: RelationType): RelationshipNode[] => {
-  const nodes: RelationshipNode[] = [];
-  for (const edge of index.outgoingById.get(nodeId) ?? []) {
-    if (edge.type !== relation) continue;
-    const node = index.nodesById.get(edge.targetId);
-    if (node) nodes.push(node);
-  }
-  for (const edge of index.incomingById.get(nodeId) ?? []) {
-    if (edge.type !== relation) continue;
-    const node = index.nodesById.get(edge.sourceId);
-    if (node) nodes.push(node);
-  }
-  return compactUnique(nodes);
-};
-
-export function buildFamilyMemberFromRelationshipRows(
-  rows: RelationshipTableRow[],
-  rootId?: string,
-): FamilyMember | null {
-  const graph = buildRelationshipGraphFromRows(rows);
-  const resolvedRootId = rootId ?? graph.inferredRootId;
-  if (!resolvedRootId) return null;
-  const index = createRelationshipIndex(graph.nodes, graph.relationships);
-  const rootNode = index.nodesById.get(resolvedRootId);
-  if (!rootNode) return null;
-
-  const parentNodes = getFamilyParents(index, resolvedRootId);
-  const childNodes = getFamilyChildren(index, resolvedRootId);
-  const explicitSiblings = getSymmetricFamilyNodes(index, resolvedRootId, "sibling");
-  const sharedParentSiblings = parentNodes.flatMap((parent) =>
-    getFamilyChildren(index, parent.id).filter((node) => node.id !== resolvedRootId),
-  );
-  const spouseNode = getSymmetricFamilyNodes(index, resolvedRootId, "spouse")[0];
-
-  return {
-    ...toFamilyMember(rootNode),
-    parents: parentNodes.map((node) => toFamilyMember(node, "parent")),
-    siblings: compactUnique([...explicitSiblings, ...sharedParentSiblings]).map((node) => toFamilyMember(node, "sibling")),
-    spouse: spouseNode ? toFamilyMember(spouseNode, "spouse") : undefined,
-    children: childNodes.map((node) => toFamilyMember(node, "child")),
   };
 }
 

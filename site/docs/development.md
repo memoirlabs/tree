@@ -35,8 +35,9 @@ ESM environments.
 
 ## Source Layout
 
-Published source lives under `src/`. Tests live under `tests/`. The playground
-and markdown docs live under `site/`. Keep root-level TypeScript limited to
+Published source lives under `src/`. Tests live under `tests/`. Markdown docs
+live under `site/docs/`, and the visual playground lives under `site/playground/`.
+Keep root-level TypeScript limited to
 entry/config compatibility files like `mod.ts`.
 
 See [Project Structure](./project-structure.md) for the full tree.
@@ -45,8 +46,9 @@ See [Project Structure](./project-structure.md) for the full tree.
 
 Tests are focused on pure behavior:
 
-- YAML parsing and validation.
-- Layout row derivation.
+- Relationship helper rows.
+- Subject-centered family indexing.
+- Measured layout derivation.
 - Relationship graph traversal.
 - Relationship chart level building.
 

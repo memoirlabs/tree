@@ -6,15 +6,19 @@ code do not ship in the npm/JSR package.
 
 ## Contents
 
-- [Getting Started](./getting-started.md)
-- [Project Structure](./project-structure.md)
-- [FamilyTree](./family-tree.md)
-- [YAML Schema](./yaml-schema.md)
-- [Relationship Graph](./relationship-graph.md)
-- [Org Charts](./org-charts.md)
-- [Playground](./playground.md)
-- [Development](./development.md)
-- [Public API](./api.md)
+### Docs
+
+- [Getting Started](./docs/getting-started.md)
+- [Project Structure](./docs/project-structure.md)
+- [FamilyTree](./docs/family-tree.md)
+- [Relationship Graph](./docs/relationship-graph.md)
+- [Org Charts](./docs/org-charts.md)
+- [Development](./docs/development.md)
+- [Public API](./docs/api.md)
+
+### Playground
+
+- [Playground Guide](./playground/README.md)
 
 ## Local Commands
 

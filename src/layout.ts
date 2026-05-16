@@ -1,110 +1,279 @@
-import type { FamilyMember, FamilyTreeLayoutDensity, FamilyTreeLayoutStrategy } from "./types";
+import { collectFamilyNeighborhood, createFamilyIndex } from "./family-index";
+import type { FamilyRelative } from "./family-index";
+import type {
+  ComputedRelation,
+  FamilyRelationship,
+  FamilyTreeSize,
+  FamilyTreeSpacing,
+  PeopleById,
+  PersonId,
+} from "./types";
 
-export type FamilyTreeNodeRole = "parent" | "sibling" | "root" | "spouse" | "child";
-
-export interface FamilyTreeLayoutItem {
-  member: FamilyMember;
-  role: FamilyTreeNodeRole;
-  isRoot: boolean;
-  className: string;
+export interface FamilyTreeLayoutCard<Person> {
+  personId: PersonId;
+  person: Person;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  relation: ComputedRelation;
 }
 
-export interface FamilyTreeLayoutRow {
+export interface FamilyTreeLayoutEdge {
   id: string;
-  className: string;
-  innerClassName?: string;
-  items: FamilyTreeLayoutItem[];
+  path: string;
+  kind: string;
+  status?: string;
+  sourceId?: PersonId;
+  targetId?: PersonId;
 }
 
-export interface FamilyTreeLayoutModel {
-  strategy: FamilyTreeLayoutStrategy;
-  density: FamilyTreeLayoutDensity;
-  verticalGapClassName: string;
-  rows: FamilyTreeLayoutRow[];
+export interface FamilyTreeBounds {
+  width: number;
+  height: number;
 }
 
-export interface BuildFamilyTreeLayoutOptions {
-  strategy?: FamilyTreeLayoutStrategy;
-  density?: FamilyTreeLayoutDensity;
+export interface FamilyTreeLayoutResult<Person> {
+  cards: FamilyTreeLayoutCard<Person>[];
+  edges: FamilyTreeLayoutEdge[];
+  bounds: FamilyTreeBounds;
 }
 
-const roleAnimationClassNames: Record<FamilyTreeNodeRole, string> = {
-  parent: "relative animate-in fade-in slide-in-from-top-4 duration-500",
-  sibling: "relative animate-in fade-in slide-in-from-left-4 duration-500",
-  root: "relative animate-in fade-in zoom-in-95 duration-500",
-  spouse: "relative animate-in fade-in slide-in-from-right-4 duration-500",
-  child: "relative animate-in fade-in slide-in-from-bottom-4 duration-500",
+export interface BuildFamilyTreeLayoutInput<Person> {
+  subject: PersonId;
+  people: PeopleById<Person>;
+  relationships: FamilyRelationship[];
+  measurements?: Record<PersonId, FamilyTreeSize>;
+}
+
+const defaultFallbackCardSize: FamilyTreeSize = {
+  width: 220,
+  height: 80,
 };
 
-const createItem = (member: FamilyMember, role: FamilyTreeNodeRole): FamilyTreeLayoutItem => ({
-  member,
-  role,
-  isRoot: role === "root",
-  className: roleAnimationClassNames[role],
+const defaultSpacing: FamilyTreeSpacing = {
+  row: 120,
+  column: 32,
+  padding: 32,
+};
+
+const round = (value: number) => Math.round(value * 100) / 100;
+
+const uniqueRelatives = <Person>(relatives: FamilyRelative<Person>[]) => {
+  const seen = new Set<PersonId>();
+  const compacted: FamilyRelative<Person>[] = [];
+  for (const relative of relatives) {
+    if (seen.has(relative.personId)) continue;
+    seen.add(relative.personId);
+    compacted.push(relative);
+  }
+  return compacted;
+};
+
+const getSize = (
+  measurements: Record<PersonId, FamilyTreeSize>,
+  fallbackCardSize: FamilyTreeSize,
+  personId: PersonId,
+): FamilyTreeSize => measurements[personId] ?? fallbackCardSize;
+
+const placeRow = <Person>(
+  relatives: FamilyRelative<Person>[],
+  y: number,
+  measurements: Record<PersonId, FamilyTreeSize>,
+  fallbackCardSize: FamilyTreeSize,
+  columnGap: number,
+): FamilyTreeLayoutCard<Person>[] => {
+  if (relatives.length === 0) return [];
+
+  const sizes = relatives.map((relative) => getSize(measurements, fallbackCardSize, relative.personId));
+  const totalWidth =
+    sizes.reduce((sum, size) => sum + size.width, 0) + Math.max(0, relatives.length - 1) * columnGap;
+  let x = -totalWidth / 2;
+
+  return relatives.map((relative, index) => {
+    const size = sizes[index] ?? fallbackCardSize;
+    const card: FamilyTreeLayoutCard<Person> = {
+      personId: relative.personId,
+      person: relative.person,
+      relation: relative.relation,
+      x,
+      y,
+      width: size.width,
+      height: size.height,
+    };
+    x += size.width + columnGap;
+    return card;
+  });
+};
+
+const center = (card: FamilyTreeLayoutCard<unknown>) => ({
+  x: card.x + card.width / 2,
+  y: card.y + card.height / 2,
 });
 
-/**
- * Build the render rows for the built-in family tree layout.
- */
-export function buildFamilyTreeLayout(
-  rootMember: FamilyMember,
-  options: BuildFamilyTreeLayoutOptions = {},
-): FamilyTreeLayoutModel {
-  const strategy = options.strategy ?? "generation";
-  const density = options.density ?? "comfortable";
-  const horizontalGapClassName = density === "compact" ? "gap-6" : "gap-8";
-  const verticalGapClassName = density === "compact" ? "gap-8" : "gap-12";
-  const rows: FamilyTreeLayoutRow[] = [];
+const topCenter = (card: FamilyTreeLayoutCard<unknown>) => ({
+  x: card.x + card.width / 2,
+  y: card.y,
+});
 
-  const parents = rootMember.parents ?? [];
-  if (parents.length > 0) {
-    rows.push({
-      id: "parents",
-      className: `flex ${horizontalGapClassName} justify-center`,
-      items: parents.map((parent) => createItem(parent, "parent")),
-    });
-  }
+const bottomCenter = (card: FamilyTreeLayoutCard<unknown>) => ({
+  x: card.x + card.width / 2,
+  y: card.y + card.height,
+});
 
-  const siblings = rootMember.siblings ?? [];
-  const leftCount = Math.ceil(siblings.length / 2);
-  const leftSiblings = siblings.slice(0, leftCount);
-  const rightSiblings = siblings.slice(leftCount);
-  const currentItems: FamilyTreeLayoutItem[] = [
-    ...leftSiblings.map((sibling) => createItem(sibling, "sibling")),
-    createItem(rootMember, "root"),
-  ];
+const cardById = <Person>(cards: FamilyTreeLayoutCard<Person>[]) =>
+  new Map<PersonId, FamilyTreeLayoutCard<Person>>(cards.map((card) => [card.personId, card]));
 
-  if (rootMember.spouse) {
-    currentItems.push(createItem(rootMember.spouse, "spouse"));
-  }
+const createOrthogonalPath = (
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+) => {
+  const midY = round((start.y + end.y) / 2);
+  return `M ${round(start.x)} ${round(start.y)} L ${round(start.x)} ${midY} L ${round(end.x)} ${midY} L ${round(end.x)} ${round(end.y)}`;
+};
 
-  currentItems.push(
-    ...rightSiblings.map((sibling) => ({
-      ...createItem(sibling, "sibling"),
-      className: roleAnimationClassNames.spouse,
-    })),
-  );
+const buildEdges = <Person>(
+  cards: FamilyTreeLayoutCard<Person>[],
+  relationships: FamilyRelationship[],
+): FamilyTreeLayoutEdge[] => {
+  const cardsById = cardById(cards);
+  const edges: FamilyTreeLayoutEdge[] = [];
 
-  rows.push({
-    id: "current",
-    className: `flex items-center justify-center ${horizontalGapClassName}`,
-    innerClassName: `relative inline-flex items-center ${horizontalGapClassName}`,
-    items: currentItems,
+  relationships.forEach((relationship, relationshipIndex) => {
+    if (relationship.type === "partnership") {
+      const visiblePartners = relationship.partners
+        .map((partnerId) => cardsById.get(partnerId))
+        .filter((card): card is FamilyTreeLayoutCard<Person> => Boolean(card));
+      if (visiblePartners.length < 2) return;
+      const [first, second] = visiblePartners.toSorted((a, b) => a.x - b.x);
+      if (!first || !second) return;
+      const firstCenter = center(first);
+      const secondCenter = center(second);
+      edges.push({
+        id: relationship.id ?? `partnership-${relationshipIndex}`,
+        path: `M ${round(first.x + first.width)} ${round(firstCenter.y)} L ${round(second.x)} ${round(secondCenter.y)}`,
+        kind: relationship.relation ?? "partner",
+        status: relationship.status,
+        sourceId: first.personId,
+        targetId: second.personId,
+      });
+      return;
+    }
+
+    if (relationship.type === "parentage") {
+      for (const parentId of relationship.parents) {
+        const parentCard = cardsById.get(parentId);
+        if (!parentCard) continue;
+        for (const childId of relationship.children) {
+          const childCard = cardsById.get(childId);
+          if (!childCard) continue;
+          edges.push({
+            id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${parentId}-${childId}`,
+            path: createOrthogonalPath(bottomCenter(parentCard), topCenter(childCard)),
+            kind: relationship.relation ?? "biological",
+            status: relationship.status,
+            sourceId: parentId,
+            targetId: childId,
+          });
+        }
+      }
+      return;
+    }
+
+    for (const guardianId of relationship.guardians) {
+      const guardianCard = cardsById.get(guardianId);
+      if (!guardianCard) continue;
+      for (const childId of relationship.children) {
+        const childCard = cardsById.get(childId);
+        if (!childCard) continue;
+        edges.push({
+          id: `${relationship.id ?? `guardianship-${relationshipIndex}`}-${guardianId}-${childId}`,
+          path: createOrthogonalPath(bottomCenter(guardianCard), topCenter(childCard)),
+          kind: relationship.relation ?? "guardian",
+          status: relationship.status,
+          sourceId: guardianId,
+          targetId: childId,
+        });
+      }
+    }
   });
 
-  const children = rootMember.children ?? [];
-  if (children.length > 0) {
-    rows.push({
-      id: "children",
-      className: `flex ${horizontalGapClassName} justify-center`,
-      items: children.map((child) => createItem(child, "child")),
-    });
+  return edges;
+};
+
+export function buildFamilyTreeLayout<Person>({
+  subject,
+  people,
+  relationships,
+  measurements = {},
+}: BuildFamilyTreeLayoutInput<Person>): FamilyTreeLayoutResult<Person> {
+  const fallbackCardSize = defaultFallbackCardSize;
+  const spacing = defaultSpacing;
+  const index = createFamilyIndex(people, relationships);
+  const neighborhood = collectFamilyNeighborhood(index, subject);
+  if (!neighborhood) {
+    return {
+      cards: [],
+      edges: [],
+      bounds: { width: 0, height: 0 },
+    };
+  }
+
+  const rows = [
+    uniqueRelatives(neighborhood.grandparents),
+    uniqueRelatives(neighborhood.parents),
+    uniqueRelatives([
+      ...neighborhood.siblings,
+      ...neighborhood.halfSiblings,
+      neighborhood.self,
+      ...neighborhood.partners,
+    ]),
+    uniqueRelatives(neighborhood.children),
+    uniqueRelatives(neighborhood.grandchildren),
+  ].filter((row) => row.length > 0);
+
+  let y = 0;
+  const cards: FamilyTreeLayoutCard<Person>[] = [];
+
+  for (const row of rows) {
+    const rowCards = placeRow(row, y, measurements, fallbackCardSize, spacing.column);
+    cards.push(...rowCards);
+    const maxHeight = rowCards.reduce((height, card) => Math.max(height, card.height), 0);
+    y += maxHeight + spacing.row;
+  }
+
+  const subjectCard = cards.find((card) => card.personId === subject);
+  const subjectShift = subjectCard ? -(subjectCard.x + subjectCard.width / 2) : 0;
+  for (const card of cards) {
+    card.x += subjectShift;
+  }
+
+  if (cards.length === 0) {
+    return {
+      cards,
+      edges: [],
+      bounds: { width: 0, height: 0 },
+    };
+  }
+
+  const minX = Math.min(...cards.map((card) => card.x));
+  const minY = Math.min(...cards.map((card) => card.y));
+  const maxX = Math.max(...cards.map((card) => card.x + card.width));
+  const maxY = Math.max(...cards.map((card) => card.y + card.height));
+  const offsetX = spacing.padding - minX;
+  const offsetY = spacing.padding - minY;
+
+  for (const card of cards) {
+    card.x = round(card.x + offsetX);
+    card.y = round(card.y + offsetY);
   }
 
   return {
-    strategy: strategy === "auto" ? "generation" : strategy,
-    density,
-    verticalGapClassName,
-    rows,
+    cards,
+    edges: buildEdges(cards, relationships),
+    bounds: {
+      width: round(maxX - minX + spacing.padding * 2),
+      height: round(maxY - minY + spacing.padding * 2),
+    },
   };
 }

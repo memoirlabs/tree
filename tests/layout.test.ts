@@ -1,40 +1,54 @@
 import { expect, test } from "bun:test";
 
-import { buildFamilyTreeLayout } from "../src/layout";
-import type { FamilyMember } from "../src/types";
+import { buildFamilyTreeLayout, rel } from "../src/index";
 
-const rootMember: FamilyMember = {
-  id: "root",
-  name: "Root",
-  parents: [
-    { id: "parent-1", name: "Parent 1" },
-    { id: "parent-2", name: "Parent 2" },
-  ],
-  siblings: [
-    { id: "sibling-1", name: "Sibling 1" },
-    { id: "sibling-2", name: "Sibling 2" },
-  ],
-  spouse: { id: "spouse", name: "Spouse" },
-  children: [
-    { id: "child-1", name: "Child 1" },
-    { id: "child-2", name: "Child 2" },
-  ],
+const people = {
+  henry: { id: "henry", name: "Henry" },
+  carol: { id: "carol", name: "Carol" },
+  james: { id: "james", name: "James" },
+  emma: { id: "emma", name: "Emma" },
+  ava: { id: "ava", name: "Ava" },
+  noah: { id: "noah", name: "Noah" },
 };
 
-test("builds deterministic generation rows", () => {
-  const layout = buildFamilyTreeLayout(rootMember);
+const relationships = [
+  rel.parents("henry", ["carol", "james"]),
+  rel.partner("henry", "emma"),
+  rel.children(["henry", "emma"], ["ava"]),
+  rel.children(["ava"], ["noah"]),
+];
 
-  expect(layout.rows.map((row) => row.id)).toEqual(["parents", "current", "children"]);
-  expect(layout.rows[0]?.items.map((item) => item.role)).toEqual(["parent", "parent"]);
-  expect(layout.rows[1]?.items.map((item) => item.role)).toEqual(["sibling", "root", "spouse", "sibling"]);
-  expect(layout.rows[2]?.items.map((item) => item.role)).toEqual(["child", "child"]);
+test("builds measured subject-centered layout cards", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships,
+    measurements: {
+      henry: { width: 240, height: 90 },
+    },
+  });
+
+  expect(layout.cards.map((card) => card.personId)).toEqual(["carol", "james", "henry", "emma", "ava", "noah"]);
+  expect(layout.cards.find((card) => card.personId === "henry")?.relation).toMatchObject({
+    label: "self",
+    generation: 0,
+  });
+  expect(layout.cards.find((card) => card.personId === "noah")?.relation).toMatchObject({
+    label: "grandchild",
+    generation: 2,
+  });
+  expect(layout.bounds.width).toBeGreaterThan(0);
+  expect(layout.bounds.height).toBeGreaterThan(0);
 });
 
-test("uses compact spacing when requested", () => {
-  const layout = buildFamilyTreeLayout(rootMember, { strategy: "auto", density: "compact" });
+test("emits visible relationship edges", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships,
+  });
 
-  expect(layout.strategy).toBe("generation");
-  expect(layout.density).toBe("compact");
-  expect(layout.verticalGapClassName).toBe("gap-8");
-  expect(layout.rows[1]?.innerClassName).toContain("gap-6");
+  expect(layout.edges.map((edge) => edge.kind)).toContain("biological");
+  expect(layout.edges.map((edge) => edge.kind)).toContain("partner");
+  expect(layout.edges.every((edge) => edge.path.startsWith("M "))).toBe(true);
 });

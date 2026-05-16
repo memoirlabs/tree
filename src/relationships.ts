@@ -1,4 +1,4 @@
-import type { FamilyMember, RelationType } from "./types";
+import type { RelationType } from "./types";
 
 export type RelationshipDirection = "upstream" | "downstream" | "symmetric";
 
@@ -239,36 +239,3 @@ export function getCeoChain(index: RelationshipIndex, nodeId: string): Relations
   );
 }
 
-export function familyMemberToRelationshipNodes(rootMember: FamilyMember): {
-  nodes: RelationshipNode[];
-  relationships: RelationshipEdge[];
-} {
-  const nodesById = new Map<string, RelationshipNode>();
-  const relationships: RelationshipEdge[] = [];
-  const visit = (member: FamilyMember) => {
-    if (nodesById.has(member.id)) return;
-    nodesById.set(member.id, { id: member.id, label: member.name, data: member });
-    for (const parent of member.parents ?? []) {
-      visit(parent);
-      relationships.push({ sourceId: parent.id, targetId: member.id, type: "parent" });
-    }
-    for (const sibling of member.siblings ?? []) {
-      visit(sibling);
-      relationships.push({ sourceId: member.id, targetId: sibling.id, type: "sibling" });
-    }
-    if (member.spouse) {
-      visit(member.spouse);
-      relationships.push({ sourceId: member.id, targetId: member.spouse.id, type: "spouse" });
-    }
-    for (const child of member.children ?? []) {
-      visit(child);
-      relationships.push({ sourceId: member.id, targetId: child.id, type: "parent" });
-    }
-  };
-
-  visit(rootMember);
-  return {
-    nodes: [...nodesById.values()],
-    relationships,
-  };
-}

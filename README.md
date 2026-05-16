@@ -4,306 +4,121 @@
 [![JSR Score](https://jsr.io/badges/@memoir/tree/score)](https://jsr.io/@memoir/tree)
 [![JSR Weekly Downloads](https://jsr.io/badges/@memoir/tree/weekly-downloads)](https://jsr.io/@memoir/tree)
 
-Official React components for rendering interactive family trees with relationship-aware connectors. Data fetching and persistence are intentionally left to the host app.
+React primitives for rendering family trees and generic relationship charts. Your app owns data fetching, persistence, routing, and card design. The library owns relationship normalization, subject-relative labels, measured layout, and SVG edges.
 
-## Install (Bun + JSR)
+## Install
 
 ```bash
 bunx jsr add @memoir/tree
 ```
 
-## Requirements
+## Family Tree
 
-- React 18 or 19.
-- Styling is intentionally minimal. Bring your own CSS or custom renderers.
-
-## Quick Start
+Pass people, relationship facts, a subject, and one normal card component:
 
 ```tsx
-import { FamilyTree } from "@memoir/tree";
-import type { FamilyMember, AddMemberPayload } from "@memoir/tree";
+import { FamilyTree, rel } from "@memoir/tree";
+import type { FamilyCardProps } from "@memoir/tree";
 
-const rootMember: FamilyMember = {
-  id: "root",
-  name: "Alex Johnson",
-  status: "linked",
-  parents: [],
-  siblings: [],
-  children: [],
+type Person = {
+  id: string;
+  profile: {
+    display: string;
+    avatar?: string;
+  };
 };
 
-export function FamilyTreePage() {
-  const handleAddMember = async (payload: AddMemberPayload) => {
-    // Persist to your backend, then update your `rootMember` tree.
-    console.log("Add member", payload);
-  };
+const people: Record<string, Person> = {
+  henry: { id: "henry", profile: { display: "Henry" } },
+  carol: { id: "carol", profile: { display: "Carol" } },
+  james: { id: "james", profile: { display: "James" } },
+  emma: { id: "emma", profile: { display: "Emma" } },
+  ava: { id: "ava", profile: { display: "Ava" } },
+};
 
+const relationships = [
+  rel.parents("henry", ["carol", "james"]),
+  rel.partner("henry", "emma", { relation: "spouse" }),
+  rel.children(["henry", "emma"], ["ava"]),
+];
+
+function PersonCard({ person, relation, ...props }: FamilyCardProps<Person>) {
+  return (
+    <article {...props}>
+      <strong>{person.profile.display}</strong>
+      <small>{relation.label}</small>
+    </article>
+  );
+}
+
+export function Page() {
   return (
     <FamilyTree
-      rootMember={rootMember}
-      canEdit
-      onAddMember={handleAddMember}
-      searchProfiles={async (query) => {
-        // Return your own search results
-        return [];
-      }}
-      onNavigateProfile={(member, target) => {
-        // Route using your app router
-        console.log("Navigate", member, target);
-      }}
-      designPreset="contrast"
+      subject="henry"
+      people={people}
+      relationships={relationships}
+      card={PersonCard}
     />
   );
 }
 ```
 
-## Data Model
+The card receives normal HTML props, including data attributes for styling:
 
-The tree is derived from nested arrays on `FamilyMember`:
+```css
+[data-family-card] {
+  min-width: 220px;
+  padding: 12px 16px;
+  border: 1px solid currentColor;
+  border-radius: 16px;
+  background: white;
+}
 
-- `parents`: Direct parents for the member.
-- `siblings`: Direct siblings for the member.
-- `children`: Direct children for the member.
-- `spouse`: The member’s partner. The layout supports a single spouse per node.
+[data-family-card][data-relation="self"] {
+  border-width: 2px;
+}
 
-The `relation` field is used for labels only. Layout is driven by the relationship arrays above.
-
-## Relationship Layout Rules
-
-Connector placement is deterministic and consistent across presets:
-
-- `spouse`: Partner line connects at **mid‑height** on each card’s **inner edge** (left/right), inset by `anchors.coupleInsetPx`.
-- `parent → child` (couple): A junction is placed at the midpoint of the couple line. A vertical **trunk** drops to a horizontal **sibling bus** above the children, and each child connects **from the top center** down to that bus.
-- `parent → child` (single parent): The junction is the **bottom center** of the parent card; trunk + bus + child drops apply.
-- `siblings`: Siblings connect through the shared sibling bus above them; each sibling drops from its **top center** to the bus.
-
-Ordering is based on the array order you provide. Siblings are split left and right around the root member based on list order.
-
-## Editing And Add‑Member Workflow
-
-When `canEdit` is true, the UI emits an `AddMemberPayload` via `onAddMember`:
-
-- `type: "existing"`: user selected from `searchProfiles` results.
-- `type: "manual"`: manual entry (name, optional birthday).
-- `type: "invite"`: invite by email.
-
-You are responsible for persistence and updating the `rootMember` tree once the add completes.
-
-### Restrict Which Relations Can Be Added
-
-Use `relationOptions` to control which relationship types appear in the add menu:
-
-```tsx
-<FamilyTree
-  rootMember={rootMember}
-  canEdit
-  onAddMember={handleAddMember}
-  relationOptions={(member, isRoot) =>
-    isRoot ? ["parent", "sibling", "spouse", "child"] : ["child"]
-  }
-/>
+[data-family-edge] {
+  color: #94a3b8;
+}
 ```
 
-## Customization
+## Relationship Facts
 
-### YAML Schema
+Use helpers for small apps, demos, and tests:
 
-Use `schemaYaml` when you want the built-in UI to be driven by a declarative schema:
-
-```tsx
-const schemaYaml = `
-version: 1
-tree:
-  title: Family Tree
-layout:
-  strategy: auto
-  density: compact
-connectors:
-  preset: contrast
-  anchors:
-    verticalGapPx: 24
-card:
-  fields: [name, birthday, relation, status]
-editing:
-  enabled: true
-  rootRelations: [parent, sibling, spouse, former_spouse, child]
-  memberRelations: [child, spouse, former_spouse]
-`;
-
-<FamilyTree
-  rootMember={rootMember}
-  schemaYaml={schemaYaml}
-  onAddMember={handleAddMember}
-/>;
+```ts
+rel.parents("child", ["parent-1", "parent-2"]);
+rel.children(["parent-1", "parent-2"], ["child-1", "child-2"]);
+rel.partner("person-1", "person-2");
+rel.guardians("child", ["guardian"]);
 ```
 
-Runtime callbacks and data still come from your app: `rootMember`, `onAddMember`, `searchProfiles`,
-`onNavigateProfile`, `resolveAvatarUrl` for custom renderers, and `renderNode`. If you provide both schema values and props,
-explicit props win.
+You can also store and pass the plain fact rows directly. The library computes labels like `sibling`, `half-sibling`, `coparent`, `grandparent`, and `grandchild` from those facts relative to the subject.
 
-### Generic Relationship And Org Charts
+## Generic Relationship Charts
 
-Use `RelationshipChart` when your data is an edge list instead of a nested family member shape:
+Use `RelationshipChart` for org charts and generic graph levels:
 
 ```tsx
 import { RelationshipChart } from "@memoir/tree";
-import type { RelationshipEdge, RelationshipNode } from "@memoir/tree";
 
-const nodes: RelationshipNode[] = [
+const nodes = [
   { id: "ceo", label: "CEO" },
-  { id: "vp", label: "VP" },
   { id: "lead", label: "Engineering Lead" },
-  { id: "frontend", label: "Frontend Engineer" },
+  { id: "report", label: "Frontend Engineer" },
 ];
 
-const relationships: RelationshipEdge[] = [
-  { sourceId: "ceo", targetId: "vp", type: "ceo" },
-  { sourceId: "vp", targetId: "lead", type: "manager" },
-  { sourceId: "lead", targetId: "frontend", type: "manager" },
+const relationships = [
+  { sourceId: "ceo", targetId: "lead", type: "ceo" },
+  { sourceId: "lead", targetId: "report", type: "manager" },
 ];
 
-<RelationshipChart
-  nodes={nodes}
-  relationships={relationships}
-  rootId="lead"
-  mode="all"
-/>;
+<RelationshipChart nodes={nodes} relationships={relationships} rootId="lead" mode="all" />;
 ```
 
-The graph helpers also work without React: `createRelationshipIndex`, `getUpstream`,
-`getDownstream`, `getSiblings`, `getSpouses`, `getFormerSpouses`, `getManagers`,
-`getReports`, `getPeers`, and `getCeoChain`.
+Database-like rows are supported with `RelationshipTableRow` and `rows`.
 
-If your source of truth is a database relationship table, pass rows directly:
+## Public Surface
 
-```tsx
-import { FamilyTree, RelationshipChart } from "@memoir/tree";
-import type { RelationshipTableRow } from "@memoir/tree";
-
-const orgRows: RelationshipTableRow[] = [
-  { sourceId: "ceo", sourceLabel: "CEO", targetId: "vp", targetLabel: "VP", type: "ceo" },
-  { sourceId: "vp", sourceLabel: "VP", targetId: "lead", targetLabel: "Lead", type: "manager" },
-];
-
-<RelationshipChart rows={orgRows} mode="auto" />;
-```
-
-Family trees can be row-driven too:
-
-```tsx
-<FamilyTree relationshipRows={familyRows} rootId="alex" />;
-```
-
-The row adapter normalizes reverse edges like `child` and `direct_report`,
-infers family vs org mode, picks a deterministic root when omitted, and exposes
-line etiquette with `getRelationshipDisplaySemantics`.
-
-### Presets And Overrides
-
-Connector styling is controlled by presets or overrides:
-
-- `designPreset`: `default`, `compact`, `contrast`.
-- `designOverrides`: partial override of `FamilyTreeConnectorConfig`.
-
-Example override:
-
-```tsx
-import { getFamilyTreeConfig } from "@memoir/tree";
-
-const config = getFamilyTreeConfig("compact", {
-  statusColors: {
-    linked: "bg-emerald-500",
-  },
-  anchors: {
-    verticalGapPx: 32,
-  },
-});
-```
-
-### Custom Card Rendering
-
-If you want to render your own card UI while keeping layout and connectors, provide `renderNode`:
-
-```tsx
-import type { FamilyMember, FamilyTreeRenderNodeOptions } from "@memoir/tree";
-
-const renderNode = (member: FamilyMember, options: FamilyTreeRenderNodeOptions) => (
-  <div className="custom-card">
-    <div>{member.name}</div>
-    {options.canEdit ? (
-      <button onClick={() => options.onAddMember("child", member.id)}>
-        Add child
-      </button>
-    ) : null}
-  </div>
-);
-
-<FamilyTree rootMember={rootMember} renderNode={renderNode} />;
-```
-
-### Layout And Title Styling
-
-Use these props to integrate with your page layout:
-
-- `className`: applied to the outermost wrapper.
-- `containerClassName`: applied to the padded inner container.
-- `titleClassName`: applied to the title.
-- `showTitle`: set `false` to hide the header.
-
-## Playground
-
-Run the local playground with:
-
-```bash
-bun run playground
-```
-
-The playground lives in `site/` and is not included in the published package.
-
-## API Reference
-
-### `FamilyTree` Props
-
-- `rootMember` (required): Root of the tree.
-- `title`: Title text. Defaults to `Family Tree`.
-- `showTitle`: Hide or show the title header.
-- `className`: Outer wrapper class.
-- `containerClassName`: Inner container class.
-- `titleClassName`: Title class.
-- `canEdit`: Enables add‑member UI.
-- `onAddMember`: Called with `AddMemberPayload` when a member is added.
-- `searchProfiles`: Async search provider for the dialog.
-- `onNavigateProfile`: Called when a card with a profile ID or slug is clicked.
-- `resolveAvatarUrl`: Optional URL resolver passed to custom node renderers.
-- `designPreset`: Connector preset (`default`, `compact`, `contrast`).
-- `designOverrides`: Override connector sizing and colors.
-- `relationOptions`: Restrict add‑member relation choices.
-- `renderNode`: Render your own card UI.
-
-### Supported Relations
-
-`RelationType` supports family and org-chart use cases:
-
-- Family: `parent`, `child`, `sibling`, `spouse`, `former_spouse`, `grandparent`, `grandchild`.
-- Org: `manager`, `direct_report`, `peer`, `ceo`, `assistant`.
-
-### `FamilyMember`
-
-- `id`: Unique string identifier.
-- `name`: Display name.
-- `birthday`: Optional display string.
-- `avatarUrl`: Optional data field retained for host apps and custom renderers.
-- `relation`: Optional label for the card.
-- `status`: `linked`, `manual`, or `invite_pending` (affects connector color).
-- `profileId` / `profileSlug`: Used for navigation targets.
-- `parents`, `siblings`, `children`, `spouse`: Relationship arrays driving layout.
-
-### `AddMemberPayload`
-
-- `type: "existing"`: `{ relation, parentId, name, profileId, avatarUrl }`
-- `type: "manual"`: `{ relation, parentId, name, birthday? }`
-- `type: "invite"`: `{ relation, parentId, firstName, lastName?, email }`
-
-## License
-
-MIT
+The primary exports are `FamilyTree`, `rel`, `RelationshipChart`, `buildFamilyTreeLayout`, `createFamilyIndex`, graph traversal helpers, row adapters, and their TypeScript types.

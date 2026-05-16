@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { buildRelationshipChartLevels } from "../src/components/relationship-chart";
+import { buildRelationshipChartLevels } from "../src/RelationshipChart";
 import type { RelationshipEdge, RelationshipNode } from "../src/relationships";
 
 const nodes: RelationshipNode[] = [
