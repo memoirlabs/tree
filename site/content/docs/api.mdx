@@ -1,0 +1,36 @@
+---
+title: Public API
+description: Public exports from @memoir/tree.
+---
+
+All public exports come from `@memoir/tree`.
+
+## Family Tree
+
+- `FamilyTree`
+- `rel`
+- `createFamilyIndex(people, relationships)`
+- `collectFamilyNeighborhood(index, subject)`
+- `buildFamilyTreeLayout(input)`
+
+## Family Types
+
+- `PersonId`
+- `PeopleById<Person>`
+- `FamilyRelationship`
+- `FamilyParentageRelationship`
+- `FamilyPartnershipRelationship`
+- `FamilyGuardianshipRelationship`
+- `ComputedRelation`
+- `FamilyCardProps<Person>`
+- `FamilyTreeProps<Person>`
+- `FamilyTreeLayoutResult<Person>`
+
+## Relationship Helpers
+
+- `rel.parents(child, parents, options?)`
+- `rel.children(parents, children, options?)`
+- `rel.partner(a, b, options?)`
+- `rel.guardians(child, guardians, options?)`
+
+Use family relationship facts for the ergonomic `FamilyTree` API.

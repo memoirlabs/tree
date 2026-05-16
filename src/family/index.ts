@@ -1,5 +1,6 @@
-export { FamilyTree, rel } from "./family";
-export type { ParentageOptions, PartnershipOptions, GuardianshipOptions } from "./family";
+export { FamilyTree } from "./FamilyTree";
+export { rel } from "./rel";
+export type { ParentageOptions, PartnershipOptions, GuardianshipOptions } from "./rel";
 
 export type {
   ComputedRelation,
@@ -18,10 +19,10 @@ export type {
   PartnershipRelation,
   PeopleById,
   PersonId,
-} from "./family";
+} from "./types";
 
-export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./family";
-export { collectFamilyNeighborhood, createFamilyIndex } from "./family";
+export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./indexing";
+export { collectFamilyNeighborhood, createFamilyIndex } from "./indexing";
 
 export type {
   BuildFamilyTreeLayoutInput,
@@ -29,5 +30,5 @@ export type {
   FamilyTreeLayoutCard,
   FamilyTreeLayoutEdge,
   FamilyTreeLayoutResult,
-} from "./family";
-export { buildFamilyTreeLayout } from "./family";
+} from "./layout";
+export { buildFamilyTreeLayout } from "./layout";

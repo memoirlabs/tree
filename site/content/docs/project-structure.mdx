@@ -1,0 +1,76 @@
+---
+title: Project Structure
+description: How the library, tests, and docs site are organized.
+---
+
+The repository is organized around headless logic first and React rendering second:
+
+```text
+.
+├── src/
+│   ├── family/
+│   │   ├── FamilyTree.tsx
+│   │   ├── edge-routing.ts
+│   │   ├── indexing.ts
+│   │   ├── index.ts
+│   │   ├── layout.ts
+│   │   ├── rel.ts
+│   │   ├── types.ts
+│   │   └── use-card-measurements.ts
+│   ├── index.ts
+│   └── utils.ts
+├── tests/
+│   ├── family-index.test.ts
+│   ├── layout.test.ts
+│   └── rel.test.ts
+├── scripts/
+│   └── fix-dist-imports.ts
+├── site/
+│   ├── app/
+│   │   ├── (home)/
+│   │   └── docs/
+│   ├── components/
+│   │   ├── mdx.tsx
+│   │   └── playground.tsx
+│   ├── content/
+│   │   └── docs/
+│   ├── lib/
+│   ├── README.md
+│   ├── next.config.mjs
+│   └── package.json
+├── dist/
+├── mod.ts
+├── package.json
+├── tsconfig.json
+└── tsconfig.build.json
+```
+
+## Folder Responsibilities
+
+- `src/family/indexing.ts`: Pure relationship fact indexing and subject-relative labels.
+- `src/family/layout.ts`: Pure measured row placement.
+- `src/family/edge-routing.ts`: Pure SVG path generation.
+- `src/family/use-card-measurements.ts`: DOM measurement hook.
+- `src/family/FamilyTree.tsx`: Thin React renderer for cards, canvas, and edges.
+- `tests/`: Bun tests for helpers, family logic, and layout behavior.
+- `site/`: Next.js app with the landing page, embedded playground, and Fumadocs docs.
+- `site/app/(home)/page.tsx`: Landing page at `/`.
+- `site/app/docs`: Fumadocs routes at `/docs`.
+- `site/components/playground.tsx`: Homepage playground that imports local library source.
+- `site/content/docs`: Fumadocs MDX content.
+- `dist/`: Generated package output.
+
+## Public Entrypoints
+
+- npm package entry: `src/index.ts` -> `dist/index.js`.
+- JSR/Deno entry: `mod.ts` -> `src/index.ts`.
+
+## Package Boundary
+
+Only these files ship via npm:
+
+- `dist`
+- `README.md`
+- `LICENSE`
+
+Tests, scripts, playground code, and docs stay local.

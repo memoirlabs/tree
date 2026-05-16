@@ -1,0 +1,10 @@
+{
+  "title": "Docs",
+  "pages": [
+    "index",
+    "family-tree",
+    "api",
+    "development",
+    "project-structure"
+  ]
+}

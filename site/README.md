@@ -1,31 +1,35 @@
-# Memoir Tree Docs
+# @memoir/tree Site
 
-This folder is the local documentation and playground workspace for `@memoir/tree`.
-It is intentionally outside the published package `files` list, so docs and playground
-code do not ship in the npm/JSR package.
+This is the single website for `@memoir/tree`.
 
-## Contents
+- `/` is the library landing page with the live playground.
+- `/docs` is the Fumadocs documentation.
+- `content/docs/` contains the MDX docs.
+- `components/playground.tsx` embeds examples that import the local library source from `../src`.
 
-### Docs
-
-- [Getting Started](./docs/getting-started.md)
-- [Project Structure](./docs/project-structure.md)
-- [FamilyTree](./docs/family-tree.md)
-- [Relationship Graph](./docs/relationship-graph.md)
-- [Org Charts](./docs/org-charts.md)
-- [Development](./docs/development.md)
-- [Public API](./docs/api.md)
-
-### Playground
-
-- [Playground Guide](./playground/README.md)
-
-## Local Commands
+Run development server:
 
 ```bash
-bun run check
-bun run playground
+bun run dev
 ```
 
-`bun run check` runs oxlint, TypeScript, tests, and the production build.
-`bun run playground` starts the local visual harness at `http://localhost:4321`.
+Open http://localhost:3000 with your browser to see the result.
+
+## Commands
+
+```bash
+bun run dev
+bun run types:check
+bun run lint
+bun run build
+```
+
+## Structure
+
+| Path | Purpose |
+| --- | --- |
+| `app/(home)/page.tsx` | Landing page |
+| `app/docs` | Fumadocs routes and layout |
+| `components/playground.tsx` | Embedded homepage playground |
+| `content/docs` | Fumadocs MDX content |
+| `lib/source.ts` | Fumadocs source loader |

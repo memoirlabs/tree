@@ -1,11 +1,11 @@
 {
   "name": "@memoir/tree",
   "version": "0.1.2",
-  "description": "Family tree UI components with relationship-aware connectors.",
+  "description": "Ergonomic React family tree component with relationship-aware layout.",
   "keywords": [
     "family-tree",
     "react",
-    "graph",
+    "genealogy",
     "visualization"
   ],
   "license": "MIT",
@@ -34,7 +34,7 @@
     "check": "bun run lint && bun run typecheck && bun test && bun run build",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
-    "playground": "bun --hot site/server.ts",
+    "site": "bun --cwd site run dev",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run build",

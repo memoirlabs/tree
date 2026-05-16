@@ -4,7 +4,7 @@
 [![JSR Score](https://jsr.io/badges/@memoir/tree/score)](https://jsr.io/@memoir/tree)
 [![JSR Weekly Downloads](https://jsr.io/badges/@memoir/tree/weekly-downloads)](https://jsr.io/@memoir/tree)
 
-React primitives for rendering family trees and generic relationship charts. Your app owns data fetching, persistence, routing, and card design. The library owns relationship normalization, subject-relative labels, measured layout, and SVG edges.
+A focused React family tree library. Give it people, semantic relationships, a subject, and one normal card component. It handles relationship normalization, kinship labels, measured layout, generation placement, and SVG edges.
 
 ## Install
 
@@ -12,9 +12,7 @@ React primitives for rendering family trees and generic relationship charts. You
 bunx jsr add @memoir/tree
 ```
 
-## Family Tree
-
-Pass people, relationship facts, a subject, and one normal card component:
+## Usage
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
@@ -52,18 +50,13 @@ function PersonCard({ person, relation, ...props }: FamilyCardProps<Person>) {
 }
 
 export function Page() {
-  return (
-    <FamilyTree
-      subject="henry"
-      people={people}
-      relationships={relationships}
-      card={PersonCard}
-    />
-  );
+  return <FamilyTree subject="henry" people={people} relationships={relationships} card={PersonCard} />;
 }
 ```
 
-The card receives normal HTML props, including data attributes for styling:
+## Styling
+
+The card receives normal HTML props and stable data attributes:
 
 ```css
 [data-family-card] {
@@ -85,7 +78,7 @@ The card receives normal HTML props, including data attributes for styling:
 
 ## Relationship Facts
 
-Use helpers for small apps, demos, and tests:
+Use helpers for examples, tests, demos, and small apps:
 
 ```ts
 rel.parents("child", ["parent-1", "parent-2"]);
@@ -94,31 +87,8 @@ rel.partner("person-1", "person-2");
 rel.guardians("child", ["guardian"]);
 ```
 
-You can also store and pass the plain fact rows directly. The library computes labels like `sibling`, `half-sibling`, `coparent`, `grandparent`, and `grandchild` from those facts relative to the subject.
-
-## Generic Relationship Charts
-
-Use `RelationshipChart` for org charts and generic graph levels:
-
-```tsx
-import { RelationshipChart } from "@memoir/tree";
-
-const nodes = [
-  { id: "ceo", label: "CEO" },
-  { id: "lead", label: "Engineering Lead" },
-  { id: "report", label: "Frontend Engineer" },
-];
-
-const relationships = [
-  { sourceId: "ceo", targetId: "lead", type: "ceo" },
-  { sourceId: "lead", targetId: "report", type: "manager" },
-];
-
-<RelationshipChart nodes={nodes} relationships={relationships} rootId="lead" mode="all" />;
-```
-
-Database-like rows are supported with `RelationshipTableRow` and `rows`.
+The library computes labels like `sibling`, `half-sibling`, `coparent`, `grandparent`, and `grandchild` from those facts relative to the subject.
 
 ## Public Surface
 
-The primary exports are `FamilyTree`, `rel`, `RelationshipChart`, `buildFamilyTreeLayout`, `createFamilyIndex`, graph traversal helpers, row adapters, and their TypeScript types.
+The public API is intentionally small: `FamilyTree`, `rel`, family relationship types, `FamilyCardProps`, `FamilyTreeProps`, and the pure family indexing/layout helpers.
