@@ -288,6 +288,208 @@ html > body[data-scroll-locked] {
   text-align: left;
 }
 
+.test-ui-page {
+  display: grid;
+  gap: 32px;
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.test-ui-hero,
+.test-ui-scenario {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+}
+
+.test-ui-hero {
+  display: grid;
+  gap: 14px;
+  padding: clamp(28px, 5vw, 56px);
+  background:
+    radial-gradient(circle at 100% 0%, rgb(255 234 0 / 14%), transparent 36%),
+    radial-gradient(circle at 0% 100%, rgb(240 0 0 / 10%), transparent 32%),
+    hsl(var(--background));
+}
+
+.test-ui-hero h1,
+.test-ui-scenario h2 {
+  margin: 0;
+  letter-spacing: -0.06em;
+  text-wrap: balance;
+}
+
+.test-ui-hero h1 {
+  max-width: 820px;
+  font-size: clamp(2.6rem, 7vw, 5.5rem);
+  line-height: 0.95;
+}
+
+.test-ui-hero p,
+.test-ui-scenario-header p {
+  max-width: 760px;
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.test-ui-eyebrow {
+  margin: 0;
+  color: hsl(var(--foreground));
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.test-ui-scenario {
+  display: grid;
+  gap: 22px;
+  padding: clamp(18px, 3vw, 32px);
+}
+
+.test-ui-scenario-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 24px;
+}
+
+.test-ui-scenario-header > div:first-child {
+  display: grid;
+  gap: 8px;
+}
+
+.test-ui-scenario h2 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.test-ui-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(92px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.test-ui-stats div {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid hsl(var(--foreground));
+  background: hsl(var(--muted) / 0.25);
+}
+
+.test-ui-stats dt {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.test-ui-stats dd {
+  margin: 0;
+  color: hsl(var(--foreground));
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.test-ui-scenario > [data-tree-surface] {
+  min-height: 520px;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, hsl(var(--border) / 0.36) 1px, transparent 1px),
+    linear-gradient(hsl(var(--border) / 0.36) 1px, transparent 1px),
+    hsl(var(--background));
+  background-size: 32px 32px;
+}
+
+.test-ui-card {
+  display: grid;
+  min-width: 132px;
+  justify-items: center;
+  gap: 4px;
+  padding: 9px 11px;
+  border: 2px solid #fff;
+  background: #111;
+  color: #fff;
+  text-align: center;
+}
+
+.test-ui-card--wide {
+  min-width: 184px;
+}
+
+.test-ui-card--tall {
+  min-height: 94px;
+  align-content: center;
+}
+
+.test-ui-card--red {
+  background: #f00000;
+  color: #fff;
+}
+
+.test-ui-card--yellow {
+  background: #ffea00;
+  color: #111;
+}
+
+.test-ui-card--blue {
+  background: #0528c8;
+  color: #fff;
+}
+
+.test-ui-card--org {
+  min-width: 150px;
+}
+
+.test-ui-card strong,
+.test-ui-card small,
+.test-ui-card span,
+.test-ui-card em,
+.test-ui-card b {
+  display: block;
+}
+
+.test-ui-card strong {
+  font-size: 1rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.test-ui-card small,
+.test-ui-card span,
+.test-ui-card em {
+  color: currentColor;
+  font-style: normal;
+  line-height: 1.2;
+}
+
+.test-ui-card small {
+  font-size: 0.78rem;
+}
+
+.test-ui-card span,
+.test-ui-card em {
+  font-size: 0.7rem;
+}
+
+.test-ui-card b {
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  color: currentColor;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.test-ui-edge {
+  color: hsl(var(--muted-foreground));
+}
+
 @media (max-width: 920px) {
   .landing-page {
     padding-inline: 16px;
@@ -303,5 +505,17 @@ html > body[data-scroll-locked] {
 
   .hero-copy h1 {
     font-size: clamp(2.2rem, 11vw, 3.8rem);
+  }
+
+  .test-ui-page {
+    padding-inline: 16px;
+  }
+
+  .test-ui-scenario-header {
+    grid-template-columns: 1fr;
+  }
+
+  .test-ui-stats {
+    grid-template-columns: 1fr;
   }
 }
