@@ -1,7 +1,7 @@
 "use client";
 
-import { FamilyTree, rel } from "../../src/index";
-import type { FamilyCardProps } from "../../src/index";
+import { FamilyTree, OrgChart, rel } from "../../src/index";
+import type { FamilyCardProps, OrgChartCardProps } from "../../src/index";
 
 type Person = {
   id: string;
@@ -32,6 +32,14 @@ const familyRelationships = [
   rel.children(["riley"], ["river"]),
 ];
 
+const orgNodes = [
+  { id: "ceo", person: { id: "ceo", name: "Avery", note: "CEO" } },
+  { id: "eng", person: { id: "eng", name: "Morgan", note: "Engineering" }, parentId: "ceo" },
+  { id: "design", person: { id: "design", name: "Riley", note: "Design" }, parentId: "ceo" },
+  { id: "web", person: { id: "web", name: "Casey", note: "Web" }, parentId: "eng" },
+  { id: "data", person: { id: "data", name: "Quinn", note: "Data" }, parentId: "eng" },
+];
+
 function PersonCard({
   person,
   relation,
@@ -49,6 +57,25 @@ function PersonCard({
   );
 }
 
+function OrgPersonCard({
+  person,
+  depth: _depth,
+  selected: _selected,
+  personId: _personId,
+  focused: _focused,
+  collapsed: _collapsed,
+  directReports: _directReports,
+  managerId: _managerId,
+  ...props
+}: OrgChartCardProps<Person>) {
+  return (
+    <article {...props}>
+      <strong>{person.name}</strong>
+      <small>{person.note}</small>
+    </article>
+  );
+}
+
 export function Playground() {
   return (
     <div className="tree-frame">
@@ -60,6 +87,7 @@ export function Playground() {
         cardClassName="name-node"
         edgeClassName="family-edge"
       />
+      <OrgChart nodes={orgNodes} card={OrgPersonCard} cardClassName="name-node" edgeClassName="family-edge" />
     </div>
   );
 }

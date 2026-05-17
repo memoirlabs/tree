@@ -1,4 +1,6 @@
 export { DefaultFamilyCard, FamilyTree } from "./FamilyTree";
+export { DefaultOrgChartCard, OrgChart } from "./OrgChart";
+export { TreeSurface } from "./TreeSurface";
 export { rel } from "./rel";
 export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./rel";
 
@@ -14,11 +16,15 @@ export type {
   FamilyRelationshipStatus,
   FamilyTreeProps,
   FamilyTreeSize,
+  OrgChartCardProps,
+  OrgChartNode,
+  OrgChartProps,
   GuardianshipRelation,
   ParentageRelation,
   PartnershipRelation,
   PeopleById,
   PersonId,
+  TreeInteractionMode,
 } from "./types";
 
 export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./indexing";
@@ -32,3 +38,12 @@ export type {
   FamilyTreeLayoutResult,
 } from "./layout";
 export { buildFamilyTreeLayout } from "./layout";
+
+export type {
+  BuildOrgChartLayoutInput,
+  OrgChartBounds,
+  OrgChartLayoutCard,
+  OrgChartLayoutEdge,
+  OrgChartLayoutResult,
+} from "./org-layout";
+export { buildOrgChartLayout } from "./org-layout";

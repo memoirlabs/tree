@@ -1,0 +1,87 @@
+---
+title: OrgChart
+description: Render an app-owned reporting tree with the same surface behavior as FamilyTree.
+---
+
+`OrgChart` renders a reporting hierarchy from flat app-owned nodes. It uses the same clipped drag-panning surface, sizing defaults, styling hooks, and interaction modes as `FamilyTree`.
+
+## Props
+
+```ts
+type OrgChartProps<Person> = {
+  nodes: OrgChartNode<Person>[];
+  rootId?: string;
+  card?: React.ComponentType<OrgChartCardProps<Person>>;
+  className?: string;
+  style?: React.CSSProperties;
+  cardClassName?: string;
+  edgeClassName?: string;
+  interactionMode?: "pan" | "scroll" | "none";
+  selected?: string;
+  collapsed?: string[];
+  onPersonClick?: (person: Person, personId: string) => void;
+};
+
+type OrgChartNode<Person> = {
+  id: string;
+  person: Person;
+  parentId?: string | null;
+  order?: number;
+};
+```
+
+## Example
+
+```tsx
+import { OrgChart } from "@memoir/tree";
+import type { OrgChartCardProps } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+
+type Person = {
+  name: string;
+  role: string;
+};
+
+const nodes = [
+  { id: "ceo", person: { name: "Avery", role: "CEO" } },
+  { id: "eng", person: { name: "Morgan", role: "Engineering" }, parentId: "ceo" },
+  { id: "design", person: { name: "Riley", role: "Design" }, parentId: "ceo" },
+];
+
+function PersonCard({ person, ...props }: OrgChartCardProps<Person>) {
+  return (
+    <article {...props}>
+      <strong>{person.name}</strong>
+      <small>{person.role}</small>
+    </article>
+  );
+}
+
+export function Page() {
+  return <OrgChart nodes={nodes} card={PersonCard} />;
+}
+```
+
+## Surface
+
+The root surface is intentionally shared across tree types:
+
+- `interactionMode="pan"` clips overflow and supports drag-panning.
+- `interactionMode="scroll"` exposes native scrollbars.
+- `interactionMode="none"` clips without navigation.
+- `style` and `className` apply to the surface, not each node.
+
+## Styling Hooks
+
+`OrgChart` emits generic tree hooks and org-specific hooks:
+
+- `data-tree-surface`
+- `data-tree-canvas`
+- `data-tree-card`
+- `data-tree-card-positioner`
+- `data-tree-edge`
+- `data-org-chart`
+- `data-org-canvas`
+- `data-org-card`
+- `data-org-card-positioner`
+- `data-org-edge`

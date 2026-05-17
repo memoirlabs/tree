@@ -1,0 +1,38 @@
+[data-tree-surface] {
+  --tree-surface-bg: Canvas;
+  --tree-surface-fg: CanvasText;
+  --tree-surface-border: color-mix(in srgb, CanvasText 14%, transparent);
+  --tree-card-bg: color-mix(in srgb, Canvas 96%, CanvasText 4%);
+  --tree-card-border: color-mix(in srgb, CanvasText 16%, transparent);
+  --tree-card-selected-border: color-mix(in srgb, CanvasText 54%, transparent);
+  --tree-edge: color-mix(in srgb, CanvasText 34%, transparent);
+
+  background: var(--tree-surface-bg);
+  border-color: var(--tree-surface-border);
+  color: var(--tree-surface-fg);
+}
+
+[data-tree-canvas] {
+  isolation: isolate;
+}
+
+[data-tree-edge] {
+  color: var(--tree-edge);
+}
+
+[data-tree-card] {
+  border: 1px solid var(--tree-card-border);
+  border-radius: 8px;
+  background: var(--tree-card-bg);
+  color: inherit;
+  font: inherit;
+}
+
+[data-tree-card][aria-selected="true"] {
+  border-color: var(--tree-card-selected-border);
+  box-shadow: 0 0 0 1px var(--tree-card-selected-border);
+}
+
+[data-tree-card-positioner] {
+  will-change: transform;
+}

@@ -210,16 +210,11 @@ html > body[data-scroll-locked] {
 }
 
 .tree-frame {
-  overflow: auto;
   padding: clamp(20px, 4vw, 48px);
   border: 1px solid hsl(var(--border));
   background:
     radial-gradient(circle at 50% 12%, rgb(255 234 0 / 10%), transparent 36%),
     hsl(var(--background));
-}
-
-.tree-frame [data-family-tree] {
-  width: 100%;
 }
 
 .tree-frame [data-family-canvas] {

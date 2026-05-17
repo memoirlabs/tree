@@ -14,13 +14,17 @@ type FamilyTreeProps<Person> = {
   relationships: FamilyRelationship[];
   card?: React.ComponentType<FamilyCardProps<Person>>;
   className?: string;
+  style?: React.CSSProperties;
   cardClassName?: string;
   edgeClassName?: string;
+  interactionMode?: "pan" | "scroll" | "none";
   onPersonClick?: (person: Person, personId: string) => void;
 };
 ```
 
 The library does not require `name`, `avatarUrl`, profile fields, or nested relationship arrays. It only needs stable person IDs.
+
+By default, `FamilyTree` is self-contained: it fills the parent width, inherits parent height when one exists, falls back to a usable minimum height, clips overflow, and lets users drag-pan the tree horizontally and vertically. Host apps should only pass `style`, `className`, or `interactionMode` when they want to override those defaults.
 
 ## Relationship Facts
 
@@ -74,6 +78,8 @@ The default layout shows a subject-centered family window:
 - generation `2`: grandchildren
 
 Cards are measured with `ResizeObserver`. The first pass uses a fallback size, then layout recalculates with the actual rendered card dimensions.
+
+The root element owns the viewport behavior. `interactionMode="pan"` uses a clipped drag-panning viewport, `interactionMode="scroll"` exposes native scrollbars, and `interactionMode="none"` clips without user navigation.
 
 ## Styling Hooks
 

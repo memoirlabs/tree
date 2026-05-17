@@ -20,3 +20,8 @@ for await (const path of new Bun.Glob("**/*.js").scan("dist")) {
     await Bun.write(filePath, rewritten);
   }
 }
+
+const styles = Bun.file("src/styles.css");
+if (await styles.exists()) {
+  await Bun.write("dist/styles.css", styles);
+}

@@ -3,10 +3,10 @@
 import type { CSSProperties, JSX } from "react";
 import { useCallback, useMemo, useRef } from "react";
 
-import { buildFamilyTreeLayout } from "./layout";
+import { buildOrgChartLayout } from "./org-layout";
 import { TreeSurface } from "./TreeSurface";
 import { useCardMeasurements } from "./use-card-measurements";
-import type { FamilyCardProps, FamilyTreeProps, PersonId } from "./types";
+import type { OrgChartCardProps, OrgChartProps, PersonId } from "./types";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
@@ -14,8 +14,8 @@ const defaultCardStyle: CSSProperties = {
   display: "grid",
   gap: 4,
   justifyItems: "center",
-  minWidth: 124,
-  padding: "8px 10px",
+  minWidth: 140,
+  padding: "10px 12px",
   textAlign: "center",
 };
 
@@ -25,26 +25,18 @@ const defaultNameStyle: CSSProperties = {
   lineHeight: 1.1,
 };
 
-const defaultRelationStyle: CSSProperties = {
+const defaultMetaStyle: CSSProperties = {
   display: "block",
-  fontSize: "0.8rem",
+  fontSize: "0.78rem",
   lineHeight: 1.2,
   opacity: 0.68,
 };
 
-const defaultBadgeStyle: CSSProperties = {
-  display: "block",
-  fontSize: "0.68rem",
-  fontWeight: 700,
-  letterSpacing: "0.08em",
-  lineHeight: 1.2,
-  textTransform: "uppercase",
-};
-
-function getDefaultPersonLabel<Person>(person: Person, personId: PersonId): string {
+function getDefaultOrgLabel<Person>(person: Person, personId: PersonId): string {
   if (!isRecord(person)) return personId;
   if (typeof person.name === "string") return person.name;
   if (typeof person.label === "string") return person.label;
+  if (typeof person.title === "string") return person.title;
 
   const profile = person.profile;
   if (isRecord(profile) && typeof profile.display === "string") return profile.display;
@@ -52,29 +44,38 @@ function getDefaultPersonLabel<Person>(person: Person, personId: PersonId): stri
   return personId;
 }
 
-export function DefaultFamilyCard<Person>({
+function getDefaultOrgMeta<Person>(person: Person, depth: number): string {
+  if (isRecord(person)) {
+    if (typeof person.role === "string") return person.role;
+    if (typeof person.title === "string") return person.title;
+  }
+
+  return depth === 0 ? "root" : `level ${depth}`;
+}
+
+export function DefaultOrgChartCard<Person>({
   person,
   personId,
-  relation,
-  selected,
+  depth,
   focused: _focused,
   collapsed: _collapsed,
+  directReports: _directReports,
+  managerId: _managerId,
+  selected: _selected,
   ...props
-}: FamilyCardProps<Person>): JSX.Element {
+}: OrgChartCardProps<Person>): JSX.Element {
   return (
     <article {...props} style={{ ...defaultCardStyle, ...props.style }}>
-      <strong style={defaultNameStyle}>{getDefaultPersonLabel(person, personId)}</strong>
-      <small style={defaultRelationStyle}>{relation.label}</small>
-      {selected ? <span style={defaultBadgeStyle}>selected</span> : null}
+      <strong style={defaultNameStyle}>{getDefaultOrgLabel(person, personId)}</strong>
+      <small style={defaultMetaStyle}>{getDefaultOrgMeta(person, depth)}</small>
     </article>
   );
 }
 
-export function FamilyTree<Person>({
-  subject,
-  people,
-  relationships,
-  card: Card = DefaultFamilyCard,
+export function OrgChart<Person>({
+  nodes,
+  rootId,
+  card: Card = DefaultOrgChartCard,
   className,
   style,
   cardClassName,
@@ -83,32 +84,25 @@ export function FamilyTree<Person>({
   selected,
   collapsed,
   onPersonClick,
-}: FamilyTreeProps<Person>): JSX.Element {
+}: OrgChartProps<Person>): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
 
-  const unmeasuredLayout = useMemo(
-    () =>
-      buildFamilyTreeLayout({
-        subject,
-        people,
-        relationships,
-      }),
-    [people, relationships, subject],
-  );
+  const unmeasuredLayout = useMemo(() => buildOrgChartLayout({ nodes, rootId }), [nodes, rootId]);
   const measureKey = unmeasuredLayout.cards.map((card) => card.personId).join("|");
   const measurements = useCardMeasurements(containerRef, measureKey);
 
   const layout = useMemo(
     () =>
-      buildFamilyTreeLayout({
-        subject,
-        people,
-        relationships,
+      buildOrgChartLayout({
+        nodes,
+        rootId,
         measurements,
       }),
-    [measurements, people, relationships, subject],
+    [measurements, nodes, rootId],
   );
+
+  const subject = rootId ?? layout.cards.find((card) => card.depth === 0)?.personId;
 
   const handlePersonClick = useCallback(
     (person: Person, personId: PersonId) => {
@@ -124,15 +118,9 @@ export function FamilyTree<Person>({
       interactionMode={interactionMode}
       style={style}
       subject={subject}
-      treeType="family"
+      treeType="org"
     >
-      <div
-        ref={containerRef}
-        data-family-canvas
-        data-family-tree
-        data-family-interaction={interactionMode}
-        data-family-subject={subject}
-      >
+      <div ref={containerRef} data-org-canvas data-org-chart data-org-root={subject}>
         <svg
           aria-hidden="true"
           width={layout.bounds.width}
@@ -151,17 +139,12 @@ export function FamilyTree<Person>({
               key={edge.id}
               className={edgeClassName}
               d={edge.path}
-              data-tree-edge
-              data-edge-kind={edge.kind}
-              data-edge-status={edge.status}
-              data-family-edge
+              data-org-edge
               data-source-id={edge.sourceId}
               data-target-id={edge.targetId}
+              data-tree-edge
               fill="none"
               stroke="currentColor"
-              strokeDasharray={
-                edge.kind === "adoptive" || edge.kind === "guardian" || edge.status === "former" ? "4 4" : undefined
-              }
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
@@ -170,31 +153,31 @@ export function FamilyTree<Person>({
         </svg>
 
         {layout.cards.map((layoutCard) => {
-          const isSelected = selected ? selected === layoutCard.personId : layoutCard.personId === subject;
-          const cardProps: FamilyCardProps<Person> = {
+          const isSelected = selected ? selected === layoutCard.personId : layoutCard.depth === 0;
+          const cardProps: OrgChartCardProps<Person> = {
             person: layoutCard.person,
             personId: layoutCard.personId,
-            relation: layoutCard.relation,
+            managerId: layoutCard.managerId,
+            depth: layoutCard.depth,
             selected: isSelected,
             focused: false,
             collapsed: collapsedIds.has(layoutCard.personId),
+            directReports: layoutCard.directReports,
             className: cardClassName,
             "aria-selected": isSelected,
-            "data-family-card": "",
-            "data-tree-card": "",
+            "data-depth": layoutCard.depth,
+            "data-org-card": "",
             "data-person-id": layoutCard.personId,
-            "data-relation": layoutCard.relation.label,
-            "data-generation": layoutCard.relation.generation,
-            "data-side": layoutCard.relation.side,
+            "data-tree-card": "",
             onClick: onPersonClick ? () => handlePersonClick(layoutCard.person, layoutCard.personId) : undefined,
           };
 
           return (
             <div
               key={layoutCard.personId}
-              data-family-card-positioner
-              data-tree-card-positioner
+              data-org-card-positioner
               data-person-id={layoutCard.personId}
+              data-tree-card-positioner
               style={{
                 left: 0,
                 position: "absolute",
@@ -202,7 +185,7 @@ export function FamilyTree<Person>({
                 transform: `translate(${layoutCard.x}px, ${layoutCard.y}px)`,
               }}
             >
-              <div data-family-measure data-family-measure-id={layoutCard.personId}>
+              <div data-family-measure-id={layoutCard.personId}>
                 <Card {...cardProps} />
               </div>
             </div>

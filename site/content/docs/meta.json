@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "family-tree",
+    "org-chart",
     "api",
     "development",
     "project-structure"
