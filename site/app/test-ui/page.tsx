@@ -135,6 +135,7 @@ function TestOrgCard({
   depth,
   directReports,
   focused: _focused,
+  generation: _generation,
   managerId: _managerId,
   person,
   personId: _personId,

@@ -44,22 +44,29 @@ function getDefaultOrgLabel<Person>(person: Person, personId: PersonId): string 
   return personId;
 }
 
-function getDefaultOrgMeta<Person>(person: Person, depth: number): string {
+function getReportLabel(count: number): string {
+  return count === 1 ? "1 report" : `${count} reports`;
+}
+
+function getDefaultOrgMeta<Person>(person: Person, generation: number, directReportCount: number): string {
+  const reportLabel = getReportLabel(directReportCount);
+
   if (isRecord(person)) {
-    if (typeof person.role === "string") return person.role;
-    if (typeof person.title === "string") return person.title;
+    if (typeof person.role === "string") return `${person.role} - ${reportLabel}`;
+    if (typeof person.title === "string") return `${person.title} - ${reportLabel}`;
   }
 
-  return depth === 0 ? "root" : `level ${depth}`;
+  return generation === 0 ? `root - ${reportLabel}` : `generation ${generation} - ${reportLabel}`;
 }
 
 export function DefaultOrgChartCard<Person>({
   person,
   personId,
-  depth,
+  depth: _depth,
+  generation,
   focused: _focused,
   collapsed: _collapsed,
-  directReports: _directReports,
+  directReports,
   managerId: _managerId,
   selected: _selected,
   ...props
@@ -67,7 +74,7 @@ export function DefaultOrgChartCard<Person>({
   return (
     <article {...props} style={{ ...defaultCardStyle, ...props.style }}>
       <strong style={defaultNameStyle}>{getDefaultOrgLabel(person, personId)}</strong>
-      <small style={defaultMetaStyle}>{getDefaultOrgMeta(person, depth)}</small>
+      <small style={defaultMetaStyle}>{getDefaultOrgMeta(person, generation, directReports.length)}</small>
     </article>
   );
 }
@@ -159,6 +166,7 @@ export function OrgChart<Person>({
             personId: layoutCard.personId,
             managerId: layoutCard.managerId,
             depth: layoutCard.depth,
+            generation: layoutCard.generation,
             selected: isSelected,
             focused: false,
             collapsed: collapsedIds.has(layoutCard.personId),
@@ -166,6 +174,7 @@ export function OrgChart<Person>({
             className: cardClassName,
             "aria-selected": isSelected,
             "data-depth": layoutCard.depth,
+            "data-generation": layoutCard.generation,
             "data-org-card": "",
             "data-person-id": layoutCard.personId,
             "data-tree-card": "",

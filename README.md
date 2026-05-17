@@ -22,7 +22,7 @@ Most tree UIs force your app into a specific data model or a fixed card design. 
 
 - Bring your own person shape.
 - Describe family facts with `rel.parents`, `rel.children`, `rel.partner`, and `rel.guardians`.
-- Render org charts from flat `{ id, person, parentId }` nodes.
+- Render org charts from a nested reporting tree or flat `{ id, person, parentId }` nodes.
 - Start with the built-in `DefaultFamilyCard`, then swap in any React card component.
 - Get computed labels like `self`, `parent`, `sibling`, `half-sibling`, `partner`, `grandparent`, and `grandchild`.
 - Style with stable data attributes instead of a bundled theme.
@@ -85,21 +85,98 @@ For a quick first render, omit `card`. The built-in default card displays `name`
 
 `FamilyTree` owns its viewport defaults. It fills the parent width, inherits parent height when available, falls back to a usable minimum height, clips overflow, and supports drag-panning horizontally and vertically without requiring wrapper CSS. Use `style`, `className`, or `interactionMode="scroll"` only when a host app wants a different container contract.
 
-The same surface contract applies to `OrgChart`:
+The same surface contract applies to `OrgChart`.
+
+## Org Chart API
+
+For the simplest org chart API, describe who reports to who with `createOrgChart`. Each `reports` array is the next generation.
 
 ```tsx
-import { OrgChart } from "@memoir/tree";
+import { OrgChart, createOrgChart } from "@memoir/tree";
+import type { OrgChartCardProps } from "@memoir/tree";
 
-const nodes = [
-  { id: "ceo", person: { name: "Avery", role: "CEO" } },
-  { id: "eng", person: { name: "Morgan", role: "Engineering" }, parentId: "ceo" },
-  { id: "design", person: { name: "Riley", role: "Design" }, parentId: "ceo" },
-];
+type Person = {
+  name: string;
+  role: string;
+};
+
+const chart = createOrgChart({
+  id: "ceo",
+  person: { name: "Avery", role: "CEO" },
+  reports: [
+    {
+      id: "eng",
+      person: { name: "Morgan", role: "Engineering" },
+      reports: [{ id: "platform", person: { name: "Casey", role: "Platform" } }],
+    },
+    { id: "design", person: { name: "Riley", role: "Design" } },
+  ],
+});
+```
+
+`createOrgChart` returns the exact props `OrgChart` needs, plus easy metadata:
+
+```ts
+chart.rootId;
+// "ceo"
+
+chart.nodes;
+// [
+//   { id: "ceo", person: { name: "Avery", role: "CEO" }, parentId: null, order: 0 },
+//   { id: "eng", person: { name: "Morgan", role: "Engineering" }, parentId: "ceo", order: 0 },
+//   { id: "platform", person: { name: "Casey", role: "Platform" }, parentId: "eng", order: 0 },
+//   { id: "design", person: { name: "Riley", role: "Design" }, parentId: "ceo", order: 1 },
+// ]
+
+chart.generations;
+// [
+//   { generation: 0, personIds: ["ceo"], count: 1 },
+//   { generation: 1, personIds: ["eng", "design"], count: 2 },
+//   { generation: 2, personIds: ["platform"], count: 1 },
+// ]
+
+chart.maxGeneration;
+// 2
+
+chart.reportLines;
+// [
+//   { managerId: "ceo", reportId: "eng" },
+//   { managerId: "eng", reportId: "platform" },
+//   { managerId: "ceo", reportId: "design" },
+// ]
+```
+
+Render it by spreading the returned object:
+
+```tsx
+function OrgPersonCard({
+  collapsed: _collapsed,
+  depth: _depth,
+  directReports,
+  focused: _focused,
+  generation,
+  managerId: _managerId,
+  person,
+  personId: _personId,
+  selected: _selected,
+  ...props
+}: OrgChartCardProps<Person>) {
+  return (
+    <article {...props}>
+      <strong>{person.name}</strong>
+      <small>
+        {person.role} - generation {generation} - {directReports.length} reports
+      </small>
+    </article>
+  );
+}
 
 export function Page() {
-  return <OrgChart nodes={nodes} />;
+  return <OrgChart {...chart} card={OrgPersonCard} />;
 }
 ```
+
+If your data already comes from a database as flat rows, you can still pass `nodes` directly.
 
 ## Relationship Facts
 
@@ -153,6 +230,7 @@ The public API is intentionally small:
 - `OrgChart`
 - `DefaultOrgChartCard`
 - `TreeSurface`
+- `createOrgChart`
 - `rel`
 - `FamilyCardProps`
 - `FamilyTreeProps`

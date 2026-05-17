@@ -6,6 +6,7 @@ export interface OrgChartLayoutCard<Person> {
   managerId?: PersonId;
   directReports: PersonId[];
   depth: number;
+  generation: number;
   x: number;
   y: number;
   width: number;
@@ -97,6 +98,7 @@ export function buildOrgChartLayout<Person>({
         managerId: node.parentId ?? undefined,
         directReports: [],
         depth,
+        generation: depth,
         x: nextLeafX,
         y: depth * (fallbackCardSize.height + spacing.row),
         width: size.width,
@@ -123,6 +125,7 @@ export function buildOrgChartLayout<Person>({
       managerId: node.parentId ?? undefined,
       directReports: directReports.map((child) => child.id),
       depth,
+      generation: depth,
       x,
       y: depth * (fallbackCardSize.height + spacing.row),
       width: size.width,

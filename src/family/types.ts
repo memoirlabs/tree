@@ -123,6 +123,7 @@ export interface OrgChartCardProps<Person> extends HTMLAttributes<HTMLElement> {
   personId: PersonId;
   managerId?: PersonId;
   depth: number;
+  generation: number;
   selected: boolean;
   focused: boolean;
   collapsed: boolean;
@@ -133,6 +134,7 @@ export interface OrgChartCardProps<Person> extends HTMLAttributes<HTMLElement> {
   "data-tree-card"?: string;
   "data-person-id"?: string;
   "data-depth"?: number;
+  "data-generation"?: number;
 }
 
 export interface OrgChartProps<Person> {

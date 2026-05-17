@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { buildFamilyTreeLayout, rel } from "../src/index";
+import { buildFamilyTreeLayout, buildOrgChartLayout, createOrgChart, rel } from "../src/index";
 
 const people = {
   henry: { id: "henry", name: "Henry" },
@@ -51,4 +51,42 @@ test("emits visible relationship edges", () => {
   expect(layout.edges.map((edge) => edge.kind)).toContain("biological");
   expect(layout.edges.map((edge) => edge.kind)).toContain("partner");
   expect(layout.edges.every((edge) => edge.path.startsWith("M "))).toBe(true);
+});
+
+test("creates org chart nodes from a nested reporting tree", () => {
+  const chart = createOrgChart({
+    id: "ceo",
+    person: { name: "Avery", role: "CEO" },
+    reports: [
+      {
+        id: "eng",
+        person: { name: "Morgan", role: "Engineering" },
+        reports: [{ id: "platform", person: { name: "Casey", role: "Platform" } }],
+      },
+      { id: "design", person: { name: "Riley", role: "Design" } },
+    ],
+  });
+
+  expect(chart.rootId).toBe("ceo");
+  expect(chart.nodes.map((node) => [node.id, node.parentId])).toEqual([
+    ["ceo", null],
+    ["eng", "ceo"],
+    ["platform", "eng"],
+    ["design", "ceo"],
+  ]);
+  expect(chart.generations).toEqual([
+    { generation: 0, personIds: ["ceo"], count: 1 },
+    { generation: 1, personIds: ["eng", "design"], count: 2 },
+    { generation: 2, personIds: ["platform"], count: 1 },
+  ]);
+  expect(chart.maxGeneration).toBe(2);
+  expect(chart.reportLines).toEqual([
+    { managerId: "ceo", reportId: "eng" },
+    { managerId: "eng", reportId: "platform" },
+    { managerId: "ceo", reportId: "design" },
+  ]);
+
+  const layout = buildOrgChartLayout(chart);
+
+  expect(layout.cards.find((card) => card.personId === "platform")?.generation).toBe(2);
 });

@@ -1,4 +1,4 @@
-export { DefaultFamilyCard, DefaultOrgChartCard, FamilyTree, OrgChart, TreeSurface, rel } from "./family";
+export { DefaultFamilyCard, DefaultOrgChartCard, FamilyTree, OrgChart, TreeSurface, createOrgChart, rel } from "./family";
 export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./family";
 
 export type {
@@ -37,10 +37,14 @@ export type {
 export { buildFamilyTreeLayout } from "./family";
 
 export type {
+  OrgChartBranch,
   BuildOrgChartLayoutInput,
   OrgChartBounds,
+  OrgChartDefinition,
+  OrgChartGeneration,
   OrgChartLayoutCard,
   OrgChartLayoutEdge,
   OrgChartLayoutResult,
+  OrgChartReportLine,
 } from "./family";
 export { buildOrgChartLayout } from "./family";

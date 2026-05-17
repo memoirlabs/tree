@@ -18,7 +18,22 @@ All public exports come from `@memoir/tree`.
 
 - `OrgChart`
 - `DefaultOrgChartCard`
+- `createOrgChart(root)`
 - `buildOrgChartLayout(input)`
+
+`createOrgChart(root)` accepts a nested reporting tree and returns:
+
+```ts
+type OrgChartDefinition<Person> = {
+  rootId: string;
+  nodes: OrgChartNode<Person>[];
+  generations: OrgChartGeneration[];
+  maxGeneration: number;
+  reportLines: OrgChartReportLine[];
+};
+```
+
+Use `generations` and `maxGeneration` to show how far the chart goes. Use `reportLines` to inspect who reports to who without walking the nested input again.
 
 ## Shared Surface
 
@@ -42,6 +57,10 @@ All public exports come from `@memoir/tree`.
 ## Org Types
 
 - `OrgChartNode<Person>`
+- `OrgChartBranch<Person>`
+- `OrgChartDefinition<Person>`
+- `OrgChartGeneration`
+- `OrgChartReportLine`
 - `OrgChartCardProps<Person>`
 - `OrgChartProps<Person>`
 - `OrgChartLayoutResult<Person>`
