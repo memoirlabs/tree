@@ -1,4 +1,5 @@
 import type { ComponentType, CSSProperties, HTMLAttributes } from "react";
+import type { TreeLineShape, TreeStylePreset, TreeTheme } from "./theme";
 
 export type PersonId = string;
 
@@ -100,6 +101,9 @@ export interface FamilyTreeProps<Person> {
   cardClassName?: string;
   edgeClassName?: string;
   interactionMode?: TreeInteractionMode;
+  lineShape?: TreeLineShape;
+  spacing?: Partial<FamilyTreeSpacing>;
+  theme?: TreeStylePreset | TreeTheme;
   selected?: PersonId;
   collapsed?: PersonId[];
   onPersonClick?: (person: Person, personId: PersonId) => void;
@@ -146,7 +150,12 @@ export interface OrgChartProps<Person> {
   cardClassName?: string;
   edgeClassName?: string;
   interactionMode?: TreeInteractionMode;
+  lineShape?: TreeLineShape;
+  spacing?: Partial<FamilyTreeSpacing>;
+  theme?: TreeStylePreset | TreeTheme;
   selected?: PersonId;
   collapsed?: PersonId[];
   onPersonClick?: (person: Person, personId: PersonId) => void;
 }
+
+export type { TreeLineShape, TreeStylePreset, TreeTheme };

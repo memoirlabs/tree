@@ -5,6 +5,21 @@ description: Render an app-owned reporting tree with the same surface behavior a
 
 `OrgChart` renders a reporting hierarchy from app-owned nodes. For the easiest API, write the chart as a nested reporting tree with `createOrgChart`, then pass the result straight into `OrgChart`.
 
+<div className="docs-card-grid">
+  <div className="docs-card">
+    <strong>Flat or nested</strong>
+    <div className="docs-copy">Pass database-shaped rows directly or use `createOrgChart` for nested authoring.</div>
+  </div>
+  <div className="docs-card">
+    <strong>Shared surface</strong>
+    <div className="docs-copy">Org charts use the same pan, scroll, measuring, and SVG edge behavior as family trees.</div>
+  </div>
+  <div className="docs-card">
+    <strong>Custom cards</strong>
+    <div className="docs-copy">Render roles, avatars, metrics, or actions without changing the layout engine.</div>
+  </div>
+</div>
+
 ## Props
 
 ```ts
@@ -38,6 +53,11 @@ type OrgChartBranch<Person> = {
 ```
 
 ## Example
+
+<div className="docs-api-band">
+  <h3>Author the org the way humans think about it.</h3>
+  <div className="docs-copy">`createOrgChart` turns a nested reporting tree into the flat nodes, generations, and report lines used by the renderer.</div>
+</div>
 
 Each `reports` array is the next generation in the chart.
 

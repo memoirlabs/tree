@@ -87,7 +87,7 @@ export default function HomePage() {
             <p className="eyebrow">Live example</p>
             <h2>Names, relationships, and layout. Nothing extra.</h2>
             <p>
-              The demo below renders a family tree and org chart with plain app-owned data.
+              Type into the controls, click cards, add people, and watch the family tree and org chart update live.
             </p>
           </div>
           <Playground />

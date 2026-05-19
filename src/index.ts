@@ -21,7 +21,10 @@ export type {
   PartnershipRelation,
   PeopleById,
   PersonId,
+  TreeLineShape,
   TreeInteractionMode,
+  TreeStylePreset,
+  TreeTheme,
 } from "./family";
 
 export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./family";

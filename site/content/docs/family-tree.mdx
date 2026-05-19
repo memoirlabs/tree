@@ -5,6 +5,21 @@ description: Render a subject-centered family neighborhood from app-owned person
 
 `FamilyTree` renders a subject-centered family neighborhood from app-owned person data and plain relationship facts.
 
+<div className="docs-card-grid">
+  <div className="docs-card">
+    <strong>Subject-centered</strong>
+    <div className="docs-copy">Choose the person in focus and the layout computes their visible family neighborhood.</div>
+  </div>
+  <div className="docs-card">
+    <strong>Clickable</strong>
+    <div className="docs-copy">Use `selected` and `onPersonClick` to build inspectors, profile drawers, and editors.</div>
+  </div>
+  <div className="docs-card">
+    <strong>Scrollable or pannable</strong>
+    <div className="docs-copy">Pick `pan`, `scroll`, or `none` depending on the surface you want.</div>
+  </div>
+</div>
+
 ## Props
 
 ```ts
@@ -27,6 +42,11 @@ The library does not require `name`, `avatarUrl`, profile fields, or nested rela
 By default, `FamilyTree` is self-contained: it fills the parent width, inherits parent height when one exists, falls back to a usable minimum height, clips overflow, and lets users drag-pan the tree horizontally and vertically. Host apps should only pass `style`, `className`, or `interactionMode` when they want to override those defaults.
 
 ## Relationship Facts
+
+<div className="docs-api-band">
+  <h3>Relationships are facts, not nested UI state.</h3>
+  <div className="docs-copy">Store parentage, partnership, and guardianship as flat rows. The subject-relative labels are computed at render time.</div>
+</div>
 
 ```ts
 import { rel } from "@memoir/tree";

@@ -9,6 +9,7 @@ import type {
   PeopleById,
   PersonId,
 } from "./types";
+import type { TreeLineShape } from "./theme";
 
 export interface FamilyTreeLayoutCard<Person> {
   personId: PersonId;
@@ -45,6 +46,8 @@ export interface BuildFamilyTreeLayoutInput<Person> {
   people: PeopleById<Person>;
   relationships: FamilyRelationship[];
   measurements?: Record<PersonId, FamilyTreeSize>;
+  spacing?: Partial<FamilyTreeSpacing>;
+  lineShape?: TreeLineShape;
 }
 
 const defaultFallbackCardSize: FamilyTreeSize = {
@@ -112,9 +115,11 @@ export function buildFamilyTreeLayout<Person>({
   people,
   relationships,
   measurements = {},
+  spacing: spacingOverrides,
+  lineShape = "orthogonal",
 }: BuildFamilyTreeLayoutInput<Person>): FamilyTreeLayoutResult<Person> {
   const fallbackCardSize = defaultFallbackCardSize;
-  const spacing = defaultSpacing;
+  const spacing = { ...defaultSpacing, ...spacingOverrides };
   const index = createFamilyIndex(people, relationships);
   const neighborhood = collectFamilyNeighborhood(index, subject);
   if (!neighborhood) {
@@ -176,7 +181,7 @@ export function buildFamilyTreeLayout<Person>({
 
   return {
     cards,
-    edges: routeFamilyEdges(cards, relationships),
+    edges: routeFamilyEdges(cards, relationships, { lineShape }),
     bounds: {
       width: round(maxX - minX + spacing.padding * 2),
       height: round(maxY - minY + spacing.padding * 2),

@@ -5,12 +5,38 @@ description: Install @memoir/tree and render your first family tree.
 
 `@memoir/tree` provides React primitives for family trees.
 
+<div className="docs-hero-card">
+  <div className="docs-chip-row">
+    <span>React</span>
+    <span>TypeScript</span>
+    <span>Measured layout</span>
+    <span>Bring your own UI</span>
+  </div>
+  <h2>Readable family trees without giving up your own data model.</h2>
+  <div className="docs-copy">Render family neighborhoods and org charts from plain relationship facts, then style the cards like the rest of your app.</div>
+</div>
+
 The package keeps persistence, routing, styling, auth, and data fetching in the host app. The library focuses on:
 
 - Normalizing relationship facts.
 - Computing subject-relative family labels.
 - Measuring custom cards.
 - Rendering automatic layouts and SVG edges.
+
+<div className="docs-card-grid">
+  <div className="docs-card">
+    <strong>1. Pass people</strong>
+    <div className="docs-copy">Use your app-owned objects. The tree only needs stable IDs.</div>
+  </div>
+  <div className="docs-card">
+    <strong>2. Add facts</strong>
+    <div className="docs-copy">Describe parents, partners, guardians, and children as flat rows.</div>
+  </div>
+  <div className="docs-card">
+    <strong>3. Render cards</strong>
+    <div className="docs-copy">Bring any React card component and let the layout measure it.</div>
+  </div>
+</div>
 
 ## Install
 
@@ -19,6 +45,21 @@ bunx jsr add @memoir/tree
 ```
 
 ## Minimal Family Tree
+
+<div className="docs-steps">
+  <div className="docs-step">
+    <h3>Create app data</h3>
+    <div className="docs-copy">Keep people in your database shape. No required profile schema, avatar field, or nested arrays.</div>
+  </div>
+  <div className="docs-step">
+    <h3>Describe relationships</h3>
+    <div className="docs-copy">Use `rel.parents`, `rel.partner`, and `rel.children` to build readable relationship facts.</div>
+  </div>
+  <div className="docs-step">
+    <h3>Render the tree</h3>
+    <div className="docs-copy">Pass a subject ID, people, relationships, and optionally your custom card.</div>
+  </div>
+</div>
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
@@ -61,6 +102,11 @@ export function Page() {
 ```
 
 ## Styling
+
+<div className="docs-api-band">
+  <h3>Stable selectors, normal CSS</h3>
+  <div className="docs-copy">The renderer emits data attributes for surfaces, cards, relation labels, selected state, and SVG edges so you can style the component without wrapping internals.</div>
+</div>
 
 Use normal CSS against stable data attributes:
 

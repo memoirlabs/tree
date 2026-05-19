@@ -12,11 +12,31 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 
 const defaultCardStyle: CSSProperties = {
   display: "grid",
-  gap: 4,
+  gap: "var(--tree-card-gap, 6px)",
   justifyItems: "center",
   minWidth: 124,
-  padding: "8px 10px",
+  padding: "var(--tree-card-padding, 10px 12px)",
+  border: "var(--tree-outline-width, 1px) solid var(--tree-card-border, currentColor)",
+  borderRadius: "var(--tree-card-radius, 0)",
+  background: "var(--tree-card-bg, Canvas)",
+  boxShadow: "var(--tree-card-shadow, none)",
+  color: "var(--tree-card-fg, inherit)",
   textAlign: "center",
+};
+
+const defaultSelectedCardStyle: CSSProperties = {
+  background: "var(--tree-card-selected-bg, var(--tree-card-bg, Canvas))",
+  borderColor: "var(--tree-card-selected-border, var(--tree-card-border, currentColor))",
+  color: "var(--tree-card-selected-fg, var(--tree-card-fg, inherit))",
+};
+
+const defaultAvatarStyle: CSSProperties = {
+  width: 36,
+  height: 36,
+  border: "var(--tree-outline-width, 1px) solid var(--tree-card-border, currentColor)",
+  borderRadius: "var(--tree-profile-radius, 0)",
+  background: "var(--tree-profile-bg, transparent)",
+  objectFit: "cover",
 };
 
 const defaultNameStyle: CSSProperties = {
@@ -27,13 +47,15 @@ const defaultNameStyle: CSSProperties = {
 
 const defaultRelationStyle: CSSProperties = {
   display: "block",
+  color: "var(--tree-muted-fg, currentColor)",
   fontSize: "0.8rem",
   lineHeight: 1.2,
-  opacity: 0.68,
 };
 
 const defaultBadgeStyle: CSSProperties = {
   display: "block",
+  padding: "2px 7px",
+  border: "var(--tree-outline-width, 1px) solid currentColor",
   fontSize: "0.68rem",
   fontWeight: 700,
   letterSpacing: "0.08em",
@@ -52,6 +74,20 @@ function getDefaultPersonLabel<Person>(person: Person, personId: PersonId): stri
   return personId;
 }
 
+function getDefaultProfileImage<Person>(person: Person): string | undefined {
+  if (!isRecord(person)) return undefined;
+  if (typeof person.avatar === "string") return person.avatar;
+  if (typeof person.image === "string") return person.image;
+
+  const profile = person.profile;
+  if (!isRecord(profile)) return undefined;
+  if (typeof profile.avatar === "string") return profile.avatar;
+  if (typeof profile.image === "string") return profile.image;
+  if (typeof profile.photo === "string") return profile.photo;
+
+  return undefined;
+}
+
 export function DefaultFamilyCard<Person>({
   person,
   personId,
@@ -61,8 +97,11 @@ export function DefaultFamilyCard<Person>({
   collapsed: _collapsed,
   ...props
 }: FamilyCardProps<Person>): JSX.Element {
+  const profileImage = getDefaultProfileImage(person);
+
   return (
-    <article {...props} style={{ ...defaultCardStyle, ...props.style }}>
+    <article {...props} style={{ ...defaultCardStyle, ...(selected ? defaultSelectedCardStyle : {}), ...props.style }}>
+      {profileImage ? <img alt="" src={profileImage} style={defaultAvatarStyle} /> : null}
       <strong style={defaultNameStyle}>{getDefaultPersonLabel(person, personId)}</strong>
       <small style={defaultRelationStyle}>{relation.label}</small>
       {selected ? <span style={defaultBadgeStyle}>selected</span> : null}
@@ -80,6 +119,9 @@ export function FamilyTree<Person>({
   cardClassName,
   edgeClassName,
   interactionMode = "pan",
+  lineShape = "orthogonal",
+  spacing,
+  theme,
   selected,
   collapsed,
   onPersonClick,
@@ -93,8 +135,10 @@ export function FamilyTree<Person>({
         subject,
         people,
         relationships,
+        lineShape,
+        spacing,
       }),
-    [people, relationships, subject],
+    [lineShape, people, relationships, spacing, subject],
   );
   const measureKey = unmeasuredLayout.cards.map((card) => card.personId).join("|");
   const measurements = useCardMeasurements(containerRef, measureKey);
@@ -106,8 +150,10 @@ export function FamilyTree<Person>({
         people,
         relationships,
         measurements,
+        lineShape,
+        spacing,
       }),
-    [measurements, people, relationships, subject],
+    [lineShape, measurements, people, relationships, spacing, subject],
   );
 
   const handlePersonClick = useCallback(
@@ -124,6 +170,7 @@ export function FamilyTree<Person>({
       interactionMode={interactionMode}
       style={style}
       subject={subject}
+      theme={theme}
       treeType="family"
     >
       <div
@@ -162,8 +209,8 @@ export function FamilyTree<Person>({
               strokeDasharray={
                 edge.kind === "adoptive" || edge.kind === "guardian" || edge.status === "former" ? "4 4" : undefined
               }
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap={lineShape === "curved" ? "round" : "butt"}
+              strokeLinejoin={lineShape === "curved" ? "round" : "miter"}
               strokeWidth={2}
             />
           ))}

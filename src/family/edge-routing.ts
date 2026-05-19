@@ -1,5 +1,6 @@
 import type { FamilyRelationship, PersonId } from "./types";
 import type { FamilyTreeLayoutCard, FamilyTreeLayoutEdge } from "./layout";
+import type { TreeLineShape } from "./theme";
 
 const round = (value: number) => Math.round(value * 100) / 100;
 
@@ -29,12 +30,32 @@ const createOrthogonalPath = (
   return `M ${round(start.x)} ${round(start.y)} L ${round(start.x)} ${midY} L ${round(end.x)} ${midY} L ${round(end.x)} ${round(end.y)}`;
 };
 
+const createCurvedPath = (
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+) => {
+  const midY = round((start.y + end.y) / 2);
+  return `M ${round(start.x)} ${round(start.y)} C ${round(start.x)} ${midY}, ${round(end.x)} ${midY}, ${round(end.x)} ${round(end.y)}`;
+};
+
+const createEdgePath = (
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  lineShape: TreeLineShape,
+) => (lineShape === "curved" ? createCurvedPath(start, end) : createOrthogonalPath(start, end));
+
+export interface RouteFamilyEdgesOptions {
+  lineShape?: TreeLineShape;
+}
+
 export function routeFamilyEdges<Person>(
   cards: FamilyTreeLayoutCard<Person>[],
   relationships: FamilyRelationship[],
+  options: RouteFamilyEdgesOptions = {},
 ): FamilyTreeLayoutEdge[] {
   const cardsById = cardById(cards);
   const edges: FamilyTreeLayoutEdge[] = [];
+  const lineShape = options.lineShape ?? "orthogonal";
 
   relationships.forEach((relationship, relationshipIndex) => {
     if (relationship.type === "partnership") {
@@ -66,7 +87,7 @@ export function routeFamilyEdges<Person>(
           if (!childCard) continue;
           edges.push({
             id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${parentId}-${childId}`,
-            path: createOrthogonalPath(bottomCenter(parentCard), topCenter(childCard)),
+            path: createEdgePath(bottomCenter(parentCard), topCenter(childCard), lineShape),
             kind: relationship.relation ?? "biological",
             status: relationship.status,
             sourceId: parentId,
@@ -85,7 +106,7 @@ export function routeFamilyEdges<Person>(
         if (!childCard) continue;
         edges.push({
           id: `${relationship.id ?? `guardianship-${relationshipIndex}`}-${guardianId}-${childId}`,
-          path: createOrthogonalPath(bottomCenter(guardianCard), topCenter(childCard)),
+          path: createEdgePath(bottomCenter(guardianCard), topCenter(childCard), lineShape),
           kind: relationship.relation ?? "guardian",
           status: relationship.status,
           sourceId: guardianId,

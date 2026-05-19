@@ -191,7 +191,7 @@ const relationships = [
 ];
 ```
 
-For the intended default surface, card, and edge styling, import the optional stylesheet:
+For the intended Memoir surface, card, and edge styling, import the optional stylesheet. It uses sharp corners, square outlined profile images, 1px black outlines, white and cream surfaces, and the Memoir orange accent:
 
 ```tsx
 import "@memoir/tree/styles.css";
@@ -200,6 +200,26 @@ import "@memoir/tree/styles.css";
 The helpers produce plain relationship rows. The library computes labels and placement from those facts relative to the current `subject`.
 
 ## Styling
+
+`FamilyTree` and `OrgChart` accept the same styling controls:
+
+```tsx
+<FamilyTree
+  subject="henry"
+  people={people}
+  relationships={relationships}
+  theme={{
+    surfaceBackground: "#fffdf4",
+    cardRadius: 12,
+    profileRadius: 999,
+    accent: "#f97316",
+  }}
+  spacing={{ row: 140, column: 44, padding: 40 }}
+  lineShape="curved"
+/>
+```
+
+Use `theme="memoir"` for the default Memoir preset or `theme="system"` for neutral system colors. A theme object can pass app-owned colors, outline width, card/profile corner radius, shadows, and font family. `lineShape="orthogonal"` keeps 90-degree connector turns; `lineShape="curved"` uses curved connectors.
 
 The card receives normal HTML props and stable data attributes:
 

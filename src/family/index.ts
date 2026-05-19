@@ -25,7 +25,10 @@ export type {
   PartnershipRelation,
   PeopleById,
   PersonId,
+  TreeLineShape,
   TreeInteractionMode,
+  TreeStylePreset,
+  TreeTheme,
 } from "./types";
 
 export type {

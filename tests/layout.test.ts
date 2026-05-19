@@ -53,6 +53,34 @@ test("emits visible relationship edges", () => {
   expect(layout.edges.every((edge) => edge.path.startsWith("M "))).toBe(true);
 });
 
+test("accepts custom family spacing and curved edge routing", () => {
+  const compact = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships,
+    lineShape: "curved",
+    spacing: {
+      row: 72,
+      column: 16,
+      padding: 12,
+    },
+  });
+  const roomy = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships,
+    spacing: {
+      row: 144,
+      column: 64,
+      padding: 48,
+    },
+  });
+
+  expect(compact.bounds.width).toBeLessThan(roomy.bounds.width);
+  expect(compact.bounds.height).toBeLessThan(roomy.bounds.height);
+  expect(compact.edges.some((edge) => edge.path.includes(" C "))).toBe(true);
+});
+
 test("creates org chart nodes from a nested reporting tree", () => {
   const chart = createOrgChart({
     id: "ceo",

@@ -1,4 +1,5 @@
-import type { FamilyTreeSize, OrgChartNode, PersonId } from "./types";
+import type { FamilyTreeSize, FamilyTreeSpacing, OrgChartNode, PersonId } from "./types";
+import type { TreeLineShape } from "./theme";
 
 export interface OrgChartLayoutCard<Person> {
   personId: PersonId;
@@ -35,6 +36,8 @@ export interface BuildOrgChartLayoutInput<Person> {
   nodes: OrgChartNode<Person>[];
   rootId?: PersonId;
   measurements?: Record<PersonId, FamilyTreeSize>;
+  spacing?: Partial<FamilyTreeSpacing>;
+  lineShape?: TreeLineShape;
 }
 
 const fallbackCardSize: FamilyTreeSize = {
@@ -42,7 +45,7 @@ const fallbackCardSize: FamilyTreeSize = {
   height: 80,
 };
 
-const spacing = {
+const defaultSpacing: FamilyTreeSpacing = {
   row: 112,
   column: 36,
   padding: 32,
@@ -53,11 +56,28 @@ const round = (value: number) => Math.round(value * 100) / 100;
 const getSize = (measurements: Record<PersonId, FamilyTreeSize>, personId: PersonId): FamilyTreeSize =>
   measurements[personId] ?? fallbackCardSize;
 
+const createOrgEdgePath = (
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  lineShape: TreeLineShape,
+) => {
+  const midY = round(start.y + Math.max(24, (end.y - start.y) / 2));
+
+  if (lineShape === "curved") {
+    return `M ${round(start.x)} ${round(start.y)} C ${round(start.x)} ${midY}, ${round(end.x)} ${midY}, ${round(end.x)} ${round(end.y)}`;
+  }
+
+  return `M ${round(start.x)} ${round(start.y)} L ${round(start.x)} ${midY} L ${round(end.x)} ${midY} L ${round(end.x)} ${round(end.y)}`;
+};
+
 export function buildOrgChartLayout<Person>({
   nodes,
   rootId,
   measurements = {},
+  spacing: spacingOverrides,
+  lineShape = "orthogonal",
 }: BuildOrgChartLayoutInput<Person>): OrgChartLayoutResult<Person> {
+  const spacing = { ...defaultSpacing, ...spacingOverrides };
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const childrenByParent = new Map<PersonId, OrgChartNode<Person>[]>();
 
@@ -168,10 +188,9 @@ export function buildOrgChartLayout<Person>({
       const startY = card.y + card.height;
       const endX = child.x + child.width / 2;
       const endY = child.y;
-      const midY = startY + Math.max(24, (endY - startY) / 2);
       edges.push({
         id: `${card.personId}->${child.personId}`,
-        path: `M ${round(startX)} ${round(startY)} L ${round(startX)} ${round(midY)} L ${round(endX)} ${round(midY)} L ${round(endX)} ${round(endY)}`,
+        path: createOrgEdgePath({ x: startX, y: startY }, { x: endX, y: endY }, lineShape),
         sourceId: card.personId,
         targetId: child.personId,
       });

@@ -12,11 +12,31 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 
 const defaultCardStyle: CSSProperties = {
   display: "grid",
-  gap: 4,
+  gap: "var(--tree-card-gap, 6px)",
   justifyItems: "center",
   minWidth: 140,
-  padding: "10px 12px",
+  padding: "var(--tree-card-padding, 10px 12px)",
+  border: "var(--tree-outline-width, 1px) solid var(--tree-card-border, currentColor)",
+  borderRadius: "var(--tree-card-radius, 0)",
+  background: "var(--tree-card-bg, Canvas)",
+  boxShadow: "var(--tree-card-shadow, none)",
+  color: "var(--tree-card-fg, inherit)",
   textAlign: "center",
+};
+
+const defaultSelectedCardStyle: CSSProperties = {
+  background: "var(--tree-card-selected-bg, var(--tree-card-bg, Canvas))",
+  borderColor: "var(--tree-card-selected-border, var(--tree-card-border, currentColor))",
+  color: "var(--tree-card-selected-fg, var(--tree-card-fg, inherit))",
+};
+
+const defaultAvatarStyle: CSSProperties = {
+  width: 36,
+  height: 36,
+  border: "var(--tree-outline-width, 1px) solid var(--tree-card-border, currentColor)",
+  borderRadius: "var(--tree-profile-radius, 0)",
+  background: "var(--tree-profile-bg, transparent)",
+  objectFit: "cover",
 };
 
 const defaultNameStyle: CSSProperties = {
@@ -27,9 +47,9 @@ const defaultNameStyle: CSSProperties = {
 
 const defaultMetaStyle: CSSProperties = {
   display: "block",
+  color: "var(--tree-muted-fg, currentColor)",
   fontSize: "0.78rem",
   lineHeight: 1.2,
-  opacity: 0.68,
 };
 
 function getDefaultOrgLabel<Person>(person: Person, personId: PersonId): string {
@@ -42,6 +62,20 @@ function getDefaultOrgLabel<Person>(person: Person, personId: PersonId): string 
   if (isRecord(profile) && typeof profile.display === "string") return profile.display;
 
   return personId;
+}
+
+function getDefaultProfileImage<Person>(person: Person): string | undefined {
+  if (!isRecord(person)) return undefined;
+  if (typeof person.avatar === "string") return person.avatar;
+  if (typeof person.image === "string") return person.image;
+
+  const profile = person.profile;
+  if (!isRecord(profile)) return undefined;
+  if (typeof profile.avatar === "string") return profile.avatar;
+  if (typeof profile.image === "string") return profile.image;
+  if (typeof profile.photo === "string") return profile.photo;
+
+  return undefined;
 }
 
 function getReportLabel(count: number): string {
@@ -71,8 +105,11 @@ export function DefaultOrgChartCard<Person>({
   selected: _selected,
   ...props
 }: OrgChartCardProps<Person>): JSX.Element {
+  const profileImage = getDefaultProfileImage(person);
+
   return (
-    <article {...props} style={{ ...defaultCardStyle, ...props.style }}>
+    <article {...props} style={{ ...defaultCardStyle, ...(_selected ? defaultSelectedCardStyle : {}), ...props.style }}>
+      {profileImage ? <img alt="" src={profileImage} style={defaultAvatarStyle} /> : null}
       <strong style={defaultNameStyle}>{getDefaultOrgLabel(person, personId)}</strong>
       <small style={defaultMetaStyle}>{getDefaultOrgMeta(person, generation, directReports.length)}</small>
     </article>
@@ -88,6 +125,9 @@ export function OrgChart<Person>({
   cardClassName,
   edgeClassName,
   interactionMode = "pan",
+  lineShape = "orthogonal",
+  spacing,
+  theme,
   selected,
   collapsed,
   onPersonClick,
@@ -95,7 +135,10 @@ export function OrgChart<Person>({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
 
-  const unmeasuredLayout = useMemo(() => buildOrgChartLayout({ nodes, rootId }), [nodes, rootId]);
+  const unmeasuredLayout = useMemo(
+    () => buildOrgChartLayout({ nodes, rootId, lineShape, spacing }),
+    [lineShape, nodes, rootId, spacing],
+  );
   const measureKey = unmeasuredLayout.cards.map((card) => card.personId).join("|");
   const measurements = useCardMeasurements(containerRef, measureKey);
 
@@ -105,8 +148,10 @@ export function OrgChart<Person>({
         nodes,
         rootId,
         measurements,
+        lineShape,
+        spacing,
       }),
-    [measurements, nodes, rootId],
+    [lineShape, measurements, nodes, rootId, spacing],
   );
 
   const subject = rootId ?? layout.cards.find((card) => card.depth === 0)?.personId;
@@ -125,6 +170,7 @@ export function OrgChart<Person>({
       interactionMode={interactionMode}
       style={style}
       subject={subject}
+      theme={theme}
       treeType="org"
     >
       <div ref={containerRef} data-org-canvas data-org-chart data-org-root={subject}>
@@ -152,8 +198,8 @@ export function OrgChart<Person>({
               data-tree-edge
               fill="none"
               stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap={lineShape === "curved" ? "round" : "butt"}
+              strokeLinejoin={lineShape === "curved" ? "round" : "miter"}
               strokeWidth={2}
             />
           ))}

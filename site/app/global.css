@@ -2,6 +2,17 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
+@theme {
+  --color-bg: #fafafa;
+  --color-fg: #030201;
+  --color-copy-primary: #030201;
+  --color-copy-secondary: #24211a;
+  --color-copy-muted: #3b342e;
+  --color-copy-disabled: #6b615e;
+  --color-canvas-base: #f4efdc;
+  --color-canvas-secondary: #ec5a44;
+}
+
 html {
   scrollbar-gutter: stable;
 }
@@ -298,7 +309,7 @@ html > body[data-scroll-locked] {
 
 .tree-frame {
   display: grid;
-  gap: 18px;
+  gap: 28px;
   padding: clamp(20px, 4vw, 48px);
   border: 1px solid hsl(var(--border));
   background:
@@ -306,10 +317,123 @@ html > body[data-scroll-locked] {
     hsl(var(--background));
 }
 
-.tree-example {
+.playground-panel {
   display: grid;
-  gap: 10px;
+  gap: 16px;
   min-width: 0;
+  padding: clamp(16px, 3vw, 26px);
+  border: 1px solid hsl(var(--border));
+  background:
+    radial-gradient(circle at 0% 0%, rgb(5 40 200 / 8%), transparent 30%),
+    hsl(var(--background));
+}
+
+.playground-copy {
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+}
+
+.playground-copy h3,
+.playground-copy p {
+  margin: 0;
+}
+
+.playground-copy h3 {
+  color: hsl(var(--foreground));
+  font-size: clamp(1.45rem, 3vw, 2.4rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.playground-copy p:not(.tree-example-label),
+.playground-status {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.55;
+}
+
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.playground-controls input,
+.playground-controls select,
+.playground-controls button,
+.playground-toggle button {
+  min-height: 40px;
+  border: 1px solid hsl(var(--foreground));
+  border-radius: 0;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font: inherit;
+}
+
+.playground-controls input,
+.playground-controls select {
+  width: 100%;
+  padding: 0 10px;
+  font-size: 0.86rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.playground-controls button,
+.playground-toggle button {
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.playground-controls button:hover,
+.playground-toggle button:hover,
+.name-node:hover {
+  transform: translateY(-1px);
+}
+
+.playground-inline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.playground-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: end;
+  gap: 8px;
+}
+
+.playground-toggle button[aria-pressed='true'] {
+  background: #0528c8;
+  color: #fff;
+}
+
+.playground-status {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.2);
+  font-size: 0.9rem;
+}
+
+.playground-status strong {
+  color: hsl(var(--foreground));
 }
 
 .tree-example-label {
@@ -340,9 +464,21 @@ html > body[data-scroll-locked] {
   justify-items: center;
   gap: 4px;
   padding: 8px 10px;
+  border: 2px solid hsl(var(--foreground));
   color: hsl(var(--foreground));
-  background: transparent;
+  background: hsl(var(--background));
+  box-shadow: 5px 5px 0 hsl(var(--foreground));
+  cursor: pointer;
   text-align: center;
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.name-node[aria-selected='true'] {
+  background: #ffea00;
+  color: #111;
+  box-shadow: 7px 7px 0 #0528c8;
 }
 
 .name-node strong,
@@ -376,6 +512,119 @@ html > body[data-scroll-locked] {
 
 .family-edge {
   color: hsl(var(--muted-foreground));
+}
+
+.docs-hero-card,
+.docs-card,
+.docs-step,
+.docs-api-band {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+}
+
+.docs-hero-card {
+  display: grid;
+  gap: 18px;
+  margin: 8px 0 26px;
+  padding: clamp(22px, 4vw, 40px);
+  background:
+    radial-gradient(circle at 100% 0%, rgb(255 234 0 / 16%), transparent 34%),
+    radial-gradient(circle at 0% 100%, rgb(5 40 200 / 10%), transparent 30%),
+    hsl(var(--background));
+}
+
+.docs-hero-card h2,
+.docs-card h3,
+.docs-step h3,
+.docs-api-band h3 {
+  margin: 0;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.04em;
+}
+
+.docs-hero-card h2 {
+  max-width: 760px;
+  font-size: clamp(1.9rem, 5vw, 3.8rem);
+  line-height: 0.96;
+}
+
+.docs-copy {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.65;
+}
+
+.docs-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.docs-chip-row span {
+  padding: 6px 9px;
+  border: 1px solid hsl(var(--foreground));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.docs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.docs-card,
+.docs-step,
+.docs-api-band {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.docs-card strong {
+  color: hsl(var(--foreground));
+}
+
+.docs-steps {
+  display: grid;
+  gap: 12px;
+  margin: 22px 0;
+  counter-reset: docs-step;
+}
+
+.docs-step {
+  position: relative;
+  padding-left: 72px;
+}
+
+.docs-step::before {
+  counter-increment: docs-step;
+  content: counter(docs-step);
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid hsl(var(--foreground));
+  background: #f00000;
+  color: #fff;
+  font-weight: 900;
+}
+
+.docs-api-band {
+  margin: 22px 0;
+  background:
+    linear-gradient(90deg, hsl(var(--border) / 0.42) 1px, transparent 1px),
+    linear-gradient(hsl(var(--border) / 0.42) 1px, transparent 1px),
+    hsl(var(--muted) / 0.16);
+  background-size: 28px 28px;
 }
 
 [data-family-card-actions] {
@@ -630,7 +879,9 @@ html > body[data-scroll-locked] {
   }
 
   .hero-section,
-  .feature-section {
+  .feature-section,
+  .docs-card-grid,
+  .playground-controls {
     grid-template-columns: 1fr;
   }
 

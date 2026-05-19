@@ -4,14 +4,17 @@ import type { CSSProperties, JSX, PointerEvent, ReactNode } from "react";
 import { useCallback, useLayoutEffect, useRef } from "react";
 
 import type { TreeInteractionMode } from "./types";
+import type { TreeStylePreset, TreeTheme } from "./theme";
+import { createTreeThemeStyle, getTreeStyleName } from "./theme";
 
 const defaultTreeSurfaceStyle: CSSProperties = {
-  background: "Canvas",
-  border: "1px solid color-mix(in srgb, CanvasText 14%, transparent)",
-  borderRadius: 8,
+  background: "var(--tree-surface-bg, Canvas)",
+  border: "var(--tree-outline-width, 1px) solid var(--tree-surface-border, color-mix(in srgb, CanvasText 14%, transparent))",
+  borderRadius: "var(--tree-surface-radius, 8px)",
   boxSizing: "border-box",
-  color: "CanvasText",
+  color: "var(--tree-surface-fg, CanvasText)",
   contain: "layout paint",
+  fontFamily: "var(--tree-font-family, inherit)",
   height: "100%",
   maxHeight: "inherit",
   maxWidth: "100%",
@@ -34,6 +37,7 @@ export interface TreeSurfaceProps {
   interactionMode?: TreeInteractionMode;
   style?: CSSProperties;
   subject?: string;
+  theme?: TreeStylePreset | TreeTheme;
   treeType: "family" | "org";
 }
 
@@ -44,6 +48,7 @@ export function TreeSurface({
   interactionMode = "pan",
   style,
   subject,
+  theme,
   treeType,
 }: TreeSurfaceProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -109,6 +114,7 @@ export function TreeSurface({
       className={className}
       data-tree-interaction={interactionMode}
       data-tree-subject={subject}
+      data-tree-style={getTreeStyleName(theme)}
       data-tree-surface
       data-tree-type={treeType}
       onPointerCancel={handlePointerUp}
@@ -117,6 +123,7 @@ export function TreeSurface({
       onPointerUp={handlePointerUp}
       style={{
         ...defaultTreeSurfaceStyle,
+        ...createTreeThemeStyle(theme),
         cursor: interactionMode === "pan" ? "grab" : undefined,
         overflow: interactionMode === "scroll" ? "auto" : "hidden",
         ...style,
@@ -129,6 +136,7 @@ export function TreeSurface({
           minHeight: "100%",
           minWidth: "100%",
           position: "relative",
+          background: "var(--tree-canvas-bg, transparent)",
           width: bounds.width,
         }}
       >

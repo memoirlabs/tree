@@ -29,4 +29,36 @@ describe("buildOrgChartLayout", () => {
     expect(web?.depth).toBe(2);
     expect(ceo?.directReports).toEqual(["design", "eng"]);
   });
+
+  test("accepts custom org spacing and curved edge routing", () => {
+    const compact = buildOrgChartLayout({
+      nodes: [
+        { id: "ceo", person: { name: "Avery" } },
+        { id: "eng", person: { name: "Morgan" }, parentId: "ceo" },
+        { id: "design", person: { name: "Riley" }, parentId: "ceo" },
+      ],
+      lineShape: "curved",
+      spacing: {
+        row: 72,
+        column: 12,
+        padding: 12,
+      },
+    });
+    const roomy = buildOrgChartLayout({
+      nodes: [
+        { id: "ceo", person: { name: "Avery" } },
+        { id: "eng", person: { name: "Morgan" }, parentId: "ceo" },
+        { id: "design", person: { name: "Riley" }, parentId: "ceo" },
+      ],
+      spacing: {
+        row: 144,
+        column: 64,
+        padding: 48,
+      },
+    });
+
+    expect(compact.bounds.width).toBeLessThan(roomy.bounds.width);
+    expect(compact.bounds.height).toBeLessThan(roomy.bounds.height);
+    expect(compact.edges.every((edge) => edge.path.includes(" C "))).toBe(true);
+  });
 });
