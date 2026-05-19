@@ -8,9 +8,8 @@
   Ergonomic React family trees and org charts.
 </p>
 
-[![JSR](https://jsr.io/badges/@memoir/tree)](https://jsr.io/@memoir/tree)
-[![JSR Score](https://jsr.io/badges/@memoir/tree/score)](https://jsr.io/@memoir/tree)
-[![JSR Weekly Downloads](https://jsr.io/badges/@memoir/tree/weekly-downloads)](https://jsr.io/@memoir/tree)
+[![npm](https://img.shields.io/npm/v/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
+[![npm downloads](https://img.shields.io/npm/dw/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 
 `@memoir/tree` is a focused React library for rendering subject-centered family trees and org charts. Give it your app-owned records and one normal card component. It handles measured layout, SVG edges, and a shared clipped drag-panning surface.
 
@@ -33,7 +32,7 @@ Most tree UIs force your app into a specific data model or a fixed card design. 
 ## Install
 
 ```bash
-bunx jsr add @memoir/tree
+bun add @memoir/tree
 ```
 
 ## Usage

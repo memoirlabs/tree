@@ -39,7 +39,6 @@ The repository is organized around headless logic first and React rendering seco
 │   ├── next.config.mjs
 │   └── package.json
 ├── dist/
-├── mod.ts
 ├── package.json
 ├── tsconfig.json
 └── tsconfig.build.json
@@ -63,13 +62,13 @@ The repository is organized around headless logic first and React rendering seco
 ## Public Entrypoints
 
 - npm package entry: `src/index.ts` -> `dist/index.js`.
-- JSR/Deno entry: `mod.ts` -> `src/index.ts`.
 
 ## Package Boundary
 
 Only these files ship via npm:
 
 - `dist`
+- `public/logo-transparent.png`
 - `README.md`
 - `LICENSE`
 
