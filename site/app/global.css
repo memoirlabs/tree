@@ -64,7 +64,6 @@ html > body[data-scroll-locked] {
   width: min(100%, 1180px);
   margin: 0 auto;
   padding: 34px 24px 88px;
-  overflow: clip;
 }
 
 .hero-section {
@@ -298,6 +297,8 @@ html > body[data-scroll-locked] {
 }
 
 .tree-frame {
+  display: grid;
+  gap: 18px;
   padding: clamp(20px, 4vw, 48px);
   border: 1px solid hsl(var(--border));
   background:
@@ -305,7 +306,31 @@ html > body[data-scroll-locked] {
     hsl(var(--background));
 }
 
-.tree-frame [data-family-canvas] {
+.tree-example {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tree-example-label {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.landing-tree-surface {
+  border-radius: 0 !important;
+  background:
+    linear-gradient(90deg, hsl(var(--border) / 0.36) 1px, transparent 1px),
+    linear-gradient(hsl(var(--border) / 0.36) 1px, transparent 1px),
+    hsl(var(--background)) !important;
+  background-size: 32px 32px !important;
+}
+
+.tree-frame [data-tree-canvas] {
   margin-inline: auto;
 }
 

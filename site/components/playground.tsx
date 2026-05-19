@@ -79,15 +79,32 @@ function OrgPersonCard({
 export function Playground() {
   return (
     <div className="tree-frame">
-      <FamilyTree
-        subject="alex"
-        people={people}
-        relationships={familyRelationships}
-        card={PersonCard}
-        cardClassName="name-node"
-        edgeClassName="family-edge"
-      />
-      <OrgChart nodes={orgNodes} card={OrgPersonCard} cardClassName="name-node" edgeClassName="family-edge" />
+      <div className="tree-example">
+        <p className="tree-example-label">FamilyTree</p>
+        <FamilyTree
+          subject="alex"
+          people={people}
+          relationships={familyRelationships}
+          card={PersonCard}
+          cardClassName="name-node"
+          className="landing-tree-surface"
+          edgeClassName="family-edge"
+          interactionMode="scroll"
+          style={{ height: 820 }}
+        />
+      </div>
+      <div className="tree-example">
+        <p className="tree-example-label">OrgChart</p>
+        <OrgChart
+          nodes={orgNodes}
+          card={OrgPersonCard}
+          cardClassName="name-node"
+          className="landing-tree-surface"
+          edgeClassName="family-edge"
+          interactionMode="scroll"
+          style={{ height: 540 }}
+        />
+      </div>
     </div>
   );
 }
