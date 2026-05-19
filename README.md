@@ -22,9 +22,11 @@ Most tree UIs force your app into a specific data model or a fixed card design. 
 
 - Bring your own person shape.
 - Describe family facts with `rel.parents`, `rel.children`, `rel.partner`, and `rel.guardians`.
+- Or describe family trees and org charts with a small Mermaid-like text syntax.
 - Render org charts from a nested reporting tree or flat `{ id, person, parentId }` nodes.
 - Start with the built-in `DefaultFamilyCard`, then swap in any React card component.
 - Get computed labels like `self`, `parent`, `sibling`, `half-sibling`, `partner`, `grandparent`, and `grandchild`.
+- Compose lower-level primitives when the default wrapper is not enough.
 - Style with stable data attributes instead of a bundled theme.
 - Use pure indexing and layout helpers in tests, previews, or custom renderers.
 
@@ -86,6 +88,92 @@ For a quick first render, omit `card`. The built-in default card displays `name`
 `FamilyTree` owns its viewport defaults. It fills the parent width, inherits parent height when available, falls back to a usable minimum height, clips overflow, and supports drag-panning horizontally and vertically without requiring wrapper CSS. Use `style`, `className`, or `interactionMode="scroll"` only when a host app wants a different container contract.
 
 The same surface contract applies to `OrgChart`.
+
+## Declarative Tree Syntax
+
+For demos, docs, tests, or user-authored diagrams, parse compact visual syntax into the same props:
+
+```tsx
+import { FamilyTree, createFamilyTree } from "@memoir/tree";
+
+const family = createFamilyTree(`
+subject henry
+carol["Carol"] + james["James"] -> henry["Henry"]
+henry + emma["Emma"] -> ava["Ava"]
+`);
+
+export function Page() {
+  return <FamilyTree {...family} />;
+}
+```
+
+The syntax is intentionally small:
+
+```txt
+subject henry
+parentA["Parent A"] + parentB["Parent B"] -> child["Child"]
+partnerA + partnerB : spouse
+guardian["Guardian"] -> child : guardian
+```
+
+Use the same idea for org charts:
+
+```tsx
+import { OrgChart, createOrgTree } from "@memoir/tree";
+
+const org = createOrgTree(`
+root avery
+avery["Avery", role="CEO"] -> morgan["Morgan", role="Product"] + casey["Casey", role="Engineering"]
+casey -> river["River", role="Web"]
+`);
+
+export function Page() {
+  return <OrgChart {...org} />;
+}
+```
+
+By default, parsed people include `{ id, name, label, profile.display }` plus any inline attributes. If your app owns a different data shape, map nodes while parsing:
+
+```ts
+const family = createFamilyTree(source, {
+  person: (node) => ({
+    id: node.id,
+    displayName: node.name,
+  }),
+});
+```
+
+## Component Primitives
+
+Use `FamilyTree` and `OrgChart` for normal apps. Drop to primitives when you need to own the render layers while keeping Memoir Tree's layout, measuring, and panning behavior:
+
+```tsx
+import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "@memoir/tree";
+
+export function Page() {
+  return (
+    <TreeProvider type="family" subject="henry" people={people} relationships={relationships}>
+      <TreeCanvas>
+        <TreeEdges />
+        <TreeNodeLayer card={PersonCard} />
+      </TreeCanvas>
+    </TreeProvider>
+  );
+}
+```
+
+The same primitives work for org charts:
+
+```tsx
+<TreeProvider type="org" nodes={nodes} rootId="ceo">
+  <TreeCanvas interactionMode="scroll">
+    <TreeEdges />
+    <TreeNodeLayer card={OrgPersonCard} />
+  </TreeCanvas>
+</TreeProvider>
+```
+
+`useTreeLayout()` exposes the computed cards, edges, bounds, and tree type for fully custom renderers.
 
 ## Org Chart API
 
@@ -211,6 +299,7 @@ The helpers produce plain relationship rows. The library computes labels and pla
   theme={{
     surfaceBackground: "#fffdf4",
     cardRadius: 12,
+    edgeWidth: 3,
     profileRadius: 999,
     accent: "#f97316",
   }}
@@ -219,7 +308,7 @@ The helpers produce plain relationship rows. The library computes labels and pla
 />
 ```
 
-Use `theme="memoir"` for the default Memoir preset or `theme="system"` for neutral system colors. A theme object can pass app-owned colors, outline width, card/profile corner radius, shadows, and font family. `lineShape="orthogonal"` keeps 90-degree connector turns; `lineShape="curved"` uses curved connectors.
+Use `theme="memoir"` for the default Memoir preset or `theme="system"` for neutral system colors. A theme object can pass app-owned colors, outline width, edge width, card/profile corner radius, shadows, and font family. `lineShape="orthogonal"` keeps 90-degree connector turns; `lineShape="curved"` uses curved connectors. The same theme presets and helpers are exported as `memoirTreeTheme`, `systemTreeTheme`, `treeStylePresets`, `resolveTreeTheme`, and `createTreeThemeStyle`.
 
 The card receives normal HTML props and stable data attributes:
 
@@ -250,6 +339,13 @@ The public API is intentionally small:
 - `OrgChart`
 - `DefaultOrgChartCard`
 - `TreeSurface`
+- `TreeProvider`
+- `TreeCanvas`
+- `TreeEdges`
+- `TreeNodeLayer`
+- `useTreeLayout`
+- `createFamilyTree`
+- `createOrgTree`
 - `createOrgChart`
 - `rel`
 - `FamilyCardProps`

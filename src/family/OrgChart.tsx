@@ -1,11 +1,8 @@
 "use client";
 
 import type { CSSProperties, JSX } from "react";
-import { useCallback, useMemo, useRef } from "react";
 
-import { buildOrgChartLayout } from "./org-layout";
-import { TreeSurface } from "./TreeSurface";
-import { useCardMeasurements } from "./use-card-measurements";
+import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "./TreePrimitives";
 import type { OrgChartCardProps, OrgChartProps, PersonId } from "./types";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
@@ -132,121 +129,21 @@ export function OrgChart<Person>({
   collapsed,
   onPersonClick,
 }: OrgChartProps<Person>): JSX.Element {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
-
-  const unmeasuredLayout = useMemo(
-    () => buildOrgChartLayout({ nodes, rootId, lineShape, spacing }),
-    [lineShape, nodes, rootId, spacing],
-  );
-  const measureKey = unmeasuredLayout.cards.map((card) => card.personId).join("|");
-  const measurements = useCardMeasurements(containerRef, measureKey);
-
-  const layout = useMemo(
-    () =>
-      buildOrgChartLayout({
-        nodes,
-        rootId,
-        measurements,
-        lineShape,
-        spacing,
-      }),
-    [lineShape, measurements, nodes, rootId, spacing],
-  );
-
-  const subject = rootId ?? layout.cards.find((card) => card.depth === 0)?.personId;
-
-  const handlePersonClick = useCallback(
-    (person: Person, personId: PersonId) => {
-      onPersonClick?.(person, personId);
-    },
-    [onPersonClick],
-  );
-
   return (
-    <TreeSurface
-      bounds={layout.bounds}
-      className={className}
-      interactionMode={interactionMode}
-      style={style}
-      subject={subject}
-      theme={theme}
-      treeType="org"
+    <TreeProvider
+      type="org"
+      collapsed={collapsed}
+      lineShape={lineShape}
+      nodes={nodes}
+      onPersonClick={onPersonClick}
+      rootId={rootId}
+      selected={selected}
+      spacing={spacing}
     >
-      <div ref={containerRef} data-org-canvas data-org-chart data-org-root={subject}>
-        <svg
-          aria-hidden="true"
-          width={layout.bounds.width}
-          height={layout.bounds.height}
-          viewBox={`0 0 ${layout.bounds.width} ${layout.bounds.height}`}
-          fill="none"
-          style={{
-            inset: 0,
-            overflow: "visible",
-            pointerEvents: "none",
-            position: "absolute",
-          }}
-        >
-          {layout.edges.map((edge) => (
-            <path
-              key={edge.id}
-              className={edgeClassName}
-              d={edge.path}
-              data-org-edge
-              data-source-id={edge.sourceId}
-              data-target-id={edge.targetId}
-              data-tree-edge
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap={lineShape === "curved" ? "round" : "butt"}
-              strokeLinejoin={lineShape === "curved" ? "round" : "miter"}
-              strokeWidth={2}
-            />
-          ))}
-        </svg>
-
-        {layout.cards.map((layoutCard) => {
-          const isSelected = selected ? selected === layoutCard.personId : layoutCard.depth === 0;
-          const cardProps: OrgChartCardProps<Person> = {
-            person: layoutCard.person,
-            personId: layoutCard.personId,
-            managerId: layoutCard.managerId,
-            depth: layoutCard.depth,
-            generation: layoutCard.generation,
-            selected: isSelected,
-            focused: false,
-            collapsed: collapsedIds.has(layoutCard.personId),
-            directReports: layoutCard.directReports,
-            className: cardClassName,
-            "aria-selected": isSelected,
-            "data-depth": layoutCard.depth,
-            "data-generation": layoutCard.generation,
-            "data-org-card": "",
-            "data-person-id": layoutCard.personId,
-            "data-tree-card": "",
-            onClick: onPersonClick ? () => handlePersonClick(layoutCard.person, layoutCard.personId) : undefined,
-          };
-
-          return (
-            <div
-              key={layoutCard.personId}
-              data-org-card-positioner
-              data-person-id={layoutCard.personId}
-              data-tree-card-positioner
-              style={{
-                left: 0,
-                position: "absolute",
-                top: 0,
-                transform: `translate(${layoutCard.x}px, ${layoutCard.y}px)`,
-              }}
-            >
-              <div data-family-measure-id={layoutCard.personId}>
-                <Card {...cardProps} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </TreeSurface>
+      <TreeCanvas className={className} interactionMode={interactionMode} style={style} theme={theme}>
+        <TreeEdges edgeClassName={edgeClassName} />
+        <TreeNodeLayer<Person> card={Card} cardClassName={cardClassName} />
+      </TreeCanvas>
+    </TreeProvider>
   );
 }

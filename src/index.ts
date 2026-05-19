@@ -1,4 +1,26 @@
-export { DefaultFamilyCard, DefaultOrgChartCard, FamilyTree, OrgChart, TreeSurface, createOrgChart, rel } from "./family";
+export {
+  DefaultFamilyCard,
+  DefaultOrgChartCard,
+  FamilyTree,
+  OrgChart,
+  TreeCanvas,
+  TreeEdges,
+  TreeNodeLayer,
+  TreeProvider,
+  TreeSurface,
+  TreeDslError,
+  createFamilyTree,
+  createOrgChart,
+  createOrgTree,
+  createTreeThemeStyle,
+  getTreeStyleName,
+  memoirTreeTheme,
+  rel,
+  resolveTreeTheme,
+  systemTreeTheme,
+  treeStylePresets,
+  useTreeLayout,
+} from "./family";
 export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./family";
 
 export type {
@@ -25,6 +47,29 @@ export type {
   TreeInteractionMode,
   TreeStylePreset,
   TreeTheme,
+} from "./family";
+
+export type {
+  FamilyTreePrimitiveContext,
+  FamilyTreeProviderProps,
+  OrgTreePrimitiveContext,
+  OrgTreeProviderProps,
+  TreeCanvasProps,
+  TreeEdgesProps,
+  TreeNodeLayerProps,
+  TreePrimitiveContext,
+  TreePrimitiveType,
+  TreeProviderProps,
+} from "./family";
+
+export type {
+  CreateFamilyTreeOptions,
+  CreateOrgTreeOptions,
+  FamilyTreeDefinition,
+  OrgTreeDefinition,
+  TreeDslAttributeValue,
+  TreeDslNode,
+  TreeDslNodeInput,
 } from "./family";
 
 export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./family";

@@ -1,8 +1,11 @@
 export { DefaultFamilyCard, FamilyTree } from "./FamilyTree";
 export { DefaultOrgChartCard, OrgChart } from "./OrgChart";
+export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./TreePrimitives";
 export { TreeSurface } from "./TreeSurface";
 export { createOrgChart } from "./org";
 export { rel } from "./rel";
+export { createTreeThemeStyle, getTreeStyleName, memoirTreeTheme, resolveTreeTheme, systemTreeTheme, treeStylePresets } from "./theme";
+export { TreeDslError, createFamilyTree, createOrgTree } from "./tree-dsl";
 export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./rel";
 
 export type {
@@ -32,11 +35,34 @@ export type {
 } from "./types";
 
 export type {
+  FamilyTreePrimitiveContext,
+  FamilyTreeProviderProps,
+  OrgTreePrimitiveContext,
+  OrgTreeProviderProps,
+  TreeCanvasProps,
+  TreeEdgesProps,
+  TreeNodeLayerProps,
+  TreePrimitiveContext,
+  TreePrimitiveType,
+  TreeProviderProps,
+} from "./TreePrimitives";
+
+export type {
   OrgChartBranch,
   OrgChartDefinition,
   OrgChartGeneration,
   OrgChartReportLine,
 } from "./org";
+
+export type {
+  CreateFamilyTreeOptions,
+  CreateOrgTreeOptions,
+  FamilyTreeDefinition,
+  OrgTreeDefinition,
+  TreeDslAttributeValue,
+  TreeDslNode,
+  TreeDslNodeInput,
+} from "./tree-dsl";
 
 export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./indexing";
 export { collectFamilyNeighborhood, createFamilyIndex } from "./indexing";

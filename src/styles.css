@@ -11,6 +11,7 @@
   --tree-card-selected-border: #030201;
   --tree-card-shadow: 4px 4px 0 #030201;
   --tree-edge: #030201;
+  --tree-edge-width: 1;
   --tree-accent: #ec5a44;
   --tree-muted-fg: #3b342e;
   --tree-profile-bg: #f4efdc;
@@ -39,6 +40,7 @@
   --tree-card-selected-border: color-mix(in srgb, CanvasText 54%, transparent);
   --tree-card-shadow: none;
   --tree-edge: color-mix(in srgb, CanvasText 34%, transparent);
+  --tree-edge-width: 2;
   --tree-muted-fg: color-mix(in srgb, CanvasText 68%, transparent);
   --tree-profile-bg: color-mix(in srgb, CanvasText 10%, transparent);
   --tree-surface-radius: 8px;

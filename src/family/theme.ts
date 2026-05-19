@@ -16,6 +16,7 @@ export interface TreeTheme {
   cardSelectedBorder?: string;
   cardShadow?: string;
   edge?: string;
+  edgeWidth?: CSSProperties["strokeWidth"];
   accent?: string;
   mutedForeground?: string;
   profileBackground?: string;
@@ -28,7 +29,7 @@ export interface TreeTheme {
 
 type TreeThemeVars = CSSProperties & Record<`--tree-${string}`, string | number | undefined>;
 
-const memoirTheme: TreeTheme = {
+export const memoirTreeTheme: TreeTheme = {
   surfaceBackground: "#fafafa",
   surfaceForeground: "#030201",
   surfaceBorder: "#030201",
@@ -41,6 +42,7 @@ const memoirTheme: TreeTheme = {
   cardSelectedBorder: "#030201",
   cardShadow: "4px 4px 0 #030201",
   edge: "#030201",
+  edgeWidth: 1,
   accent: "#EC5A44",
   mutedForeground: "#3b342e",
   profileBackground: "#F4EFDC",
@@ -50,7 +52,7 @@ const memoirTheme: TreeTheme = {
   outlineWidth: "1px",
 };
 
-const systemTheme: TreeTheme = {
+export const systemTreeTheme: TreeTheme = {
   surfaceBackground: "Canvas",
   surfaceForeground: "CanvasText",
   surfaceBorder: "color-mix(in srgb, CanvasText 14%, transparent)",
@@ -60,6 +62,7 @@ const systemTheme: TreeTheme = {
   cardBorder: "color-mix(in srgb, CanvasText 16%, transparent)",
   cardSelectedBorder: "color-mix(in srgb, CanvasText 54%, transparent)",
   edge: "color-mix(in srgb, CanvasText 34%, transparent)",
+  edgeWidth: 2,
   mutedForeground: "color-mix(in srgb, CanvasText 68%, transparent)",
   profileBackground: "color-mix(in srgb, CanvasText 10%, transparent)",
   surfaceRadius: 8,
@@ -68,9 +71,14 @@ const systemTheme: TreeTheme = {
   outlineWidth: "1px",
 };
 
+export const treeStylePresets = {
+  memoir: memoirTreeTheme,
+  system: systemTreeTheme,
+} satisfies Record<TreeStylePreset, TreeTheme>;
+
 export function resolveTreeTheme(theme: TreeStylePreset | TreeTheme | undefined): TreeTheme {
-  if (theme === "system") return systemTheme;
-  if (theme === "memoir" || theme === undefined) return memoirTheme;
+  if (theme === "system") return systemTreeTheme;
+  if (theme === "memoir" || theme === undefined) return memoirTreeTheme;
   return theme;
 }
 
@@ -95,6 +103,7 @@ export function createTreeThemeStyle(theme: TreeStylePreset | TreeTheme | undefi
     "--tree-card-selected-border": resolvedTheme.cardSelectedBorder,
     "--tree-card-shadow": resolvedTheme.cardShadow,
     "--tree-edge": resolvedTheme.edge,
+    "--tree-edge-width": resolvedTheme.edgeWidth,
     "--tree-accent": resolvedTheme.accent,
     "--tree-muted-fg": resolvedTheme.mutedForeground,
     "--tree-profile-bg": resolvedTheme.profileBackground,

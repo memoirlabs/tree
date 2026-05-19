@@ -44,6 +44,8 @@ const createEdgePath = (
   lineShape: TreeLineShape,
 ) => (lineShape === "curved" ? createCurvedPath(start, end) : createOrthogonalPath(start, end));
 
+const partnershipKey = (a: PersonId, b: PersonId) => [a, b].toSorted().join("|");
+
 export interface RouteFamilyEdgesOptions {
   lineShape?: TreeLineShape;
 }
@@ -57,28 +59,90 @@ export function routeFamilyEdges<Person>(
   const edges: FamilyTreeLayoutEdge[] = [];
   const lineShape = options.lineShape ?? "orthogonal";
 
+  // Track which co-parent pairs already have a horizontal bar drawn so we
+  // never stack a partnership edge on top of an implicit co-parent bar.
+  const drawnParentBars = new Set<string>();
+
+  const drawParentBar = (
+    pair: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>],
+    id: string,
+    kind: string,
+    status: FamilyRelationship["status"],
+  ) => {
+    const [first, second] = pair;
+    const y = (center(first).y + center(second).y) / 2;
+    edges.push({
+      id,
+      path: `M ${round(first.x + first.width)} ${round(y)} L ${round(second.x)} ${round(y)}`,
+      kind,
+      status,
+      sourceId: first.personId,
+      targetId: second.personId,
+    });
+    drawnParentBars.add(partnershipKey(first.personId, second.personId));
+    return { x: (first.x + first.width + second.x) / 2, y };
+  };
+
+  const findOrderedPair = (
+    aId: PersonId,
+    bId: PersonId,
+  ): [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>] | null => {
+    const a = cardsById.get(aId);
+    const b = cardsById.get(bId);
+    if (!a || !b) return null;
+    return a.x <= b.x ? [a, b] : [b, a];
+  };
+
   relationships.forEach((relationship, relationshipIndex) => {
     if (relationship.type === "partnership") {
-      const visiblePartners = relationship.partners
-        .map((partnerId) => cardsById.get(partnerId))
-        .filter((card): card is FamilyTreeLayoutCard<Person> => Boolean(card));
-      if (visiblePartners.length < 2) return;
-      const [first, second] = visiblePartners.toSorted((a, b) => a.x - b.x);
-      if (!first || !second) return;
-      const firstCenter = center(first);
-      const secondCenter = center(second);
-      edges.push({
-        id: relationship.id ?? `partnership-${relationshipIndex}`,
-        path: `M ${round(first.x + first.width)} ${round(firstCenter.y)} L ${round(second.x)} ${round(secondCenter.y)}`,
-        kind: relationship.relation ?? "partner",
-        status: relationship.status,
-        sourceId: first.personId,
-        targetId: second.personId,
-      });
+      const [partnerAId, partnerBId] = relationship.partners;
+      if (!partnerAId || !partnerBId) return;
+      if (drawnParentBars.has(partnershipKey(partnerAId, partnerBId))) return;
+      const pair = findOrderedPair(partnerAId, partnerBId);
+      if (!pair) return;
+      drawParentBar(
+        pair,
+        relationship.id ?? `partnership-${relationshipIndex}`,
+        relationship.relation ?? "partner",
+        relationship.status,
+      );
       return;
     }
 
     if (relationship.type === "parentage") {
+      // Two co-parents → always draw a horizontal parent bar between them and
+      // drop one shared line to each child from the bar's midpoint.
+      if (relationship.parents.length === 2) {
+        const [parentAId, parentBId] = relationship.parents;
+        if (parentAId && parentBId) {
+          const pair = findOrderedPair(parentAId, parentBId);
+          if (pair) {
+            const key = partnershipKey(parentAId, parentBId);
+            const join = drawnParentBars.has(key)
+              ? { x: (pair[0].x + pair[0].width + pair[1].x) / 2, y: (center(pair[0]).y + center(pair[1]).y) / 2 }
+              : drawParentBar(
+                  pair,
+                  `${relationship.id ?? `parentage-${relationshipIndex}`}-bar`,
+                  relationship.relation ?? "biological",
+                  relationship.status,
+                );
+            for (const childId of relationship.children) {
+              const childCard = cardsById.get(childId);
+              if (!childCard) continue;
+              edges.push({
+                id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${parentAId}-${parentBId}-${childId}`,
+                path: createEdgePath(join, topCenter(childCard), lineShape),
+                kind: relationship.relation ?? "biological",
+                status: relationship.status,
+                sourceId: parentAId,
+                targetId: childId,
+              });
+            }
+            return;
+          }
+        }
+      }
+
       for (const parentId of relationship.parents) {
         const parentCard = cardsById.get(parentId);
         if (!parentCard) continue;

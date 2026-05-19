@@ -1,11 +1,8 @@
 "use client";
 
 import type { CSSProperties, JSX } from "react";
-import { useCallback, useMemo, useRef } from "react";
 
-import { buildFamilyTreeLayout } from "./layout";
-import { TreeSurface } from "./TreeSurface";
-import { useCardMeasurements } from "./use-card-measurements";
+import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "./TreePrimitives";
 import type { FamilyCardProps, FamilyTreeProps, PersonId } from "./types";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
@@ -126,136 +123,22 @@ export function FamilyTree<Person>({
   collapsed,
   onPersonClick,
 }: FamilyTreeProps<Person>): JSX.Element {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
-
-  const unmeasuredLayout = useMemo(
-    () =>
-      buildFamilyTreeLayout({
-        subject,
-        people,
-        relationships,
-        lineShape,
-        spacing,
-      }),
-    [lineShape, people, relationships, spacing, subject],
-  );
-  const measureKey = unmeasuredLayout.cards.map((card) => card.personId).join("|");
-  const measurements = useCardMeasurements(containerRef, measureKey);
-
-  const layout = useMemo(
-    () =>
-      buildFamilyTreeLayout({
-        subject,
-        people,
-        relationships,
-        measurements,
-        lineShape,
-        spacing,
-      }),
-    [lineShape, measurements, people, relationships, spacing, subject],
-  );
-
-  const handlePersonClick = useCallback(
-    (person: Person, personId: PersonId) => {
-      onPersonClick?.(person, personId);
-    },
-    [onPersonClick],
-  );
-
   return (
-    <TreeSurface
-      bounds={layout.bounds}
-      className={className}
-      interactionMode={interactionMode}
-      style={style}
+    <TreeProvider
+      type="family"
+      collapsed={collapsed}
+      lineShape={lineShape}
+      onPersonClick={onPersonClick}
+      people={people}
+      relationships={relationships}
+      selected={selected}
+      spacing={spacing}
       subject={subject}
-      theme={theme}
-      treeType="family"
     >
-      <div
-        ref={containerRef}
-        data-family-canvas
-        data-family-tree
-        data-family-interaction={interactionMode}
-        data-family-subject={subject}
-      >
-        <svg
-          aria-hidden="true"
-          width={layout.bounds.width}
-          height={layout.bounds.height}
-          viewBox={`0 0 ${layout.bounds.width} ${layout.bounds.height}`}
-          fill="none"
-          style={{
-            inset: 0,
-            overflow: "visible",
-            pointerEvents: "none",
-            position: "absolute",
-          }}
-        >
-          {layout.edges.map((edge) => (
-            <path
-              key={edge.id}
-              className={edgeClassName}
-              d={edge.path}
-              data-tree-edge
-              data-edge-kind={edge.kind}
-              data-edge-status={edge.status}
-              data-family-edge
-              data-source-id={edge.sourceId}
-              data-target-id={edge.targetId}
-              fill="none"
-              stroke="currentColor"
-              strokeDasharray={
-                edge.kind === "adoptive" || edge.kind === "guardian" || edge.status === "former" ? "4 4" : undefined
-              }
-              strokeLinecap={lineShape === "curved" ? "round" : "butt"}
-              strokeLinejoin={lineShape === "curved" ? "round" : "miter"}
-              strokeWidth={2}
-            />
-          ))}
-        </svg>
-
-        {layout.cards.map((layoutCard) => {
-          const isSelected = selected ? selected === layoutCard.personId : layoutCard.personId === subject;
-          const cardProps: FamilyCardProps<Person> = {
-            person: layoutCard.person,
-            personId: layoutCard.personId,
-            relation: layoutCard.relation,
-            selected: isSelected,
-            focused: false,
-            collapsed: collapsedIds.has(layoutCard.personId),
-            className: cardClassName,
-            "aria-selected": isSelected,
-            "data-family-card": "",
-            "data-tree-card": "",
-            "data-person-id": layoutCard.personId,
-            "data-relation": layoutCard.relation.label,
-            "data-generation": layoutCard.relation.generation,
-            "data-side": layoutCard.relation.side,
-            onClick: onPersonClick ? () => handlePersonClick(layoutCard.person, layoutCard.personId) : undefined,
-          };
-
-          return (
-            <div
-              key={layoutCard.personId}
-              data-family-card-positioner
-              data-tree-card-positioner
-              data-person-id={layoutCard.personId}
-              style={{
-                left: 0,
-                position: "absolute",
-                top: 0,
-                transform: `translate(${layoutCard.x}px, ${layoutCard.y}px)`,
-              }}
-            >
-              <div data-family-measure data-family-measure-id={layoutCard.personId}>
-                <Card {...cardProps} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </TreeSurface>
+      <TreeCanvas className={className} interactionMode={interactionMode} style={style} theme={theme}>
+        <TreeEdges edgeClassName={edgeClassName} />
+        <TreeNodeLayer<Person> card={Card} cardClassName={cardClassName} />
+      </TreeCanvas>
+    </TreeProvider>
   );
 }

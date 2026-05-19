@@ -1,16 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import {
   FamilyTree,
   OrgChart,
-  buildFamilyTreeLayout,
-  buildOrgChartLayout,
+  TreeCanvas,
+  TreeEdges,
+  TreeNodeLayer,
+  TreeProvider,
+  createFamilyTree,
+  createOrgTree,
   rel,
 } from "../../../src/index";
-import type { FamilyCardProps, OrgChartCardProps, OrgChartNode, PersonId } from "../../../src/index";
+import type { FamilyCardProps, FamilyRelationship, OrgChartCardProps, OrgChartNode, PersonId } from "../../../src/index";
 
 type TestPerson = {
   id: string;
@@ -19,11 +23,6 @@ type TestPerson = {
   detail?: string;
   tone?: "red" | "yellow" | "blue" | "neutral";
   size?: "compact" | "wide" | "tall";
-};
-
-type ScenarioStat = {
-  label: string;
-  value: string | number;
 };
 
 const classes = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(" ");
@@ -46,6 +45,183 @@ const baselineRelationships = [
   rel.partner("alex", "jordan", { relation: "spouse" }),
   rel.children(["alex", "jordan"], ["riley", "quinn"]),
 ];
+
+const outOfBoxPeople = {
+  henry: { id: "henry", profile: { display: "Henry" } },
+  carol: { id: "carol", profile: { display: "Carol" } },
+  james: { id: "james", profile: { display: "James" } },
+  emma: { id: "emma", profile: { display: "Emma" } },
+  ava: { id: "ava", profile: { display: "Ava" } },
+};
+
+const outOfBoxRelationships = [
+  rel.parents("henry", ["carol", "james"]),
+  rel.partner("henry", "emma", { relation: "spouse" }),
+  rel.children(["henry", "emma"], ["ava"]),
+];
+
+const familyDslSource = `subject henry
+carol["Carol"] + james["James"] -> henry["Henry"]
+henry + emma["Emma"] -> ava["Ava"]`;
+
+const familyFromDsl = createFamilyTree(familyDslSource);
+
+const familyDslCode = `const family = createFamilyTree(\`
+${familyDslSource}
+\`);
+
+<FamilyTree {...family} />`;
+
+const outOfBoxCode = `const people = {
+  henry: { id: "henry", profile: { display: "Henry" } },
+  carol: { id: "carol", profile: { display: "Carol" } },
+  james: { id: "james", profile: { display: "James" } },
+  emma: { id: "emma", profile: { display: "Emma" } },
+  ava: { id: "ava", profile: { display: "Ava" } },
+};
+
+const relationships = [
+  rel.parents("henry", ["carol", "james"]),
+  rel.partner("henry", "emma", { relation: "spouse" }),
+  rel.children(["henry", "emma"], ["ava"]),
+];
+
+<FamilyTree people={people} relationships={relationships} subject="henry" />`;
+
+const childrenHelperPeople: Record<PersonId, TestPerson> = {
+  parentA: { id: "parentA", name: "Alex", note: "parent", tone: "red" },
+  parentB: { id: "parentB", name: "Jordan", note: "partner", tone: "yellow" },
+  childA: { id: "childA", name: "Riley", note: "child", tone: "blue" },
+  childB: { id: "childB", name: "Quinn", note: "child", tone: "blue" },
+};
+
+const childrenHelperRelationships = [
+  rel.partner("parentA", "parentB", { relation: "spouse" }),
+  rel.children(["parentA", "parentB"], ["childA", "childB"]),
+];
+
+const childrenHelperCode = `const relationships = [
+  rel.partner("parentA", "parentB", { relation: "spouse" }),
+  rel.children(["parentA", "parentB"], ["childA", "childB"]),
+];
+
+<FamilyTree
+  card={TestFamilyCard}
+  people={childrenHelperPeople}
+  relationships={relationships}
+  subject="parentA"
+/>`;
+
+const rawRelationshipPeople: Record<PersonId, TestPerson> = {
+  grandparent: { id: "grandparent", name: "Ruth", note: "raw parentage row", tone: "yellow" },
+  parent: { id: "parent", name: "Morgan", note: "raw parent", tone: "blue" },
+  subject: { id: "subject", name: "Alex", note: "subject", tone: "red" },
+  partner: { id: "partner", name: "Jordan", note: "raw partner row", tone: "yellow" },
+  child: { id: "child", name: "Riley", note: "raw child row", tone: "blue" },
+};
+
+const rawRelationshipRows: FamilyRelationship[] = [
+  {
+    type: "parentage",
+    parents: ["grandparent"],
+    children: ["parent"],
+    relation: "biological",
+  },
+  {
+    type: "parentage",
+    parents: ["parent"],
+    children: ["subject"],
+    relation: "biological",
+  },
+  {
+    type: "partnership",
+    partners: ["subject", "partner"],
+    relation: "spouse",
+    status: "current",
+  },
+  {
+    type: "parentage",
+    parents: ["subject", "partner"],
+    children: ["child"],
+    relation: "biological",
+  },
+];
+
+const rawRelationshipCode = `const relationships: FamilyRelationship[] = [
+  {
+    type: "parentage",
+    parents: ["grandparent"],
+    children: ["parent"],
+    relation: "biological",
+  },
+  {
+    type: "partnership",
+    partners: ["subject", "partner"],
+    relation: "spouse",
+    status: "current",
+  },
+  {
+    type: "parentage",
+    parents: ["subject", "partner"],
+    children: ["child"],
+    relation: "biological",
+  },
+];
+
+<FamilyTree
+  card={TestFamilyCard}
+  people={rawRelationshipPeople}
+  relationships={relationships}
+  subject="subject"
+/>`;
+
+const guardianshipPeople: Record<PersonId, TestPerson> = {
+  parent: { id: "parent", name: "Alex", note: "parent", tone: "red" },
+  guardian: { id: "guardian", name: "Robin", note: "guardian", tone: "blue" },
+  child: { id: "child", name: "Quinn", note: "adoptive child", tone: "yellow" },
+};
+
+const guardianshipRelationships = [
+  rel.children("parent", "child", { relation: "adoptive" }),
+  rel.guardians("child", ["guardian"]),
+];
+
+const guardianshipCode = `const relationships = [
+  rel.children("parent", "child", { relation: "adoptive" }),
+  rel.guardians("child", ["guardian"]),
+];
+
+<FamilyTree
+  card={TestFamilyCard}
+  people={guardianshipPeople}
+  relationships={relationships}
+  subject="child"
+/>`;
+
+const styledMemoirPeople: Record<PersonId, TestPerson> = {
+  iris: { id: "iris", name: "Iris", note: "grandparent", tone: "yellow" },
+  morgan: { id: "morgan", name: "Morgan", note: "parent", tone: "blue" },
+  alex: { id: "alex", name: "Alex", note: "subject", tone: "red", size: "wide" },
+  jordan: { id: "jordan", name: "Jordan", note: "partner", tone: "yellow" },
+  river: { id: "river", name: "River", note: "child", tone: "blue" },
+};
+
+const styledMemoirRelationships = [
+  rel.parents("morgan", ["iris"]),
+  rel.parents("alex", ["morgan"]),
+  rel.partner("alex", "jordan"),
+  rel.children(["alex", "jordan"], ["river"]),
+];
+
+const customThemeCode = `<FamilyTree
+  card={TestFamilyCard}
+  lineShape="curved"
+  people={styledMemoirPeople}
+  relationships={styledMemoirRelationships}
+  spacing={{ column: 56, padding: 40, row: 140 }}
+  subject="alex"
+  theme={{ accent: "#EC5A44", cardRadius: 0, edgeWidth: 3, profileRadius: 0 }}
+/>`;
 
 const complexPeople: Record<PersonId, TestPerson> = {
   iris: { id: "iris", name: "Iris", note: "maternal grandparent", tone: "yellow", size: "wide" },
@@ -79,6 +255,38 @@ const complexRelationships = [
   rel.children(["riley"], ["river"]),
 ];
 
+const baselineCode = `<FamilyTree
+  card={TestFamilyCard}
+  onPersonClick={(_, personId) => setSelected(personId)}
+  people={baselinePeople}
+  relationships={baselineRelationships}
+  selected={selected}
+  subject="alex"
+/>`;
+
+const primitiveFamilyCode = `<TreeProvider
+  type="family"
+  people={baselinePeople}
+  relationships={baselineRelationships}
+  selected={selected}
+  subject="alex"
+>
+  <TreeCanvas>
+    <TreeEdges edgeClassName="test-ui-edge" />
+    <TreeNodeLayer card={TestFamilyCard} />
+  </TreeCanvas>
+</TreeProvider>`;
+
+const complexCode = `<FamilyTree
+  card={TestFamilyCard}
+  interactionMode="scroll"
+  onPersonClick={(_, personId) => setSelected(personId)}
+  people={complexPeople}
+  relationships={complexRelationships}
+  selected={selected}
+  subject="alex"
+/>`;
+
 const wideOrgNodes: Array<OrgChartNode<TestPerson>> = [
   { id: "ceo", person: { id: "ceo", name: "Avery", note: "CEO", tone: "red", size: "wide" } },
   { id: "product", person: { id: "product", name: "Morgan", note: "Product", tone: "blue" }, parentId: "ceo" },
@@ -87,6 +295,12 @@ const wideOrgNodes: Array<OrgChartNode<TestPerson>> = [
   { id: "sales", person: { id: "sales", name: "Sam", note: "Sales", tone: "yellow" }, parentId: "ceo" },
   { id: "ops", person: { id: "ops", name: "Taylor", note: "Operations" }, parentId: "ceo" },
 ];
+
+const wideOrgCode = `<OrgChart
+  card={TestOrgCard}
+  nodes={wideOrgNodes}
+  rootId="ceo"
+/>`;
 
 const deepOrgNodes: Array<OrgChartNode<TestPerson>> = [
   { id: "founder", person: { id: "founder", name: "Alex", note: "Founder", tone: "red", size: "wide" } },
@@ -99,6 +313,26 @@ const deepOrgNodes: Array<OrgChartNode<TestPerson>> = [
   { id: "lifecycle", person: { id: "lifecycle", name: "Robin", note: "Lifecycle", size: "wide" }, parentId: "vp-growth" },
   { id: "launches", person: { id: "launches", name: "Drew", note: "Launches", tone: "yellow" }, parentId: "lifecycle" },
 ];
+
+const orgDslSource = `root founder
+founder["Alex", role="Founder"] -> vpEng["Jordan", role="VP Engineering"] + vpGrowth["Quinn", role="VP Growth"]
+vpEng -> platform["Noel", role="Platform"] + web["River", role="Web"]
+platform -> data["Blair", role="Data"]`;
+
+const orgFromDsl = createOrgTree(orgDslSource);
+
+const orgDslCode = `const org = createOrgTree(\`
+${orgDslSource}
+\`);
+
+<OrgChart {...org} />`;
+
+const deepOrgCode = `<OrgChart
+  card={TestOrgCard}
+  interactionMode="scroll"
+  nodes={deepOrgNodes}
+  rootId="founder"
+/>`;
 
 function TestFamilyCard({
   className,
@@ -163,78 +397,90 @@ function TestOrgCard({
   );
 }
 
-function StatList({ stats }: { stats: ScenarioStat[] }) {
-  return (
-    <dl className="test-ui-stats">
-      {stats.map((stat) => (
-        <div key={stat.label}>
-          <dt>{stat.label}</dt>
-          <dd>{stat.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function Scenario({
+function Example({
   children,
-  description,
-  stats,
+  code,
   title,
 }: {
   children: ReactNode;
-  description: string;
-  stats: ScenarioStat[];
+  code: string;
   title: string;
 }) {
   return (
-    <section className="test-ui-scenario">
-      <div className="test-ui-scenario-header">
-        <div>
-          <p className="test-ui-eyebrow">Manual check</p>
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </div>
-        <StatList stats={stats} />
+    <section className="test-ui-example">
+      <h2>{title}</h2>
+      <div className="test-ui-example-grid">
+        <pre>
+          <code>{code}</code>
+        </pre>
+        <div className="test-ui-render">{children}</div>
       </div>
-      {children}
     </section>
   );
 }
 
 export default function TestUiPage() {
   const [selected, setSelected] = useState<PersonId>("alex");
-  const baselineLayout = useMemo(
-    () => buildFamilyTreeLayout({ people: baselinePeople, relationships: baselineRelationships, subject: "alex" }),
-    [],
-  );
-  const complexLayout = useMemo(
-    () => buildFamilyTreeLayout({ people: complexPeople, relationships: complexRelationships, subject: "alex" }),
-    [],
-  );
-  const wideOrgLayout = useMemo(() => buildOrgChartLayout({ nodes: wideOrgNodes, rootId: "ceo" }), []);
-  const deepOrgLayout = useMemo(() => buildOrgChartLayout({ nodes: deepOrgNodes, rootId: "founder" }), []);
 
   return (
     <main className="test-ui-page">
-      <header className="test-ui-hero">
-        <p className="test-ui-eyebrow">Internal release route</p>
+      <header>
         <h1>Tree layout test UI</h1>
-        <p>
-          Direct-link page for checking measured card layout, routed edges, panning, scroll overflow, and relationship
-          labeling before release.
-        </p>
+        <p>Package test page: code example on the left, rendered component on the right.</p>
       </header>
 
-      <Scenario
-        title="Baseline family tree"
-        description="Normal subject-centered neighborhood with grandparents, parents, sibling, spouse, and children."
-        stats={[
-          { label: "expected cards", value: baselineLayout.cards.length },
-          { label: "expected edges", value: baselineLayout.edges.length },
-          { label: "interaction", value: "pan" },
-        ]}
-      >
+      <Example title="DSL FamilyTree" code={familyDslCode}>
+        <FamilyTree {...familyFromDsl} />
+      </Example>
+
+      <Example title="Out-of-box FamilyTree" code={outOfBoxCode}>
+        <FamilyTree people={outOfBoxPeople} relationships={outOfBoxRelationships} subject="henry" />
+      </Example>
+
+      <Example title="rel.children(parents, children)" code={childrenHelperCode}>
+        <FamilyTree
+          card={TestFamilyCard}
+          edgeClassName="test-ui-edge"
+          people={childrenHelperPeople}
+          relationships={childrenHelperRelationships}
+          subject="parentA"
+        />
+      </Example>
+
+      <Example title="Raw FamilyRelationship rows" code={rawRelationshipCode}>
+        <FamilyTree
+          card={TestFamilyCard}
+          edgeClassName="test-ui-edge"
+          people={rawRelationshipPeople}
+          relationships={rawRelationshipRows}
+          subject="subject"
+        />
+      </Example>
+
+      <Example title="rel.guardians + adoptive children" code={guardianshipCode}>
+        <FamilyTree
+          card={TestFamilyCard}
+          edgeClassName="test-ui-edge"
+          people={guardianshipPeople}
+          relationships={guardianshipRelationships}
+          subject="child"
+        />
+      </Example>
+
+      <Example title="Theme, spacing, and curved lines" code={customThemeCode}>
+        <FamilyTree
+          card={TestFamilyCard}
+          edgeClassName="test-ui-edge"
+          lineShape="curved"
+          people={styledMemoirPeople}
+          relationships={styledMemoirRelationships}
+          spacing={{ column: 56, padding: 40, row: 140 }}
+          subject="alex"
+          theme={{ accent: "#EC5A44", cardRadius: 0, edgeWidth: 3, profileRadius: 0 }}
+        />
+      </Example>
+
+      <Example title="FamilyTree pan + click selection" code={baselineCode}>
         <FamilyTree
           card={TestFamilyCard}
           edgeClassName="test-ui-edge"
@@ -244,17 +490,24 @@ export default function TestUiPage() {
           selected={selected}
           subject="alex"
         />
-      </Scenario>
+      </Example>
 
-      <Scenario
-        title="Complex family graph"
-        description="Stress case for variable card sizes, half-siblings, former partner edges, adoptive edges, guardian edges, and grandchildren."
-        stats={[
-          { label: "expected cards", value: complexLayout.cards.length },
-          { label: "expected edges", value: complexLayout.edges.length },
-          { label: "interaction", value: "scroll" },
-        ]}
-      >
+      <Example title="Primitive FamilyTree composition" code={primitiveFamilyCode}>
+        <TreeProvider
+          type="family"
+          people={baselinePeople}
+          relationships={baselineRelationships}
+          selected={selected}
+          subject="alex"
+        >
+          <TreeCanvas>
+            <TreeEdges edgeClassName="test-ui-edge" />
+            <TreeNodeLayer<TestPerson> card={TestFamilyCard} />
+          </TreeCanvas>
+        </TreeProvider>
+      </Example>
+
+      <Example title="FamilyTree scroll mode + complex graph" code={complexCode}>
         <FamilyTree
           card={TestFamilyCard}
           edgeClassName="test-ui-edge"
@@ -265,29 +518,17 @@ export default function TestUiPage() {
           selected={selected}
           subject="alex"
         />
-      </Scenario>
+      </Example>
 
-      <Scenario
-        title="Wide org chart"
-        description="Single-root chart with many direct reports to check horizontal spacing and centered parent placement."
-        stats={[
-          { label: "expected cards", value: wideOrgLayout.cards.length },
-          { label: "expected edges", value: wideOrgLayout.edges.length },
-          { label: "interaction", value: "pan" },
-        ]}
-      >
+      <Example title="OrgChart wide team" code={wideOrgCode}>
         <OrgChart card={TestOrgCard} edgeClassName="test-ui-edge" nodes={wideOrgNodes} rootId="ceo" />
-      </Scenario>
+      </Example>
 
-      <Scenario
-        title="Deep org chart"
-        description="Nested chart that checks multi-level edge routing, uneven branches, and card measurement across depths."
-        stats={[
-          { label: "expected cards", value: deepOrgLayout.cards.length },
-          { label: "expected edges", value: deepOrgLayout.edges.length },
-          { label: "interaction", value: "scroll" },
-        ]}
-      >
+      <Example title="DSL OrgChart" code={orgDslCode}>
+        <OrgChart {...orgFromDsl} />
+      </Example>
+
+      <Example title="OrgChart scroll mode + deep tree" code={deepOrgCode}>
         <OrgChart
           card={TestOrgCard}
           edgeClassName="test-ui-edge"
@@ -295,7 +536,7 @@ export default function TestUiPage() {
           nodes={deepOrgNodes}
           rootId="founder"
         />
-      </Scenario>
+      </Example>
     </main>
   );
 }
