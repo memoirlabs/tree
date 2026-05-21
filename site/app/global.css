@@ -22,8 +22,8 @@
   --color-fd-muted-foreground: #d8d1c4;
   --color-fd-popover: #111111;
   --color-fd-popover-foreground: #fffdf4;
-  --color-fd-card: #ffffff;
-  --color-fd-card-foreground: #030201;
+  --color-fd-card: #111111;
+  --color-fd-card-foreground: #fffdf4;
   --color-fd-border: #2a2a2a;
   --color-fd-primary: #ec5a44;
   --color-fd-primary-foreground: #030201;
@@ -493,7 +493,11 @@ html > body[data-scroll-locked] {
 }
 
 .install-command:hover {
-  background: #1a3ec4;
+  background: transparent;
+}
+
+.demo-copy pre:has(.install-command:hover) {
+  box-shadow: 5px 5px 0 #1a3ec4;
 }
 
 .install-command span {
@@ -589,21 +593,13 @@ html > body[data-scroll-locked] {
   line-height: 1.65;
 }
 
-#nd-page {
-  --docs-shadow: 6px 6px 0 #1a3ec4;
-}
-
 #nd-docs-layout {
-  background:
-    radial-gradient(circle at 100% 0%, rgb(232 36 12 / 8%), transparent 30%),
-    radial-gradient(circle at 0% 100%, rgb(26 62 196 / 8%), transparent 34%),
-    radial-gradient(circle at 80% 100%, rgb(255 230 0 / 6%), transparent 30%),
-    #111111;
+  background: #111111;
 }
 
 #nd-sidebar,
 #nd-toc {
-  border-color: rgb(255 253 244 / 14%) !important;
+  border-color: rgb(255 253 244 / 10%) !important;
 }
 
 #nd-sidebar a,
@@ -613,51 +609,46 @@ html > body[data-scroll-locked] {
 
 #nd-sidebar a[data-active="true"],
 #nd-sidebar a[aria-current="page"] {
-  border: 1px solid #fffdf4;
-  background: #1a3ec4 !important;
+  background: rgb(255 253 244 / 6%) !important;
   color: #fffdf4 !important;
-  box-shadow: 3px 3px 0 #e8240c;
-  font-weight: 850;
+  font-weight: 700;
+  border-left: 2px solid #fffdf4;
 }
 
 #nd-toc a[data-active="true"],
 #nd-toc a[aria-current="true"] {
-  color: #ffe600 !important;
-  font-weight: 800;
-  text-decoration: underline;
-  text-decoration-color: #e8240c;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
+  color: #fffdf4 !important;
+  font-weight: 700;
 }
 
 .memoir-doc-title {
   max-width: 760px;
   color: #fffdf4;
-  font-size: clamp(2.3rem, 5vw, 4.65rem) !important;
-  line-height: 0.92 !important;
-  letter-spacing: -0.075em !important;
+  font-size: clamp(2rem, 4vw, 3rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.035em !important;
   text-wrap: balance;
 }
 
 .memoir-doc-description {
   max-width: 720px;
-  color: #d8d1c4 !important;
-  font-size: 1.04rem;
-  line-height: 1.65;
+  color: #b8b3a6 !important;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .memoir-doc-actions {
   margin-top: 8px;
-  border-color: rgb(255 253 244 / 18%) !important;
+  border-color: rgb(255 253 244 / 10%) !important;
 }
 
 .memoir-doc-actions button {
-  border-color: rgb(255 253 244 / 28%) !important;
+  border-color: rgb(255 253 244 / 18%) !important;
   border-radius: 0 !important;
 }
 
 .memoir-doc-body {
-  color: #fffdf4;
+  color: #e8e3d6;
 }
 
 .memoir-doc-body > p:first-child {
@@ -665,95 +656,126 @@ html > body[data-scroll-locked] {
 }
 
 .memoir-doc-body h2 {
-  position: relative;
-  margin-top: 3rem;
-  padding-top: 1rem;
-  border-top: 2px solid rgb(255 253 244 / 24%);
+  margin-top: 2.5rem;
   color: #fffdf4;
-  font-size: clamp(1.45rem, 3vw, 2.15rem);
-  line-height: 1;
-  letter-spacing: -0.055em;
-}
-
-.memoir-doc-body h2::before {
-  content: "";
-  position: absolute;
-  top: -7px;
-  left: 0;
-  width: 18px;
-  height: 12px;
-  border: 1px solid #fffdf4;
-  background: #e8240c;
-  box-shadow:
-    22px 0 0 #1a3ec4,
-    44px 0 0 #ffe600;
+  font-size: clamp(1.25rem, 2.2vw, 1.6rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
 }
 
 .memoir-doc-body h3 {
-  margin-top: 2rem;
+  margin-top: 1.75rem;
   color: #fffdf4;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.015em;
 }
 
 .memoir-doc-body a {
-  color: #ffe600;
-  font-weight: 750;
-  text-decoration-color: #e8240c;
-  text-decoration-thickness: 2px;
+  color: #fffdf4;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgb(255 253 244 / 35%);
+  text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
 .memoir-doc-body a:hover {
-  color: #e8240c;
+  text-decoration-color: #fffdf4;
 }
 
 .memoir-doc-body :not(pre) > code {
-  border: 1px solid rgb(255 253 244 / 24%);
+  border: 1px solid rgb(255 253 244 / 14%);
   border-radius: 0;
-  background: transparent;
-  color: #ffe600;
-  font-weight: 700;
+  background: rgb(255 253 244 / 5%);
+  color: #fffdf4;
+  font-weight: 500;
   padding: 1px 6px;
 }
 
-.memoir-doc-body pre {
-  border: 2px solid #fffdf4 !important;
+.memoir-doc-body figure,
+.memoir-doc-body figure[data-rehype-pretty-code-figure] {
+  position: relative;
+  margin: 0.85rem 0;
+  border: 1px solid rgb(255 253 244 / 14%);
   border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: 6px 6px 0 #1a3ec4;
+  background: #0c0c0c;
+  overflow: hidden;
+}
+
+.memoir-doc-body figure > *,
+.memoir-doc-body figure[data-rehype-pretty-code-figure] > * {
+  border-radius: 0 !important;
+}
+
+.memoir-doc-body figcaption,
+.memoir-doc-body [data-rehype-pretty-code-title] {
+  margin: 0 !important;
+  padding: 6px 12px;
+  border-bottom: 1px solid rgb(255 253 244 / 10%);
+  background: rgb(255 253 244 / 4%);
+  color: #b8b3a6;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.memoir-doc-body pre {
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: #0c0c0c !important;
   color: #fffdf4 !important;
+}
+
+.memoir-doc-body figure button,
+.memoir-doc-body figure [data-copy] {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 1px solid rgb(255 253 244 / 14%) !important;
+  border-radius: 0 !important;
+  background: rgb(255 253 244 / 4%) !important;
+  color: #b8b3a6 !important;
+  cursor: pointer;
+}
+
+.memoir-doc-body figure button:hover,
+.memoir-doc-body figure [data-copy]:hover {
+  background: rgb(255 253 244 / 8%) !important;
+  color: #fffdf4 !important;
+}
+
+.memoir-doc-body figure button svg,
+.memoir-doc-body figure [data-copy] svg {
+  width: 14px;
+  height: 14px;
+}
+
+.memoir-doc-body figure > pre,
+.memoir-doc-body figure[data-rehype-pretty-code-figure] > pre {
+  border: none !important;
 }
 
 .memoir-doc-body pre code {
   background: transparent !important;
-  color: #fffdf4 !important;
-}
-
-.memoir-doc-body pre code span {
-  color: #fffdf4 !important;
-}
-
-.memoir-doc-body pre code span:nth-child(3n + 1) {
-  color: #e8240c !important;
-}
-
-.memoir-doc-body pre code span:nth-child(3n + 2) {
-  color: #1a3ec4 !important;
-}
-
-.memoir-doc-body pre code span:nth-child(3n) {
-  color: #ffe600 !important;
 }
 
 .memoir-doc-body table {
-  border: 2px solid rgb(255 253 244 / 24%);
-  box-shadow: 5px 5px 0 #030201;
+  border: 1px solid rgb(255 253 244 / 14%);
 }
 
 .memoir-doc-body th {
-  background: #181818;
+  background: rgb(255 253 244 / 5%);
   color: #fffdf4;
-  font-weight: 850;
+  font-weight: 650;
 }
 
 .memoir-doc-body th,
@@ -762,9 +784,10 @@ html > body[data-scroll-locked] {
 }
 
 .memoir-doc-body blockquote {
-  border-left: 6px solid #e8240c;
+  border-left: 2px solid rgb(255 253 244 / 35%);
   background: transparent;
-  color: #fffdf4;
+  color: #b8b3a6;
+  font-style: normal;
 }
 
 .docs-intro-logo {
