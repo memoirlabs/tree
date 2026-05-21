@@ -42,7 +42,7 @@ export interface TreeSurfaceProps {
   style?: CSSProperties;
   subject?: string;
   theme?: TreeStylePreset | TreeTheme;
-  treeType: "family" | "org";
+  treeType: "family";
   zoom?: number;
 }
 

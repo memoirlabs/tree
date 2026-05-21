@@ -14,16 +14,12 @@ The repository is organized around headless logic first and React rendering seco
 │   │   ├── indexing.ts
 │   │   ├── index.ts
 │   │   ├── layout.ts
-│   │   ├── org.ts
-│   │   ├── org-layout.ts
 │   │   ├── rel.ts
 │   │   ├── theme.ts
-│   │   ├── tree-dsl.ts
 │   │   ├── types.ts
 │   │   └── use-card-measurements.ts
 │   ├── index.ts
 │   ├── styles.css
-│   └── utils.ts
 ├── tests/
 │   ├── family-index.test.ts
 │   ├── layout.test.ts
@@ -53,11 +49,8 @@ The repository is organized around headless logic first and React rendering seco
 
 - `src/family/indexing.ts`: Pure relationship fact indexing and subject-relative labels.
 - `src/family/layout.ts`: Pure measured row placement.
-- `src/family/org.ts`: Nested org chart normalization.
-- `src/family/org-layout.ts`: Pure org chart measured row placement.
 - `src/family/edge-routing.ts`: Pure SVG path generation.
 - `src/family/theme.ts`: Theme presets and CSS variable mapping.
-- `src/family/tree-dsl.ts`: Small diagram syntax for docs, demos, and tests.
 - `src/family/use-card-measurements.ts`: DOM measurement hook.
 - `src/family/FamilyTree.tsx`: Thin React renderer for cards, canvas, and edges.
 - `src/family/TreePrimitives.tsx`: Composable provider, canvas, edge, and node layers.
@@ -79,7 +72,6 @@ The repository is organized around headless logic first and React rendering seco
 Only these files ship via npm:
 
 - `dist`
-- `public/logo-transparent.png`
 - `README.md`
 - `LICENSE`
 

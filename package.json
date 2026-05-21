@@ -1,6 +1,6 @@
 {
   "name": "@memoir/tree",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Ergonomic React family tree component with relationship-aware layout.",
   "homepage": "https://github.com/memoirlabs/tree#readme",
   "repository": {
@@ -31,7 +31,6 @@
   "type": "module",
   "files": [
     "dist",
-    "public/logo-transparent.png",
     "README.md",
     "LICENSE"
   ],

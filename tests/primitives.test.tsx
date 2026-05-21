@@ -8,12 +8,10 @@ import {
   TreeNodeLayer,
   TreeProvider,
   buildFamilyTreeLayout,
-  buildOrgChartLayout,
-  createOrgChart,
   rel,
   useTreeLayout,
 } from "../src/index";
-import type { FamilyCardProps, OrgChartCardProps } from "../src/index";
+import type { FamilyCardProps } from "../src/index";
 
 type Person = {
   id?: string;
@@ -50,26 +48,6 @@ function FamilyCard({
     <article {...props}>
       <strong>{person.name}</strong>
       <small>{relation.label}</small>
-    </article>
-  );
-}
-
-function OrgCard({
-  collapsed: _collapsed,
-  depth: _depth,
-  directReports,
-  focused: _focused,
-  generation: _generation,
-  managerId: _managerId,
-  person,
-  personId: _personId,
-  selected: _selected,
-  ...props
-}: OrgChartCardProps<Person>) {
-  return (
-    <article {...props}>
-      <strong>{person.name}</strong>
-      <small>{directReports.length}</small>
     </article>
   );
 }
@@ -142,31 +120,5 @@ describe("tree primitives", () => {
     );
 
     expect(markup).toContain("scale(1.5)");
-  });
-
-  test("compose an org chart with the same layout data as the wrapper path", () => {
-    const chart = createOrgChart<Person>({
-      id: "ceo",
-      person: { name: "Avery", role: "CEO" },
-      reports: [
-        { id: "product", person: { name: "Morgan", role: "Product" } },
-        { id: "eng", person: { name: "Casey", role: "Engineering" } },
-      ],
-    });
-    const expected = buildOrgChartLayout(chart);
-    const markup = renderToStaticMarkup(
-      <TreeProvider type="org" nodes={chart.nodes} rootId={chart.rootId}>
-        <TreeCanvas interactionMode="none">
-          <TreeEdges />
-          <TreeNodeLayer<Person> card={OrgCard} />
-          <LayoutProbe />
-        </TreeCanvas>
-      </TreeProvider>,
-    );
-
-    expect(markup).toContain(`data-cards="${expected.cards.length}"`);
-    expect(markup).toContain(`data-edges="${expected.edges.length}"`);
-    expect(markup).toContain("data-org-card");
-    expect(markup).toContain("data-org-edge");
   });
 });

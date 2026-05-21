@@ -16,7 +16,6 @@ import "@memoir/tree/styles.css";
 - `FamilyTree`
 - `DefaultFamilyCard`
 - `rel`
-- `createFamilyTree(source, options?)`
 - `createFamilyIndex(people, relationships)`
 - `collectFamilyNeighborhood(index, subject)`
 - `buildFamilyTreeLayout(input)`
@@ -66,27 +65,6 @@ Relationship option types:
 - `GuardianshipRelation`: `guardian`, `foster`, `unknown`.
 - `FamilyRelationshipStatus`: `current`, `former`, `divorced`, `separated`, `unknown`.
 
-## Org Chart
-
-- `OrgChart`
-- `DefaultOrgChartCard`
-- `createOrgChart(root)`
-- `buildOrgChartLayout(input)`
-
-`createOrgChart(root)` accepts a nested reporting tree and returns:
-
-```ts
-type OrgChartDefinition<Person> = {
-  rootId: string;
-  nodes: OrgChartNode<Person>[];
-  generations: OrgChartGeneration[];
-  maxGeneration: number;
-  reportLines: OrgChartReportLine[];
-};
-```
-
-Use `generations` and `maxGeneration` to show how far the chart goes. Use `reportLines` to inspect who reports to who without walking the nested input again.
-
 ## Shared Surface
 
 - `TreeSurface`
@@ -130,30 +108,4 @@ Use primitives when the default wrapper is not enough but you still want package
 - `FamilyTreeBounds`
 - `BuildFamilyTreeLayoutInput<Person>`
 
-## Org Types
-
-- `OrgChartNode<Person>`
-- `OrgChartBranch<Person>`
-- `OrgChartDefinition<Person>`
-- `OrgChartGeneration`
-- `OrgChartReportLine`
-- `OrgChartCardProps<Person>`
-- `OrgChartProps<Person>`
-- `OrgChartLayoutResult<Person>`
-- `OrgChartLayoutCard<Person>`
-- `OrgChartLayoutEdge`
-- `OrgChartBounds`
-- `BuildOrgChartLayoutInput<Person>`
-
-## DSL Helpers
-
-- `createFamilyTree(source, options?)`
-- `createOrgTree(source, options?)`
-- `TreeDslError`
-- `TreeDslNode`
-- `TreeDslNodeInput`
-- `TreeDslAttributeValue`
-- `FamilyTreeDefinition<Person>`
-- `OrgTreeDefinition<Person>`
-
-The DSL helpers are useful for docs, demos, tests, and user-authored diagrams. Production apps can skip them and pass database rows directly.
+The public API is intentionally scoped to the family tree renderer. Docs, tests, and apps should pass app-owned relationship rows directly instead of going through a diagram DSL or an internal database.

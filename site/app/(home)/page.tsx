@@ -43,8 +43,8 @@ export default function HomePage() {
               Family trees that stay readable in real React apps.
             </h1>
             <p>
-              @memoir/tree renders subject-centered family neighborhoods and org charts from your
-              people, your relationship facts, and your card component.
+              @memoir/tree renders subject-centered family neighborhoods from your profiles, your relationship facts,
+              and your card component.
             </p>
             <div className="hero-actions" aria-label="Landing page actions">
               <Link className="primary-button" href="/docs">
@@ -85,7 +85,7 @@ export default function HomePage() {
         <section id="demo" className="demo-section" aria-label="Family tree demo">
           <div className="section-heading">
             <p className="eyebrow">Simple renderer</p>
-            <h2>Install it, pass your data, render Memoir-style cards.</h2>
+            <h2>Install it, pass your data, render product-style cards.</h2>
             <p>
               The package owns the measured layout, connectors, pan surface, and zoom behavior. Your app owns the data,
               profile UI, permissions, and mutations.

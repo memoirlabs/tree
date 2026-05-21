@@ -132,47 +132,4 @@ export interface FamilyTreeSpacing {
   padding: number;
 }
 
-export interface OrgChartNode<Person> {
-  id: PersonId;
-  person: Person;
-  parentId?: PersonId | null;
-  order?: number;
-}
-
-export interface OrgChartCardProps<Person> extends HTMLAttributes<HTMLElement> {
-  person: Person;
-  personId: PersonId;
-  managerId?: PersonId;
-  depth: number;
-  generation: number;
-  selected: boolean;
-  focused: boolean;
-  collapsed: boolean;
-  directReports: PersonId[];
-  className?: string;
-  style?: CSSProperties;
-  "data-org-card"?: string;
-  "data-tree-card"?: string;
-  "data-person-id"?: string;
-  "data-depth"?: number;
-  "data-generation"?: number;
-}
-
-export interface OrgChartProps<Person> {
-  nodes: OrgChartNode<Person>[];
-  rootId?: PersonId;
-  card?: ComponentType<OrgChartCardProps<Person>>;
-  className?: string;
-  style?: CSSProperties;
-  cardClassName?: string;
-  edgeClassName?: string;
-  interactionMode?: TreeInteractionMode;
-  lineShape?: TreeLineShape;
-  spacing?: Partial<FamilyTreeSpacing>;
-  theme?: TreeStylePreset | TreeTheme;
-  selected?: PersonId;
-  collapsed?: PersonId[];
-  onPersonClick?: (person: Person, personId: PersonId) => void;
-}
-
 export type { TreeLineShape, TreeStylePreset, TreeTheme };
