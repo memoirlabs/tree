@@ -3,7 +3,7 @@ title: Design
 description: Design @memoir/tree with CSS variables, stable selectors, and custom card components.
 ---
 
-`@memoir/tree` ships a small framework-free stylesheet for the intended Memoir skin: cream canvas, white cards, sharp corners, black outlines/shadows, and orange selected state.
+`@memoir/tree` ships a small framework-free stylesheet for the intended Memoir skin: warm canvas, light cards, sharp corners, black outlines, and orange selected state.
 
 ## Import Styles
 
@@ -21,15 +21,15 @@ Use this as the starting point for flat product UIs:
 
 ```css
 .memoir-tree {
-  --tree-surface-bg: #fffdf4;
-  --tree-canvas-bg: #f4efdc;
-  --tree-card-bg: #fffdf4;
+  --tree-surface-bg: #fafafa;
+  --tree-canvas-bg: #F4EFDC;
+  --tree-card-bg: #fafafa;
   --tree-card-fg: #030201;
   --tree-card-border: #030201;
-  --tree-card-selected-bg: #ec5a44;
-  --tree-card-shadow: 6px 6px 0 #030201;
-  --tree-edge: #3b342e;
-  --tree-edge-width: 2;
+  --tree-card-selected-bg: #EC5A44;
+  --tree-card-shadow: 4px 4px 0 #030201;
+  --tree-edge: #030201;
+  --tree-edge-width: 1;
   --tree-card-radius: 0;
   --tree-profile-radius: 0;
 }
@@ -84,7 +84,7 @@ For small changes, use `theme` instead of writing CSS variables manually:
     cardShadow: "6px 6px 0 #030201",
     edge: "#3b342e",
     edgeWidth: 2,
-    accent: "#ec5a44",
+    cardSelectedBackground: "#ec5a44",
   }}
 />
 ```
@@ -96,9 +96,11 @@ Use `theme="memoir"` for the package default or `theme="system"` for neutral sys
 The family renderer emits these selectors:
 
 - `data-tree-surface`: outer scroll/pan surface.
-- `data-tree-canvas`: measured canvas that contains edges and cards.
+- `data-tree-canvas`: positioned canvas used by the viewport.
+- `data-family-canvas`: measured family canvas that contains edges and cards.
 - `data-family-tree`: family tree canvas marker.
 - `data-family-card-positioner`: absolute-positioned wrapper for a card.
+- `data-family-measure`: measurement wrapper around a rendered card.
 - `data-family-card`: card props forwarded to your custom card.
 - `data-person-id`: current person ID.
 - `data-relation`: computed relation label like `self`, `parent`, or `half-sibling`.
@@ -107,6 +109,8 @@ The family renderer emits these selectors:
 - `data-selected`: present on the selected card.
 - `data-focused`: present on the focused card.
 - `data-family-edge`: SVG edge path.
+- `data-source-id`: source person ID for an edge.
+- `data-target-id`: target person ID for an edge.
 - `data-edge-kind`: relationship kind like `biological`, `adoptive`, `spouse`, or `guardian`.
 - `data-edge-status`: relationship status like `current`, `former`, or `divorced`.
 

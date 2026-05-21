@@ -1,105 +1,103 @@
 ---
-title: Development
-description: Local commands and verification flow for @memoir/tree.
+title: Integration
+description: Build app features around @memoir/tree without moving your data model.
 ---
 
-This project uses Bun, TypeScript, oxlint, and Bun's test runner.
+`@memoir/tree` is meant to sit inside your existing React app. It does not bring a data layer, editor, router, auth system, or form flow.
 
-## Commands
+## App Responsibilities
 
-```bash
-bun run lint
-bun run typecheck
-bun test
-bun run build
-bun run check
-bun run ci
-bun run deploy:package
-bun run deploy:site
+Keep these parts in your application:
+
+- Person records and profile fields.
+- Relationship creation, validation, and persistence.
+- Permissions for viewing or editing family information.
+- Selection state, side panels, forms, routes, and analytics.
+- Custom card markup and app-specific actions.
+
+The package handles rendering: layout, measured cards, SVG edges, pan and zoom, subject-relative labels, and accessibility props.
+
+## Data Flow
+
+Fetch or compute your people and relationships before rendering the tree:
+
+```tsx
+import { FamilyTree } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+
+export function FamilyPanel({ family }: { family: FamilyData }) {
+  return (
+    <FamilyTree
+      people={family.people}
+      relationships={family.relationships}
+      subject={family.subjectId}
+      selected={family.selectedId}
+      onPersonClick={family.openProfile}
+    />
+  );
+}
 ```
 
-`bun run ci` is the full monorepo quality gate. `bun run check` is the package-only quality gate:
+The tree never writes back to your data. When a user clicks a card or asks to add a relative, call your own app code.
 
-1. `oxlint .`
-2. `tsc --noEmit`
-3. `bun test`
-4. `bun run build`
+## Editing Flows
 
-Site-only checks live in the site package:
+Use callbacks to connect tree interactions to your UI:
 
-```bash
-bun run --cwd site ci
+```tsx
+<FamilyTree
+  people={people}
+  relationships={relationships}
+  subject="alex"
+  selected={selectedPersonId}
+  onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
+  onAddRelationship={(_person, personId) => openAddRelativeDialog(personId)}
+/>
 ```
 
-## Build
+Set `readOnly` when cards should not receive add-relationship actions:
 
-The build intentionally avoids `tsup` and esbuild.
-
-```bash
-rm -rf dist
-tsc -p tsconfig.build.json
-bun scripts/fix-dist-imports.ts
+```tsx
+<FamilyTree
+  people={people}
+  relationships={relationships}
+  subject="alex"
+  readOnly={!canEditFamily}
+/>
 ```
 
-TypeScript emits ESM and declarations. The Bun script rewrites local generated ESM imports to include `.js` extensions so `dist/index.js` works in Node-style ESM environments.
+## Custom Cards
 
-## Deploy
+Custom cards are regular React components. Spread the props onto the root element so the tree can attach accessibility handlers and stable data attributes:
 
-The repo has separate deploy commands because the npm package and docs site ship to different places:
+```tsx
+import type { FamilyCardProps } from "@memoir/tree";
 
-```bash
-bun run deploy:package
-bun run deploy:site
-bun run deploy:site:prod
+type Person = {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+};
+
+export function ProfileCard({ person, relation, selected, ...props }: FamilyCardProps<Person>) {
+  return (
+    <article {...props}>
+      {person.avatarUrl ? <img src={person.avatarUrl} alt="" /> : null}
+      <strong>{person.name}</strong>
+      <small>{selected ? "selected" : relation.label}</small>
+    </article>
+  );
+}
 ```
 
-- `deploy:package` publishes the built npm package.
-- `deploy:site` creates a Vercel preview deployment for the docs site.
-- `deploy:site:prod` deploys the docs site to production.
+## Practical Checks
 
-Run `bun run ci` before any deploy.
+When integrating the tree into an app, check:
 
-## Source Layout
+- Cards render with the expected names and labels.
+- Clicking a card opens your app's selection UI.
+- Keyboard activation works when `onPersonClick` is provided.
+- Large families stay readable with `limits`.
+- Custom card roots spread `...props`.
 
-Published source lives under `src/`. Tests live under `tests/`. The Next.js and Fumadocs site lives under `site/`.
-
-See [Project Structure](./project-structure) for the full tree.
-
-## Tests
-
-Tests are focused on pure behavior:
-
-- Relationship helper rows.
-- Subject-centered family indexing.
-- Explicit neighborhood limits.
-- Measured layout derivation.
-- Relationship graph traversal.
-- Theme variable mapping.
-- Primitive SSR markup for data attributes, accessibility props, custom card props, and viewport scale.
-
-## Linting
-
-Oxlint is the only linter. Keep `bun run lint` at zero warnings.
-
-## Browser Verification
-
-After layout or rendering changes:
-
-1. Run the docs site with `bun run dev` from `site/`.
-2. Open `http://localhost:3000`.
-3. Inspect the console.
-4. Capture a screenshot of the homepage family tree demo and a docs page.
-
-## Documentation
-
-Keep the public docs aligned when changing the API:
-
-- `README.md`
-- `AGENTS.md`
-- `site/content/docs/index.mdx`
-- `site/content/docs/family-tree.mdx`
-- `site/content/docs/api.mdx`
-- `site/content/docs/design.mdx`
-- `site/content/docs/org-chart.mdx`
-
-New examples should prefer the clean public names: `people`, `subject`, `card`, and `onPersonClick`. Keep `profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile` documented as compatibility aliases.
+For the full prop surface, see [FamilyTree](./family-tree) and [API](./api).

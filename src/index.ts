@@ -1,21 +1,38 @@
 export {
   DefaultFamilyCard,
   FamilyTree,
+} from "./family/FamilyTree";
+export {
   TreeCanvas,
   TreeEdges,
   TreeNodeLayer,
   TreeProvider,
+  useTreeLayout,
+} from "./family/TreePrimitives";
+export {
   TreeSurface,
+} from "./family/TreeSurface";
+export {
   createTreeThemeStyle,
   getTreeStyleName,
   memoirTreeTheme,
-  rel,
   resolveTreeTheme,
   systemTreeTheme,
   treeStylePresets,
-  useTreeLayout,
-} from "./family";
-export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./family";
+} from "./family/theme";
+export {
+  rel,
+} from "./family/rel";
+export {
+  collectFamilyNeighborhood,
+  createFamilyIndex,
+  defaultFamilyNeighborhoodLimits,
+} from "./family/indexing";
+export {
+  buildFamilyTreeLayout,
+} from "./family/layout";
+
+export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./family/rel";
 
 export type {
   ComputedRelation,
@@ -31,6 +48,7 @@ export type {
   FamilyTreeCardProps,
   FamilyTreeProps,
   FamilyTreeSize,
+  FamilyTreeSpacing,
   FamilyTreePersonHandler,
   GuardianshipRelation,
   ParentageRelation,
@@ -44,7 +62,7 @@ export type {
   TreeStylePreset,
   TreeTheme,
   TreeViewport,
-} from "./family";
+} from "./family/types";
 
 export type {
   FamilyTreePrimitiveContext,
@@ -55,10 +73,10 @@ export type {
   TreePrimitiveContext,
   TreePrimitiveType,
   TreeProviderProps,
-} from "./family";
+} from "./family/TreePrimitives";
+export type { TreeSurfaceProps } from "./family/TreeSurface";
 
-export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./family";
-export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./family";
+export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./family/indexing";
 
 export type {
   BuildFamilyTreeLayoutInput,
@@ -66,5 +84,4 @@ export type {
   FamilyTreeLayoutCard,
   FamilyTreeLayoutEdge,
   FamilyTreeLayoutResult,
-} from "./family";
-export { buildFamilyTreeLayout } from "./family";
+} from "./family/layout-types";

@@ -19,7 +19,7 @@ import type {
   TreeInteractionMode,
   TreeViewport,
 } from "./types";
-import type { FamilyTreeLayoutResult } from "./layout";
+import type { FamilyTreeLayoutResult } from "./layout-types";
 import type { TreeLineShape, TreeStylePreset, TreeTheme } from "./theme";
 
 export type TreePrimitiveType = "family";

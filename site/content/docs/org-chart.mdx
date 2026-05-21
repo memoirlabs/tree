@@ -1,49 +1,41 @@
 ---
 title: Org Chart
-description: Current org chart support and how it relates to @memoir/tree.
+description: "@memoir/tree is for family trees, not org charts."
 ---
 
 `@memoir/tree` does not currently export an `OrgChart` component.
 
-That is intentional for now. Family trees and org charts have different semantics. Org charts need managers, reports, teams, titles, dotted lines, vacant roles, and permissions. Those should not be forced through parentage or guardianship relationships.
+That is intentional. This package is scoped to subject-centered family relationships: parentage, partnership, guardianship, siblings, descendants, ancestors, and relationship-aware labels.
 
-## Status
+## Use FamilyTree For Families
 
-Use `FamilyTree` for family relationships:
+Use `FamilyTree` when the data is family data:
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
 import "@memoir/tree/styles.css";
+
+const relationships = [
+  rel.parents("alex", ["morgan", "casey"]),
+  rel.partner("alex", "jordan"),
+];
 ```
 
-There is no supported import like this today:
+## Do Not Import OrgChart
 
 ```tsx
 import { OrgChart } from "@memoir/tree";
 ```
 
-## Shape
+That import is not supported.
 
-If this package adds org charts, it should be a sibling API, not a rewrite of the family API:
+## Why Not Force It
 
-```tsx
-<OrgChart
-  people={people}
-  rootId="ceo"
-  reports={reports}
-  card={PersonCard}
-/>
-```
+Org charts have different semantics from family trees:
 
-The right shape would keep the same library principles:
+- Managers and direct reports are not parentage.
+- Dotted-line reporting is not guardianship.
+- Teams, job titles, vacant roles, and reporting permissions need their own model.
+- Org chart labels should not be computed as family labels.
 
-- React and TypeScript only.
-- No graph framework.
-- Bring your own card.
-- Tiny CSS-variable stylesheet.
-- Stable data attributes.
-- Controlled viewport props.
-- Explicit limits for visible reports.
-- Clear accessibility labels.
-
-Until that exists, docs and examples should not pretend `OrgChart` is shipped.
+If your data is not family data, use a tool designed for that model instead of reshaping it into family relationships.

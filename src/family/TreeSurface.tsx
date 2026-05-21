@@ -4,7 +4,7 @@ import type { CSSProperties, JSX, PointerEvent, ReactNode, Ref, UIEvent, WheelEv
 import { useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 
 import type { PersonId, TreeApi, TreeInteractionMode, TreeViewport } from "./types";
-import type { FamilyTreeLayoutCard } from "./layout";
+import type { FamilyTreeLayoutCard } from "./layout-types";
 import type { TreeStylePreset, TreeTheme } from "./theme";
 import { createTreeThemeStyle, getTreeStyleName } from "./theme";
 

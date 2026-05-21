@@ -62,12 +62,12 @@ function FamilyPanel() {
 
   return (
     <FamilyTree
-      profiles={profiles}
+      people={people}
       relationships={relationships}
-      rootProfileId="alex"
+      subject="alex"
       selected={selectedProfileId}
       onPersonClick={(_profile, profileId) => setSelectedProfileId(profileId)}
-      renderProfileCard={renderProfileCard}
+      card={ProfileCard}
     />
   );
 }
@@ -141,7 +141,7 @@ Supported parentage relations are `biological`, `adoptive`, `step`, `foster`, an
 
 ## Card Contract
 
-If you omit `renderProfileCard`, `FamilyTree` uses `DefaultFamilyCard`, which displays `name`, `label`, `profile.display`, or the profile ID.
+If you omit `card` and `renderProfileCard`, `FamilyTree` uses `DefaultFamilyCard`, which displays a common name field when present or falls back to the person ID. It can also show common avatar/image fields when present.
 
 Your custom card receives the person object, computed relation metadata, selected/focused state, accessibility props, stable data attributes, collapse state, and edit hooks. Always spread `...props` onto the card root:
 
@@ -161,7 +161,7 @@ function ProfileCard({
 }: FamilyCardProps<Person>) {
   return (
     <article {...props} className="memoir-profile-card">
-      <strong>{person.profile.display}</strong>
+      <strong>{person.name}</strong>
       <small>{relation.label}</small>
       {selected ? <span>Selected</span> : null}
       {collapsed ? <span>Collapsed</span> : null}
@@ -193,7 +193,7 @@ function ProfileCard({
 }: FamilyCardProps<Person> & ProfileCardExtraProps) {
   return (
     <article {...props} data-density={density}>
-      <strong>{person.profile.display}</strong>
+      <strong>{person.name}</strong>
       {canEdit ? <span>editable</span> : null}
     </article>
   );
@@ -204,8 +204,8 @@ function ProfileCard({
   relationships={relationships}
   subject="alex"
   card={ProfileCard}
-  cardProps={(person) => ({
-    canEdit: Boolean(person.permissions?.canEdit),
+  cardProps={() => ({
+    canEdit: true,
     density: "compact",
   })}
 />
@@ -218,7 +218,7 @@ function ProfileCard({
 ```tsx
 <FamilyTree
   ariaLabel="Alex's family tree"
-  getPersonLabel={(person) => person.profile.display}
+  getPersonLabel={(person) => person.name}
   people={people}
   relationships={relationships}
   subject="alex"
@@ -246,9 +246,9 @@ Use `collapsed` to hide deeper ancestor or descendant rows while keeping the col
 
 ```tsx
 <FamilyTree
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="alex"
+  subject="alex"
   collapsed={["riley"]}
 />
 ```
@@ -296,6 +296,8 @@ Use `null` to disable a cap for a group. Defaults are exported as `defaultFamily
 
 - `data-family-tree`
 - `data-family-canvas`
+- `data-tree-surface`
+- `data-tree-canvas`
 - `data-family-card-positioner`
 - `data-family-measure`
 - `data-family-card`

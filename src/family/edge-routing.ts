@@ -1,5 +1,5 @@
 import type { FamilyRelationship, PersonId } from "./types";
-import type { FamilyTreeLayoutCard, FamilyTreeLayoutEdge } from "./layout";
+import type { FamilyTreeLayoutCard, FamilyTreeLayoutEdge } from "./layout-types";
 import type { TreeLineShape } from "./theme";
 
 const round = (value: number) => Math.round(value * 100) / 100;

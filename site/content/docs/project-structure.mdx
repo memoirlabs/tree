@@ -1,83 +1,93 @@
 ---
-title: Project Structure
-description: How the library, tests, and docs site are organized.
+title: App Structure
+description: What to add to your app when using @memoir/tree.
 ---
 
-The repository is organized around headless logic first and React rendering second:
+You do not need to copy this library's source tree into your app. Install the package, keep your existing app structure, and add the tree wherever you render family context.
+
+## What Your App Owns
+
+`@memoir/tree` is a renderer. Your app should continue to own:
+
+- Where people are stored.
+- How relationships are created or edited.
+- Permissions, auth, routing, drawers, and forms.
+- The visual markup inside each person card.
+
+The library only needs stable person IDs, a `people` map, relationship facts, and a subject ID.
+
+## Recommended Shape
+
+Put your data and relationship helpers wherever they already belong in your app. A simple setup can look like this:
 
 ```text
-.
-├── src/
-│   ├── family/
-│   │   ├── FamilyTree.tsx
-│   │   ├── edge-routing.ts
-│   │   ├── indexing.ts
-│   │   ├── index.ts
-│   │   ├── layout.ts
-│   │   ├── rel.ts
-│   │   ├── theme.ts
-│   │   ├── types.ts
-│   │   └── use-card-measurements.ts
-│   ├── index.ts
-│   ├── styles.css
-├── tests/
-│   ├── family-index.test.ts
-│   ├── layout.test.ts
-│   ├── primitives.test.tsx
-│   ├── rel.test.ts
-│   └── theme.test.ts
-├── scripts/
-│   └── fix-dist-imports.ts
-├── site/
-│   ├── app/
-│   │   ├── (home)/
-│   │   └── docs/
-│   ├── components/
-│   │   ├── mdx.tsx
-│   │   └── simple-family-tree-demo.tsx
-│   ├── content/
-│   │   └── docs/
-│   ├── lib/
-│   ├── README.md
-│   ├── next.config.mjs
-│   └── package.json
-├── dist/
-├── AGENTS.md
-├── package.json
-├── tsconfig.json
-└── tsconfig.build.json
+app/
+  family/
+    page.tsx
+    profile-card.tsx
+    family-data.ts
 ```
 
-## Folder Responsibilities
+`family-data.ts` can export your people and relationship facts:
 
-- `AGENTS.md`: Current agent-facing architecture, API, styling, and verification guidance.
-- `src/family/indexing.ts`: Pure relationship fact indexing, subject-relative labels, and configurable neighborhood limits.
-- `src/family/layout.ts`: Pure measured row placement with explicit spacing and limits inputs.
-- `src/family/edge-routing.ts`: Pure SVG path generation.
-- `src/family/theme.ts`: Theme presets and CSS variable mapping.
-- `src/family/use-card-measurements.ts`: DOM measurement hook.
-- `src/family/FamilyTree.tsx`: Thin React renderer for cards, canvas, edges, accessibility labels, viewport props, and typed card props.
-- `src/family/TreePrimitives.tsx`: Composable provider, canvas, edge, and node layers.
-- `src/styles.css`: Tiny framework-free package stylesheet for the Memoir skin.
-- `tests/`: Bun tests for helpers, family logic, layout behavior, primitives, theming, and SSR markup.
-- `site/`: Next.js app with the landing page, simple rendered demo, and Fumadocs docs.
-- `site/app/(home)/page.tsx`: Landing page at `/`.
-- `site/app/docs`: Fumadocs routes at `/docs`.
-- `site/components/simple-family-tree-demo.tsx`: Static homepage demo that imports local library source.
-- `site/content/docs`: Fumadocs MDX content for getting started, FamilyTree, design, Org Chart, API, development, and project structure.
-- `dist/`: Generated package output.
+```ts
+import { rel } from "@memoir/tree";
 
-## Public Entrypoints
+export const people = {
+  alex: { id: "alex", name: "Alex" },
+  morgan: { id: "morgan", name: "Morgan" },
+  casey: { id: "casey", name: "Casey" },
+};
 
-- npm package entry: `src/index.ts` -> `dist/index.js`.
-- stylesheet entry: `src/styles.css` -> `dist/styles.css` exported as `@memoir/tree/styles.css`.
+export const relationships = [
+  rel.parents("alex", ["morgan", "casey"]),
+];
+```
 
-## Package Boundary
+`profile-card.tsx` can render your app's card UI:
 
-Only these files ship via npm:
+```tsx
+import type { FamilyCardProps } from "@memoir/tree";
 
-- `dist`
-- `README.md`
-- `LICENSE`
+type Person = {
+  id: string;
+  name: string;
+};
 
-Tests, scripts, demo code, and docs stay local.
+export function ProfileCard({ person, relation, ...props }: FamilyCardProps<Person>) {
+  return (
+    <article {...props}>
+      <strong>{person.name}</strong>
+      <small>{relation.label}</small>
+    </article>
+  );
+}
+```
+
+Then render the tree on any page:
+
+```tsx
+import { FamilyTree } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+import { people, relationships } from "./family-data";
+import { ProfileCard } from "./profile-card";
+
+export default function FamilyPage() {
+  return (
+    <FamilyTree
+      people={people}
+      relationships={relationships}
+      subject="alex"
+      card={ProfileCard}
+    />
+  );
+}
+```
+
+## Integration Checklist
+
+- Import `@memoir/tree/styles.css` once if you want the default Memoir skin.
+- Pass `people`, `relationships`, and `subject` into `FamilyTree`.
+- Use `card` when you want custom app-owned person cards.
+- Use `selected` and `onPersonClick` when your app owns selection state.
+- Use `onAddRelationship` to open your own add-relative flow.

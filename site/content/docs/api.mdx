@@ -7,7 +7,7 @@ All public exports come from `@memoir/tree`. Import styles separately from `@mem
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
-import type { FamilyTreeProps, FamilyRelationship, TreeApi, TreeViewport } from "@memoir/tree";
+import type { FamilyTreeProps, FamilyRelationship, FamilyTreeSpacing, TreeApi, TreeViewport } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 ```
 
@@ -34,11 +34,24 @@ type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, neve
   card?: React.ComponentType<FamilyCardProps<Person> & CardExtraProps>;
   cardProps?: CardExtraProps | ((person: Person, props: FamilyCardProps<Person>) => CardExtraProps);
   renderProfileCard?: (profile: Person, props: FamilyCardProps<Person>) => React.JSX.Element;
+  className?: string;
+  style?: React.CSSProperties;
+  cardClassName?: string;
+  edgeClassName?: string;
+  interactionMode?: "pan" | "scroll" | "none";
+  lineShape?: "orthogonal" | "curved";
+  zoom?: number;
+  defaultZoom?: number;
   viewport?: TreeViewport;
   defaultViewport?: Partial<TreeViewport>;
   onViewportChange?: (viewport: TreeViewport) => void;
+  minZoom?: number;
+  maxZoom?: number;
+  onZoomChange?: (zoom: number) => void;
   treeApiRef?: React.Ref<TreeApi>;
   limits?: Partial<FamilyNeighborhoodLimits>;
+  spacing?: Partial<FamilyTreeSpacing>;
+  theme?: "memoir" | "system" | TreeTheme;
   getPersonLabel?: (person: Person, personId: string) => string;
   selected?: string;
   collapsed?: string[];
@@ -142,7 +155,7 @@ Use primitives when the default wrapper is not enough but you still want package
 
 ```tsx
 <TreeProvider type="family" people={profiles} relationships={relationships} subject="alex">
-  <TreeCanvas>
+  <TreeCanvas ariaLabel="Alex's family tree">
     <TreeEdges />
     <TreeNodeLayer card={ProfileCard} />
   </TreeCanvas>
@@ -192,4 +205,4 @@ Primitive responsibilities:
 - `FamilyTreeBounds`
 - `BuildFamilyTreeLayoutInput<Person>`
 
-The API is intentionally scoped to the family tree renderer. Docs, tests, and apps should pass app-owned relationship rows directly instead of going through a diagram DSL or an internal database.
+The API is intentionally scoped to the family tree renderer. Pass app-owned relationship rows directly instead of going through a diagram DSL or package-owned database.
