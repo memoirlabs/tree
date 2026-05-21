@@ -108,13 +108,15 @@ export function DefaultFamilyCard<Person>({
   );
 }
 
-export function FamilyTree<Person>({
+export function FamilyTree<Person, CardExtraProps extends object = Record<string, never>>({
   subject,
   rootProfileId,
   people,
   profiles,
   relationships,
-  card: Card = DefaultFamilyCard,
+  ariaLabel,
+  card,
+  cardProps,
   renderProfileCard,
   className,
   style,
@@ -124,18 +126,24 @@ export function FamilyTree<Person>({
   lineShape = "orthogonal",
   zoom,
   defaultZoom,
+  viewport,
+  defaultViewport,
+  onViewportChange,
   minZoom,
   maxZoom,
   onZoomChange,
   spacing,
+  limits,
   theme,
+  treeApiRef,
+  getPersonLabel,
   selected,
   collapsed,
   readOnly = false,
   onPersonClick,
   onSelectProfile,
   onAddRelationship,
-}: FamilyTreeProps<Person>): JSX.Element {
+}: FamilyTreeProps<Person, CardExtraProps>): JSX.Element {
   const resolvedSubject = subject ?? rootProfileId;
   const resolvedPeople = people ?? profiles;
 
@@ -147,14 +155,17 @@ export function FamilyTree<Person>({
   }
 
   const ResolvedCard = renderProfileCard
-    ? (props: FamilyCardProps<Person>) => renderProfileCard(props.person, props)
-    : Card;
+    ? (props: FamilyCardProps<Person> & CardExtraProps) => renderProfileCard(props.person, props)
+    : (card ?? DefaultFamilyCard);
   const handlePersonClick = onPersonClick ?? onSelectProfile;
+  const resolvePersonLabel = getPersonLabel ?? getDefaultPersonLabel;
 
   return (
     <TreeProvider
       type="family"
       collapsed={collapsed}
+      getPersonLabel={resolvePersonLabel}
+      limits={limits}
       lineShape={lineShape}
       onAddRelationship={onAddRelationship}
       onPersonClick={handlePersonClick}
@@ -166,18 +177,27 @@ export function FamilyTree<Person>({
       subject={resolvedSubject}
     >
       <TreeCanvas
+        ariaLabel={ariaLabel}
         className={className}
+        defaultViewport={defaultViewport}
         defaultZoom={defaultZoom}
         interactionMode={interactionMode}
         maxZoom={maxZoom}
         minZoom={minZoom}
+        onViewportChange={onViewportChange}
         onZoomChange={onZoomChange}
         style={style}
         theme={theme}
+        treeApiRef={treeApiRef}
+        viewport={viewport}
         zoom={zoom}
       >
         <TreeEdges edgeClassName={edgeClassName} />
-        <TreeNodeLayer<Person> card={ResolvedCard} cardClassName={cardClassName} />
+        <TreeNodeLayer<Person, CardExtraProps>
+          card={ResolvedCard}
+          cardClassName={cardClassName}
+          cardProps={cardProps}
+        />
       </TreeCanvas>
     </TreeProvider>
   );

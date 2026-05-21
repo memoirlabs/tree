@@ -1,34 +1,23 @@
 ---
-title: Styling
-description: Style @memoir/tree with CSS variables, stable selectors, and custom card components.
+title: Design
+description: Design @memoir/tree with CSS variables, stable selectors, and custom card components.
 ---
 
-`@memoir/tree` ships a small optional stylesheet, but the styling model is deliberately ordinary React and CSS. The renderer gives you stable attributes and CSS variables; your app supplies the final visual language.
-
-<div className="docs-hero-card">
-  <div className="docs-chip-row">
-    <span>CSS variables</span>
-    <span>Data attributes</span>
-    <span>Custom cards</span>
-    <span>No theme lock-in</span>
-  </div>
-  <h2>Make the tree look like your product, not generic genealogy software.</h2>
-  <div className="docs-copy">Use the default Memoir tokens, override them at the surface, or ignore them and style your own card component directly.</div>
-</div>
+`@memoir/tree` ships a small framework-free stylesheet for the intended Memoir skin: cream canvas, white cards, sharp corners, black outlines/shadows, and orange selected state.
 
 ## Import Styles
 
-Import the stylesheet once if you want the default selectors and theme variables:
+Import the stylesheet once for the default selectors and Memoir theme variables:
 
 ```tsx
 import "@memoir/tree/styles.css";
 ```
 
-The stylesheet is optional. Without it, the React components still render; you just own more of the CSS yourself.
+You can override the variables or replace the card markup.
 
-## Flat Black-Shadow Style
+## Memoir Look
 
-Use this as the recommended starting point for flat product UIs:
+Use this as the starting point for flat product UIs:
 
 ```css
 .memoir-tree {
@@ -44,26 +33,9 @@ Use this as the recommended starting point for flat product UIs:
   --tree-card-radius: 0;
   --tree-profile-radius: 0;
 }
-
-.memoir-profile-card {
-  display: grid;
-  min-width: 128px;
-  justify-items: center;
-  gap: 5px;
-  padding: 10px 12px;
-  border: 2px solid #030201;
-  background: #fffdf4;
-  box-shadow: 6px 6px 0 #030201;
-  color: #030201;
-  text-align: center;
-}
-
-.memoir-profile-card[aria-selected="true"] {
-  background: #ec5a44;
-}
 ```
 
-Then pass the surface class and use a card component that forwards only DOM-safe props:
+Then pass the surface class and a card component:
 
 ```tsx
 function ProfileCard({
@@ -87,22 +59,22 @@ function ProfileCard({
 
 <FamilyTree
   className="memoir-tree"
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId={profileId}
-  renderProfileCard={(_profile, props) => <ProfileCard {...props} />}
+  subject={personId}
+  card={ProfileCard}
 />
 ```
 
 ## Theme Prop
 
-For small changes, use the `theme` prop instead of writing CSS variables manually:
+For small changes, use `theme` instead of writing CSS variables manually:
 
 ```tsx
 <FamilyTree
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="alex"
+  subject="alex"
   theme={{
     surfaceBackground: "#fffdf4",
     canvasBackground: "#f4efdc",
@@ -119,7 +91,7 @@ For small changes, use the `theme` prop instead of writing CSS variables manuall
 
 Use `theme="memoir"` for the package default or `theme="system"` for neutral system colors.
 
-## Stable Selectors
+## Selectors
 
 The family renderer emits these selectors:
 
@@ -128,15 +100,15 @@ The family renderer emits these selectors:
 - `data-family-tree`: family tree canvas marker.
 - `data-family-card-positioner`: absolute-positioned wrapper for a card.
 - `data-family-card`: card props forwarded to your custom card.
-- `data-person-id`: current profile ID.
+- `data-person-id`: current person ID.
 - `data-relation`: computed relation label like `self`, `parent`, or `half-sibling`.
-- `data-generation`: generation relative to the root profile.
+- `data-generation`: generation relative to the subject.
 - `data-side`: `ancestor`, `descendant`, `sibling`, `partner`, or `self`.
+- `data-selected`: present on the selected card.
+- `data-focused`: present on the focused card.
 - `data-family-edge`: SVG edge path.
 - `data-edge-kind`: relationship kind like `biological`, `adoptive`, `spouse`, or `guardian`.
 - `data-edge-status`: relationship status like `current`, `former`, or `divorced`.
-
-Example:
 
 ```css
 [data-family-card][data-relation="half-sibling"] {
@@ -149,14 +121,13 @@ Example:
 }
 ```
 
-## Card Responsibilities
+## Card Root
 
 Your card receives normal HTML props plus tree metadata. Always spread the props onto the root element so selection, data attributes, click handlers, and accessibility metadata reach the DOM:
 
 ```tsx
 function ProfileCard({
   collapsed,
-  focused: _focused,
   person,
   personId,
   readOnly,
@@ -180,4 +151,13 @@ function ProfileCard({
 }
 ```
 
-If you do not want metadata props like `personId`, `relation`, or `readOnly` to appear on a DOM element, destructure them before spreading, as shown above.
+For extra typed props, use `cardProps` on `FamilyTree`. See [FamilyTree](./family-tree) for the full card contract.
+
+```tsx
+<FamilyTree
+  people={people}
+  relationships={relationships}
+  subject={personId}
+  card={ProfileCard}
+/>
+```

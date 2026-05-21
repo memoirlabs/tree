@@ -1,13 +1,13 @@
 ---
-title: Public API
-description: Public exports from @memoir/tree.
+title: API
+description: Exports from @memoir/tree.
 ---
 
 All public exports come from `@memoir/tree`. Import styles separately from `@memoir/tree/styles.css`.
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
-import type { FamilyTreeProps, FamilyRelationship } from "@memoir/tree";
+import type { FamilyTreeProps, FamilyRelationship, TreeApi, TreeViewport } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 ```
 
@@ -17,26 +17,84 @@ import "@memoir/tree/styles.css";
 - `DefaultFamilyCard`
 - `rel`
 - `createFamilyIndex(people, relationships)`
-- `collectFamilyNeighborhood(index, subject)`
+- `collectFamilyNeighborhood(index, subject, limits?)`
+- `defaultFamilyNeighborhoodLimits`
 - `buildFamilyTreeLayout(input)`
 
 Use `FamilyTree` for normal app rendering. Use the pure helpers when you need to test relationship logic, precompute a layout, or build a custom renderer with the lower-level primitives.
 
 ```ts
-type FamilyTreeProps<Person> = {
+type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, never>> = {
+  people?: Record<string, Person>;
+  subject?: string;
+  relationships: FamilyRelationship[];
   profiles?: Record<string, Person>;
   rootProfileId?: string;
-  relationships: FamilyRelationship[];
+  ariaLabel?: string;
+  card?: React.ComponentType<FamilyCardProps<Person> & CardExtraProps>;
+  cardProps?: CardExtraProps | ((person: Person, props: FamilyCardProps<Person>) => CardExtraProps);
   renderProfileCard?: (profile: Person, props: FamilyCardProps<Person>) => React.JSX.Element;
+  viewport?: TreeViewport;
+  defaultViewport?: Partial<TreeViewport>;
+  onViewportChange?: (viewport: TreeViewport) => void;
+  treeApiRef?: React.Ref<TreeApi>;
+  limits?: Partial<FamilyNeighborhoodLimits>;
+  getPersonLabel?: (person: Person, personId: string) => string;
   selected?: string;
   collapsed?: string[];
   readOnly?: boolean;
+  onPersonClick?: (person: Person, personId: string) => void;
   onSelectProfile?: (person: Person, personId: string) => void;
   onAddRelationship?: (person: Person, personId: string) => void;
 };
 ```
 
-Compatibility aliases are also exported: `people` for `profiles`, `subject` for `rootProfileId`, `card` for `renderProfileCard`, and `onPersonClick` for `onSelectProfile`.
+Prefer `people`, `subject`, `card`, and `onPersonClick` in new code. Compatibility aliases remain supported: `profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile`.
+
+## FamilyTree Actions
+
+These are the user-facing callbacks and imperative actions:
+
+| Name | Purpose |
+| --- | --- |
+| `onPersonClick(person, personId)` | Fires when an interactive card is clicked or activated with Enter/Space. Prefer this in new code. |
+| `onSelectProfile(person, personId)` | Memoir-shaped alias for `onPersonClick`. |
+| `onAddRelationship(person, personId)` | Passed into cards so apps can open an “add relative” flow. The library does not mutate data. |
+| `onViewportChange(viewport)` | Fires when pan or zoom changes. Use it with controlled `viewport`. |
+| `onZoomChange(zoom)` | Zoom-only callback for simpler integrations. |
+| `treeApiRef.current.centerPerson(personId)` | Scrolls a rendered person card toward the center of the viewport. |
+| `treeApiRef.current.fitToSubject()` | Centers the current `subject`. |
+| `treeApiRef.current.resetViewport()` | Returns to `defaultViewport` / `defaultZoom`. |
+| `treeApiRef.current.zoomTo(zoom)` | Sets the zoom while preserving the current pan position. |
+
+## FamilyTree Props
+
+| Name | Purpose |
+| --- | --- |
+| `people` | App-owned person records keyed by ID. Preferred name. |
+| `subject` | Person ID at the center of the family neighborhood. Preferred name. |
+| `relationships` | Flat parentage, partnership, and guardianship facts. |
+| `profiles` | Compatibility alias for `people`. |
+| `rootProfileId` | Compatibility alias for `subject`. |
+| `card` | Custom React card component. Preferred path for app-owned card UI. |
+| `cardProps` | Extra typed props passed into `card`; can be an object or function. |
+| `renderProfileCard` | Compatibility/render-function path for custom cards. |
+| `ariaLabel` | Accessible label for the tree surface. |
+| `getPersonLabel` | Builds readable card labels for assistive technology. |
+| `selected` | App-owned selected person ID. |
+| `collapsed` | Person IDs whose deeper ancestor/descendant rows should be hidden. |
+| `readOnly` | Disables add-relationship handlers passed to cards. |
+| `viewport` | Controlled pan/zoom state: `{ x, y, zoom }`. |
+| `defaultViewport` | Initial uncontrolled pan/zoom state. |
+| `zoom` / `defaultZoom` | Zoom-only controlled/uncontrolled props. |
+| `minZoom` / `maxZoom` | Zoom bounds. |
+| `interactionMode` | `"pan"`, `"scroll"`, or `"none"`. |
+| `limits` | Explicit visible-relative caps; use `null` to disable a cap. |
+| `spacing` | Row, column, and padding spacing overrides. |
+| `lineShape` | `"orthogonal"` or `"curved"` SVG edge routing. |
+| `theme` | `"memoir"`, `"system"`, or a `TreeTheme` object. |
+| `className` / `style` | Applied to the tree surface. |
+| `cardClassName` / `edgeClassName` | Applied to cards and edge paths. |
 
 ## Relationship Helpers
 
@@ -74,9 +132,11 @@ Relationship option types:
 - `TreeNodeLayer`
 - `useTreeLayout()`
 - `TreeInteractionMode`
+- `TreeViewport`
+- `TreeApi`
 - `TreeLineShape`
 - `TreeTheme`
-- optional CSS from `@memoir/tree/styles.css`
+- stylesheet from `@memoir/tree/styles.css`
 
 Use primitives when the default wrapper is not enough but you still want package-owned layout, measurement, edges, pan, and zoom:
 
@@ -89,12 +149,36 @@ Use primitives when the default wrapper is not enough but you still want package
 </TreeProvider>
 ```
 
+Primitive responsibilities:
+
+| Primitive | Purpose |
+| --- | --- |
+| `TreeProvider` | Creates family layout context from people, relationships, selection, collapse state, labels, limits, and spacing. |
+| `TreeCanvas` | Renders the viewport surface, pan/zoom behavior, and canvas container. |
+| `TreeEdges` | Renders SVG relationship edges from the computed layout. |
+| `TreeNodeLayer` | Renders measured card nodes with accessibility and data attributes. |
+| `TreeSurface` | Lower-level pan/zoom surface used by `TreeCanvas`. |
+| `useTreeLayout()` | Reads computed cards, edges, bounds, and tree context for custom renderers. |
+
+## Theme Helpers
+
+| Export | Purpose |
+| --- | --- |
+| `memoirTreeTheme` | Default Memoir theme tokens. |
+| `systemTreeTheme` | Neutral system-color theme. |
+| `treeStylePresets` | Preset map for `memoir` and `system`. |
+| `resolveTreeTheme(theme)` | Resolves a preset or custom theme into a theme object. |
+| `createTreeThemeStyle(theme)` | Converts a theme to CSS variable style props. |
+| `getTreeStyleName(theme)` | Returns the `data-tree-style` name used by the surface. |
+
 ## Family Types
 
 - `PersonId`
 - `PeopleById<Person>`
 - `RenderProfileCard<Person>`
 - `FamilyTreePersonHandler<Person>`
+- `FamilyTreeCardProps<Person, CardExtraProps>`
+- `FamilyNeighborhoodLimits`
 - `FamilyRelationship`
 - `FamilyParentageRelationship`
 - `FamilyPartnershipRelationship`
@@ -108,4 +192,4 @@ Use primitives when the default wrapper is not enough but you still want package
 - `FamilyTreeBounds`
 - `BuildFamilyTreeLayoutInput<Person>`
 
-The public API is intentionally scoped to the family tree renderer. Docs, tests, and apps should pass app-owned relationship rows directly instead of going through a diagram DSL or an internal database.
+The API is intentionally scoped to the family tree renderer. Docs, tests, and apps should pass app-owned relationship rows directly instead of going through a diagram DSL or an internal database.

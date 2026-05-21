@@ -45,3 +45,12 @@ test("collects subject-centered relatives and computed labels", () => {
   expect(neighborhood?.grandchildren.map((relative) => relative.personId)).toEqual(["noah"]);
   expect(neighborhood?.halfSiblings[0]?.relation.label).toBe("half-sibling");
 });
+
+test("accepts explicit neighborhood limits", () => {
+  const index = createFamilyIndex(people, relationships);
+  const capped = collectFamilyNeighborhood(index, "henry", { children: 1 });
+  const uncapped = collectFamilyNeighborhood(index, "henry", { children: null });
+
+  expect(capped?.children.map((relative) => relative.personId)).toEqual(["ava"]);
+  expect(uncapped?.children.map((relative) => relative.personId)).toEqual(["ava", "milo"]);
+});

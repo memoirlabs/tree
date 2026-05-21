@@ -4,6 +4,7 @@ import type {
   FamilyParentageRelationship,
   FamilyPartnershipRelationship,
   FamilyRelationship,
+  FamilyNeighborhoodLimits,
   PeopleById,
   PersonId,
 } from "./types";
@@ -37,7 +38,7 @@ export interface FamilyNeighborhood<Person> {
   relationships: FamilyRelationship[];
 }
 
-const autoLimits = {
+export const defaultFamilyNeighborhoodLimits: FamilyNeighborhoodLimits = {
   grandparents: 4,
   parents: 4,
   siblings: 8,
@@ -45,7 +46,7 @@ const autoLimits = {
   partners: 3,
   children: 8,
   grandchildren: 8,
-} as const;
+};
 
 const pushToMap = <K, V>(map: Map<K, V[]>, key: K, value: V) => {
   const existing = map.get(key);
@@ -212,8 +213,8 @@ const createRelatives = <Person>(
     .filter((relative): relative is FamilyRelative<Person> => Boolean(relative))
     .toSorted(byOrderThenId);
 
-const capRelatives = <Person>(relatives: FamilyRelative<Person>[], limit: number): FamilyRelative<Person>[] =>
-  relatives.length > limit ? relatives.slice(0, limit) : relatives;
+const capRelatives = <Person>(relatives: FamilyRelative<Person>[], limit: number | null): FamilyRelative<Person>[] =>
+  limit !== null && relatives.length > limit ? relatives.slice(0, limit) : relatives;
 
 const mergeRelatives = <Person>(...groups: FamilyRelative<Person>[][]): FamilyRelative<Person>[] => {
   const seen = new Set<PersonId>();
@@ -231,9 +232,11 @@ const mergeRelatives = <Person>(...groups: FamilyRelative<Person>[][]): FamilyRe
 export function collectFamilyNeighborhood<Person>(
   index: FamilyIndex<Person>,
   subject: PersonId,
+  limits?: Partial<FamilyNeighborhoodLimits>,
 ): FamilyNeighborhood<Person> | null {
   const self = createRelative(index, subject, { label: "self", generation: 0, side: "self" });
   if (!self) return null;
+  const resolvedLimits = { ...defaultFamilyNeighborhoodLimits, ...limits };
 
   const parentIds = getParents(index, subject);
   const guardianIds = getGuardians(index, subject);
@@ -279,7 +282,7 @@ export function collectFamilyNeighborhood<Person>(
         generation: -2,
         side: "ancestor",
       }),
-      autoLimits.grandparents,
+      resolvedLimits.grandparents,
     ),
     parents: capRelatives(
       mergeRelatives(
@@ -294,7 +297,7 @@ export function collectFamilyNeighborhood<Person>(
           side: "ancestor",
         }),
       ),
-      autoLimits.parents,
+      resolvedLimits.parents,
     ),
     siblings: capRelatives(
       createRelatives(index, siblings, {
@@ -302,7 +305,7 @@ export function collectFamilyNeighborhood<Person>(
         generation: 0,
         side: "sibling",
       }),
-      autoLimits.siblings,
+      resolvedLimits.siblings,
     ),
     halfSiblings: capRelatives(
       createRelatives(index, halfSiblings, {
@@ -310,7 +313,7 @@ export function collectFamilyNeighborhood<Person>(
         generation: 0,
         side: "sibling",
       }),
-      autoLimits.halfSiblings,
+      resolvedLimits.halfSiblings,
     ),
     partners: capRelatives(
       mergeRelatives(
@@ -325,7 +328,7 @@ export function collectFamilyNeighborhood<Person>(
           side: "partner",
         }),
       ),
-      autoLimits.partners,
+      resolvedLimits.partners,
     ),
     children: capRelatives(
       createRelatives(index, childIds, {
@@ -333,7 +336,7 @@ export function collectFamilyNeighborhood<Person>(
         generation: 1,
         side: "descendant",
       }).filter((relative) => !childSet.has(subject) && relative.personId !== subject),
-      autoLimits.children,
+      resolvedLimits.children,
     ),
     grandchildren: capRelatives(
       createRelatives(index, grandchildIds, {
@@ -341,7 +344,7 @@ export function collectFamilyNeighborhood<Person>(
         generation: 2,
         side: "descendant",
       }),
-      autoLimits.grandchildren,
+      resolvedLimits.grandchildren,
     ),
     relationships: index.relationships,
   };

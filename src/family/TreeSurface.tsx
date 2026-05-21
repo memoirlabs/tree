@@ -1,9 +1,10 @@
 "use client";
 
-import type { CSSProperties, JSX, PointerEvent, ReactNode, WheelEvent } from "react";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties, JSX, PointerEvent, ReactNode, Ref, UIEvent, WheelEvent } from "react";
+import { useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 
-import type { TreeInteractionMode } from "./types";
+import type { PersonId, TreeApi, TreeInteractionMode, TreeViewport } from "./types";
+import type { FamilyTreeLayoutCard } from "./layout";
 import type { TreeStylePreset, TreeTheme } from "./theme";
 import { createTreeThemeStyle, getTreeStyleName } from "./theme";
 
@@ -32,17 +33,23 @@ export interface TreeSurfaceProps {
     width: number;
     height: number;
   };
+  cards?: FamilyTreeLayoutCard<unknown>[];
   children: ReactNode;
   className?: string;
+  ariaLabel?: string;
+  defaultViewport?: Partial<TreeViewport>;
   defaultZoom?: number;
   interactionMode?: TreeInteractionMode;
   maxZoom?: number;
   minZoom?: number;
+  onViewportChange?: (viewport: TreeViewport) => void;
   onZoomChange?: (zoom: number) => void;
+  treeApiRef?: Ref<TreeApi>;
   style?: CSSProperties;
   subject?: string;
   theme?: TreeStylePreset | TreeTheme;
   treeType: "family";
+  viewport?: TreeViewport;
   zoom?: number;
 }
 
@@ -56,22 +63,34 @@ const getPointerDistance = (pointers: Map<number, { x: number; y: number }>): nu
 
 export function TreeSurface({
   bounds,
+  cards = [],
   children,
   className,
+  ariaLabel = "Family tree",
+  defaultViewport,
   defaultZoom = 1,
   interactionMode = "pan",
   maxZoom = 2.5,
   minZoom = 0.4,
+  onViewportChange,
   onZoomChange,
   style,
   subject,
   theme,
+  treeApiRef,
   treeType,
+  viewport,
   zoom,
 }: TreeSurfaceProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [uncontrolledZoom, setUncontrolledZoom] = useState(defaultZoom);
-  const currentZoom = clamp(zoom ?? uncontrolledZoom, minZoom, maxZoom);
+  const lastCenteredKeyRef = useRef<string | null>(null);
+  const [uncontrolledViewport, setUncontrolledViewport] = useState<TreeViewport>({
+    x: defaultViewport?.x ?? 0,
+    y: defaultViewport?.y ?? 0,
+    zoom: defaultViewport?.zoom ?? defaultZoom,
+  });
+  const currentZoom = clamp(viewport?.zoom ?? zoom ?? uncontrolledViewport.zoom, minZoom, maxZoom);
+  const centerKey = `${interactionMode}:${subject ?? ""}:${bounds.width}:${bounds.height}`;
   const dragRef = useRef<{
     pointerId: number;
     scrollLeft: number;
@@ -85,24 +104,95 @@ export function TreeSurface({
     zoom: number;
   } | null>(null);
 
-  const updateZoom = useCallback(
-    (nextZoom: number) => {
-      const clampedZoom = clamp(nextZoom, minZoom, maxZoom);
-      if (zoom === undefined) setUncontrolledZoom(clampedZoom);
-      onZoomChange?.(clampedZoom);
+  const updateViewport = useCallback(
+    (nextViewport: TreeViewport, notifyZoom = false) => {
+      const clampedViewport = {
+        x: Math.max(0, nextViewport.x),
+        y: Math.max(0, nextViewport.y),
+        zoom: clamp(nextViewport.zoom, minZoom, maxZoom),
+      };
+      if (viewport === undefined) setUncontrolledViewport(clampedViewport);
+      onViewportChange?.(clampedViewport);
+      if (notifyZoom) onZoomChange?.(clampedViewport.zoom);
     },
-    [maxZoom, minZoom, onZoomChange, zoom],
+    [maxZoom, minZoom, onViewportChange, onZoomChange, viewport],
+  );
+
+  const updateZoom = useCallback(
+    (nextZoom: number, x?: number, y?: number) => {
+      const clampedZoom = clamp(nextZoom, minZoom, maxZoom);
+      updateViewport(
+        {
+          x: x ?? containerRef.current?.scrollLeft ?? uncontrolledViewport.x,
+          y: y ?? containerRef.current?.scrollTop ?? uncontrolledViewport.y,
+          zoom: clampedZoom,
+        },
+        true,
+      );
+    },
+    [maxZoom, minZoom, uncontrolledViewport.x, uncontrolledViewport.y, updateViewport],
   );
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container || interactionMode === "none") return;
+    if (viewport) {
+      container.scrollLeft = viewport.x;
+      container.scrollTop = viewport.y;
+      return;
+    }
+    if (lastCenteredKeyRef.current === centerKey) return;
 
     const maxLeft = container.scrollWidth - container.clientWidth;
     const maxTop = container.scrollHeight - container.clientHeight;
     if (maxLeft > 0) container.scrollLeft = maxLeft / 2;
     if (maxTop > 0) container.scrollTop = maxTop / 2;
-  }, [bounds.height, bounds.width, currentZoom, interactionMode]);
+    lastCenteredKeyRef.current = centerKey;
+    updateViewport({ x: container.scrollLeft, y: container.scrollTop, zoom: currentZoom });
+  }, [centerKey, currentZoom, interactionMode, updateViewport, viewport]);
+
+  const centerPerson = useCallback(
+    (personId: PersonId) => {
+      const container = containerRef.current;
+      const card = cards.find((candidate) => candidate.personId === personId);
+      if (!container || !card) return;
+      const nextX = card.x * currentZoom + (card.width * currentZoom) / 2 - container.clientWidth / 2;
+      const nextY = card.y * currentZoom + (card.height * currentZoom) / 2 - container.clientHeight / 2;
+      container.scrollLeft = Math.max(0, nextX);
+      container.scrollTop = Math.max(0, nextY);
+      updateViewport({ x: container.scrollLeft, y: container.scrollTop, zoom: currentZoom });
+    },
+    [cards, currentZoom, updateViewport],
+  );
+
+  const resetViewport = useCallback(() => {
+    const nextZoom = defaultViewport?.zoom ?? defaultZoom;
+    const nextViewport = {
+      x: defaultViewport?.x ?? 0,
+      y: defaultViewport?.y ?? 0,
+      zoom: nextZoom,
+    };
+    const container = containerRef.current;
+    if (container) {
+      container.scrollLeft = nextViewport.x;
+      container.scrollTop = nextViewport.y;
+    }
+    lastCenteredKeyRef.current = null;
+    updateViewport(nextViewport, true);
+  }, [defaultViewport?.x, defaultViewport?.y, defaultViewport?.zoom, defaultZoom, updateViewport]);
+
+  useImperativeHandle(
+    treeApiRef,
+    () => ({
+      centerPerson,
+      fitToSubject: () => {
+        if (subject) centerPerson(subject);
+      },
+      resetViewport,
+      zoomTo: (nextZoom) => updateZoom(nextZoom),
+    }),
+    [centerPerson, resetViewport, subject, updateZoom],
+  );
 
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
@@ -153,8 +243,9 @@ export function TreeSurface({
       const container = event.currentTarget;
       container.scrollLeft = drag.scrollLeft - (event.clientX - drag.x);
       container.scrollTop = drag.scrollTop - (event.clientY - drag.y);
+      updateViewport({ x: container.scrollLeft, y: container.scrollTop, zoom: currentZoom });
     },
-    [updateZoom],
+    [currentZoom, updateViewport, updateZoom],
   );
 
   const handlePointerUp = useCallback((event: PointerEvent<HTMLDivElement>) => {
@@ -178,15 +269,27 @@ export function TreeSurface({
     (event: WheelEvent<HTMLDivElement>) => {
       if (interactionMode === "none" || !event.ctrlKey) return;
       event.preventDefault();
-      updateZoom(currentZoom * (1 - event.deltaY * 0.002));
+      updateZoom(currentZoom * (1 - event.deltaY * 0.002), event.currentTarget.scrollLeft, event.currentTarget.scrollTop);
     },
     [currentZoom, interactionMode, updateZoom],
+  );
+
+  const handleScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      updateViewport({
+        x: event.currentTarget.scrollLeft,
+        y: event.currentTarget.scrollTop,
+        zoom: currentZoom,
+      });
+    },
+    [currentZoom, updateViewport],
   );
 
   return (
     <div
       ref={containerRef}
       className={className}
+      aria-label={ariaLabel}
       data-tree-interaction={interactionMode}
       data-tree-subject={subject}
       data-tree-style={getTreeStyleName(theme)}
@@ -196,6 +299,7 @@ export function TreeSurface({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onScroll={handleScroll}
       onWheel={handleWheel}
       style={{
         ...defaultTreeSurfaceStyle,

@@ -1,0 +1,14 @@
+{
+  "title": "Memoir Tree Release",
+  "outputPath": "RELEASE_ANNOUNCEMENT.md",
+  "tagPrefix": "v",
+  "includeMergeCommits": true,
+  "topMessage": "",
+  "sections": {
+    "features": "Features",
+    "fixes": "Fixes",
+    "documentation": "Documentation",
+    "maintenance": "Maintenance",
+    "other": "Other Changes"
+  }
+}

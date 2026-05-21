@@ -49,10 +49,10 @@ function DemoProfileCard({
 export function SimpleFamilyTreeDemo() {
   return (
     <FamilyTree
-      profiles={profiles}
+      people={profiles}
       relationships={relationships}
-      rootProfileId="noa"
-      renderProfileCard={(_profile, props) => <DemoProfileCard {...props} />}
+      subject="noa"
+      card={DemoProfileCard}
       className="memoir-demo-surface"
       edgeClassName="memoir-demo-edge"
       interactionMode="pan"

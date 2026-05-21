@@ -3,40 +3,16 @@ title: Getting Started
 description: Install @memoir/tree and render your first family tree.
 ---
 
-`@memoir/tree` is a controlled React renderer for family trees. Your app owns the profiles, permissions, editing flows, and database writes. The package handles measured layout, SVG relationship edges, panning, zooming, and card placement.
+`@memoir/tree` is a lightweight React renderer for subject-centered family trees. Your app owns the people, permissions, editing flows, and database writes. The package handles measured layout, SVG relationship edges, panning, zooming, card placement, accessibility props, and a tiny CSS-variable skin.
 
-<div className="docs-hero-card">
-  <div className="docs-chip-row">
-    <span>React</span>
-    <span>TypeScript</span>
-    <span>Measured layout</span>
-    <span>Bring your own UI</span>
-  </div>
-  <h2>Readable family trees without giving up your data model.</h2>
-  <div className="docs-copy">Pass profile records, relationship facts, and a normal React card. The renderer keeps the tree readable while your app stays in control.</div>
-</div>
+<img className="docs-intro-logo" src="/logo-transparent.png" alt="Memoir Tree" />
 
-The package is intentionally not a genealogy app in a box. It keeps persistence, routing, styling, auth, permissions, and data fetching in the host application. It focuses on:
+The package is not a genealogy app in a box. It keeps persistence, routing, auth, permissions, and data fetching in the host application. It focuses on:
 
 - Normalizing relationship facts.
 - Computing subject-relative family labels.
 - Measuring custom cards.
-- Rendering automatic layouts, SVG edges, pan, and zoom.
-
-<div className="docs-card-grid">
-  <div className="docs-card">
-    <strong>1. Own your data</strong>
-    <div className="docs-copy">Use your app-owned profile objects. The tree only needs stable IDs.</div>
-  </div>
-  <div className="docs-card">
-    <strong>2. Describe facts</strong>
-    <div className="docs-copy">Describe parents, partners, guardians, and children as flat rows.</div>
-  </div>
-  <div className="docs-card">
-    <strong>3. Render your cards</strong>
-    <div className="docs-copy">Bring any React card component and let the layout measure it.</div>
-  </div>
-</div>
+- Rendering automatic layouts, SVG edges, pan, zoom, and a small viewport API.
 
 ## Install
 
@@ -44,45 +20,22 @@ The package is intentionally not a genealogy app in a box. It keeps persistence,
 bun add @memoir/tree
 ```
 
-Import the optional stylesheet once in your app if you want the default CSS variables and stable selector styles:
+Import the stylesheet once for the intended Memoir skin. It is framework-free CSS built from variables and stable selectors:
 
 ```tsx
 import "@memoir/tree/styles.css";
 ```
 
-## Recommended Docs Outline
-
-Use the docs in this order when adding the package to another app:
-
-<div className="docs-steps">
-  <div className="docs-step">
-    <h3>Getting Started</h3>
-    <div className="docs-copy">Install the package and render the smallest useful family tree.</div>
-  </div>
-  <div className="docs-step">
-    <h3>FamilyTree</h3>
-    <div className="docs-copy">Wire controlled profile data, relationship facts, selection, edit hooks, collapse, and zoom.</div>
-  </div>
-  <div className="docs-step">
-    <h3>Styling</h3>
-    <div className="docs-copy">Apply the flat black-shadow style, replace tokens, and target stable data attributes.</div>
-  </div>
-  <div className="docs-step">
-    <h3>Public API</h3>
-    <div className="docs-copy">Use the exported components, helpers, types, primitives, and layout functions.</div>
-  </div>
-</div>
-
 ## Minimal Family Tree
 
-This example uses the Memoir-shaped API: `profiles`, `relationships`, `rootProfileId`, and `renderProfileCard`.
+This example uses the clean API: `people`, `relationships`, `subject`, and `card`.
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
 import type { FamilyCardProps } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 
-const profiles = {
+const people = {
   alex: { id: "alex", name: "Alex" },
   morgan: { id: "morgan", name: "Morgan" },
   casey: { id: "casey", name: "Casey" },
@@ -96,7 +49,7 @@ const relationships = [
   rel.children(["alex", "jordan"], ["riley"]),
 ];
 
-type Profile = (typeof profiles)[string];
+type Person = (typeof people)[string];
 
 function ProfileCard({
   collapsed: _collapsed,
@@ -108,7 +61,7 @@ function ProfileCard({
   relation,
   selected,
   ...props
-}: FamilyCardProps<Profile>) {
+}: FamilyCardProps<Person>) {
   return (
     <article {...props} className="memoir-profile-card">
       <strong>{person.name}</strong>
@@ -120,10 +73,10 @@ function ProfileCard({
 export function Page() {
   return (
     <FamilyTree
-      profiles={profiles}
+      people={people}
       relationships={relationships}
-      rootProfileId="alex"
-      renderProfileCard={(_profile, props) => <ProfileCard {...props} />}
+      subject="alex"
+      card={ProfileCard}
     />
   );
 }
@@ -133,40 +86,10 @@ You can also omit `renderProfileCard` to use the built-in default card:
 
 ```tsx
 export function Page() {
-  return <FamilyTree profiles={profiles} rootProfileId="alex" relationships={relationships} />;
+  return <FamilyTree people={people} subject="alex" relationships={relationships} />;
 }
 ```
 
-## Styling
+`profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile` remain supported Memoir-shaped aliases for app compatibility.
 
-<div className="docs-api-band">
-  <h3>Stable selectors, normal CSS</h3>
-  <div className="docs-copy">The renderer emits data attributes for surfaces, cards, relation labels, selected state, and SVG edges so you can style the component without wrapping internals.</div>
-</div>
-
-Use normal CSS against stable data attributes. This is the flat black-shadow look used on the site:
-
-```css
-[data-family-card] {
-  min-width: 128px;
-  border: 2px solid currentColor;
-  border-radius: 0;
-  padding: 10px 12px;
-  background: #fffdf4;
-  box-shadow: 6px 6px 0 #030201;
-}
-
-[data-family-card][data-relation="self"] {
-  background: #ec5a44;
-}
-
-[data-family-card][aria-selected="true"] {
-  box-shadow: 8px 8px 0 #030201;
-}
-
-[data-family-edge] {
-  color: #3b342e;
-}
-```
-
-Next: read [FamilyTree](./family-tree) for the full component contract or [Styling](./styling) for theme and selector guidance.
+Next: read [FamilyTree](./family-tree) for the full component contract, [Org Chart](./org-chart) for the current org-chart status, or [Design](./design) for theme and selector guidance.

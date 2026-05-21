@@ -23,7 +23,9 @@ The repository is organized around headless logic first and React rendering seco
 ├── tests/
 │   ├── family-index.test.ts
 │   ├── layout.test.ts
-│   └── rel.test.ts
+│   ├── primitives.test.tsx
+│   ├── rel.test.ts
+│   └── theme.test.ts
 ├── scripts/
 │   └── fix-dist-imports.ts
 ├── site/
@@ -40,6 +42,7 @@ The repository is organized around headless logic first and React rendering seco
 │   ├── next.config.mjs
 │   └── package.json
 ├── dist/
+├── AGENTS.md
 ├── package.json
 ├── tsconfig.json
 └── tsconfig.build.json
@@ -47,25 +50,27 @@ The repository is organized around headless logic first and React rendering seco
 
 ## Folder Responsibilities
 
-- `src/family/indexing.ts`: Pure relationship fact indexing and subject-relative labels.
-- `src/family/layout.ts`: Pure measured row placement.
+- `AGENTS.md`: Current agent-facing architecture, API, styling, and verification guidance.
+- `src/family/indexing.ts`: Pure relationship fact indexing, subject-relative labels, and configurable neighborhood limits.
+- `src/family/layout.ts`: Pure measured row placement with explicit spacing and limits inputs.
 - `src/family/edge-routing.ts`: Pure SVG path generation.
 - `src/family/theme.ts`: Theme presets and CSS variable mapping.
 - `src/family/use-card-measurements.ts`: DOM measurement hook.
-- `src/family/FamilyTree.tsx`: Thin React renderer for cards, canvas, and edges.
+- `src/family/FamilyTree.tsx`: Thin React renderer for cards, canvas, edges, accessibility labels, viewport props, and typed card props.
 - `src/family/TreePrimitives.tsx`: Composable provider, canvas, edge, and node layers.
-- `src/styles.css`: Optional package stylesheet.
-- `tests/`: Bun tests for helpers, family logic, and layout behavior.
+- `src/styles.css`: Tiny framework-free package stylesheet for the Memoir skin.
+- `tests/`: Bun tests for helpers, family logic, layout behavior, primitives, theming, and SSR markup.
 - `site/`: Next.js app with the landing page, simple rendered demo, and Fumadocs docs.
 - `site/app/(home)/page.tsx`: Landing page at `/`.
 - `site/app/docs`: Fumadocs routes at `/docs`.
 - `site/components/simple-family-tree-demo.tsx`: Static homepage demo that imports local library source.
-- `site/content/docs`: Fumadocs MDX content.
+- `site/content/docs`: Fumadocs MDX content for getting started, FamilyTree, design, Org Chart, API, development, and project structure.
 - `dist/`: Generated package output.
 
 ## Public Entrypoints
 
 - npm package entry: `src/index.ts` -> `dist/index.js`.
+- stylesheet entry: `src/styles.css` -> `dist/styles.css` exported as `@memoir/tree/styles.css`.
 
 ## Package Boundary
 

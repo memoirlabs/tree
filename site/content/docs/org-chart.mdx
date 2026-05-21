@@ -1,0 +1,49 @@
+---
+title: Org Chart
+description: Current org chart support and how it relates to @memoir/tree.
+---
+
+`@memoir/tree` does not currently export an `OrgChart` component.
+
+That is intentional for now. Family trees and org charts have different semantics. Org charts need managers, reports, teams, titles, dotted lines, vacant roles, and permissions. Those should not be forced through parentage or guardianship relationships.
+
+## Status
+
+Use `FamilyTree` for family relationships:
+
+```tsx
+import { FamilyTree, rel } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+```
+
+There is no supported import like this today:
+
+```tsx
+import { OrgChart } from "@memoir/tree";
+```
+
+## Shape
+
+If this package adds org charts, it should be a sibling API, not a rewrite of the family API:
+
+```tsx
+<OrgChart
+  people={people}
+  rootId="ceo"
+  reports={reports}
+  card={PersonCard}
+/>
+```
+
+The right shape would keep the same library principles:
+
+- React and TypeScript only.
+- No graph framework.
+- Bring your own card.
+- Tiny CSS-variable stylesheet.
+- Stable data attributes.
+- Controlled viewport props.
+- Explicit limits for visible reports.
+- Clear accessibility labels.
+
+Until that exists, docs and examples should not pretend `OrgChart` is shipped.

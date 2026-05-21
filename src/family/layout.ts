@@ -3,6 +3,7 @@ import { routeFamilyEdges } from "./edge-routing";
 import type { FamilyRelative } from "./indexing";
 import type {
   ComputedRelation,
+  FamilyNeighborhoodLimits,
   FamilyRelationship,
   FamilyTreeSize,
   FamilyTreeSpacing,
@@ -48,6 +49,7 @@ export interface BuildFamilyTreeLayoutInput<Person> {
   collapsed?: PersonId[];
   measurements?: Record<PersonId, FamilyTreeSize>;
   spacing?: Partial<FamilyTreeSpacing>;
+  limits?: Partial<FamilyNeighborhoodLimits>;
   lineShape?: TreeLineShape;
 }
 
@@ -148,12 +150,13 @@ export function buildFamilyTreeLayout<Person>({
   collapsed = [],
   measurements = {},
   spacing: spacingOverrides,
+  limits,
   lineShape = "orthogonal",
 }: BuildFamilyTreeLayoutInput<Person>): FamilyTreeLayoutResult<Person> {
   const fallbackCardSize = defaultFallbackCardSize;
   const spacing = { ...defaultSpacing, ...spacingOverrides };
   const index = createFamilyIndex(people, relationships);
-  const neighborhood = collectFamilyNeighborhood(index, subject);
+  const neighborhood = collectFamilyNeighborhood(index, subject, limits);
   if (!neighborhood) {
     return {
       cards: [],

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType, CSSProperties, JSX, ReactNode, RefObject } from "react";
+import type { ComponentType, CSSProperties, JSX, KeyboardEvent, ReactNode, Ref, RefObject } from "react";
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
 
 import { buildFamilyTreeLayout } from "./layout";
@@ -9,12 +9,15 @@ import { useCardMeasurements } from "./use-card-measurements";
 import type {
   FamilyCardProps,
   FamilyRelationship,
+  FamilyTreeCardProps,
   FamilyTreePersonHandler,
   FamilyTreeProps,
   FamilyTreeSpacing,
   PeopleById,
   PersonId,
+  TreeApi,
   TreeInteractionMode,
+  TreeViewport,
 } from "./types";
 import type { FamilyTreeLayoutResult } from "./layout";
 import type { TreeLineShape, TreeStylePreset, TreeTheme } from "./theme";
@@ -31,9 +34,11 @@ export interface FamilyTreeProviderProps<Person> {
   lineShape?: TreeLineShape;
   onPersonClick?: FamilyTreeProps<Person>["onPersonClick"];
   onAddRelationship?: FamilyTreePersonHandler<Person>;
+  getPersonLabel?: (person: Person, personId: PersonId) => string;
   readOnly?: boolean;
   selected?: PersonId;
   spacing?: Partial<FamilyTreeSpacing>;
+  limits?: FamilyTreeProps<Person>["limits"];
 }
 
 export type TreeProviderProps<Person> = FamilyTreeProviderProps<Person>;
@@ -46,6 +51,7 @@ export interface FamilyTreePrimitiveContext<Person> {
   lineShape: TreeLineShape;
   onPersonClick?: FamilyTreeProps<Person>["onPersonClick"];
   onAddRelationship?: FamilyTreePersonHandler<Person>;
+  getPersonLabel?: (person: Person, personId: PersonId) => string;
   readOnly: boolean;
   selected?: PersonId;
   subject: PersonId;
@@ -55,14 +61,19 @@ export type TreePrimitiveContext<Person> = FamilyTreePrimitiveContext<Person>;
 
 export interface TreeCanvasProps {
   children: ReactNode;
+  ariaLabel?: string;
   className?: string;
+  defaultViewport?: Partial<TreeViewport>;
   defaultZoom?: number;
   interactionMode?: TreeInteractionMode;
   maxZoom?: number;
   minZoom?: number;
+  onViewportChange?: (viewport: TreeViewport) => void;
   onZoomChange?: (zoom: number) => void;
   style?: CSSProperties;
   theme?: TreeStylePreset | TreeTheme;
+  treeApiRef?: Ref<TreeApi>;
+  viewport?: TreeViewport;
   zoom?: number;
 }
 
@@ -70,9 +81,10 @@ export interface TreeEdgesProps {
   edgeClassName?: string;
 }
 
-export interface TreeNodeLayerProps<Person> {
-  card: ComponentType<FamilyCardProps<Person>>;
+export interface TreeNodeLayerProps<Person, CardExtraProps extends object = Record<string, never>> {
+  card: ComponentType<FamilyCardProps<Person> & CardExtraProps>;
   cardClassName?: string;
+  cardProps?: FamilyTreeCardProps<Person, CardExtraProps>;
 }
 
 const TreePrimitiveContextObject = createContext<TreePrimitiveContext<unknown> | null>(null);
@@ -86,6 +98,25 @@ const createLayoutSpacing = (spacing?: Partial<FamilyTreeSpacing>) =>
       }
     : undefined;
 
+const createMeasurementKey = (
+  subject: PersonId,
+  relationships: FamilyRelationship[],
+  collapsed?: PersonId[],
+) => {
+  const relationshipKey = relationships
+    .map((relationship) => {
+      if (relationship.type === "partnership") {
+        return `p:${relationship.partners.join(",")}`;
+      }
+      if (relationship.type === "guardianship") {
+        return `g:${relationship.guardians.join(",")}>${relationship.children.join(",")}`;
+      }
+      return `r:${relationship.parents.join(",")}>${relationship.children.join(",")}`;
+    })
+    .join("|");
+  return `${subject}::${collapsed?.join(",") ?? ""}::${relationshipKey}`;
+};
+
 export function TreeProvider<Person>(props: TreeProviderProps<Person>): JSX.Element {
   return <FamilyTreeProvider {...props} />;
 }
@@ -97,6 +128,8 @@ function FamilyTreeProvider<Person>({
   children,
   collapsed,
   lineShape = "orthogonal",
+  getPersonLabel,
+  limits,
   onAddRelationship,
   onPersonClick,
   readOnly = false,
@@ -106,11 +139,7 @@ function FamilyTreeProvider<Person>({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
   const layoutSpacing = useMemo(() => createLayoutSpacing(spacing), [spacing]);
-  const unmeasuredLayout = useMemo(
-    () => buildFamilyTreeLayout({ subject, people, relationships, collapsed, lineShape, spacing: layoutSpacing }),
-    [collapsed, layoutSpacing, lineShape, people, relationships, subject],
-  );
-  const measureKey = unmeasuredLayout.cards.map((card) => card.personId).join("|");
+  const measureKey = createMeasurementKey(subject, relationships, collapsed);
   const measurements = useCardMeasurements(containerRef, measureKey);
   const layout = useMemo(
     () =>
@@ -120,10 +149,11 @@ function FamilyTreeProvider<Person>({
         relationships,
         collapsed,
         measurements,
+        limits,
         lineShape,
         spacing: layoutSpacing,
       }),
-    [collapsed, layoutSpacing, lineShape, measurements, people, relationships, subject],
+    [collapsed, layoutSpacing, limits, lineShape, measurements, people, relationships, subject],
   );
   const value = useMemo<FamilyTreePrimitiveContext<Person>>(
     () => ({
@@ -132,13 +162,14 @@ function FamilyTreeProvider<Person>({
       containerRef,
       layout,
       lineShape,
+      getPersonLabel,
       onAddRelationship,
       onPersonClick,
       readOnly,
       selected,
       subject,
     }),
-    [collapsedIds, layout, lineShape, onAddRelationship, onPersonClick, readOnly, selected, subject],
+    [collapsedIds, layout, lineShape, getPersonLabel, onAddRelationship, onPersonClick, readOnly, selected, subject],
   );
 
   return <TreePrimitiveContextObject.Provider value={value as TreePrimitiveContext<unknown>}>{children}</TreePrimitiveContextObject.Provider>;
@@ -154,14 +185,19 @@ export function useTreeLayout<Person = unknown>(): TreePrimitiveContext<Person> 
 
 export function TreeCanvas({
   children,
+  ariaLabel,
   className,
+  defaultViewport,
   defaultZoom,
   interactionMode = "pan",
   maxZoom,
   minZoom,
+  onViewportChange,
   onZoomChange,
   style,
   theme,
+  treeApiRef,
+  viewport,
   zoom,
 }: TreeCanvasProps): JSX.Element {
   const context = useTreeLayout();
@@ -169,16 +205,22 @@ export function TreeCanvas({
   return (
     <TreeSurface
       bounds={context.layout.bounds}
+      cards={context.layout.cards}
       className={className}
+      ariaLabel={ariaLabel}
+      defaultViewport={defaultViewport}
       defaultZoom={defaultZoom}
       interactionMode={interactionMode}
       maxZoom={maxZoom}
       minZoom={minZoom}
+      onViewportChange={onViewportChange}
       onZoomChange={onZoomChange}
       style={style}
       subject={context.subject}
       theme={theme}
+      treeApiRef={treeApiRef}
       treeType="family"
+      viewport={viewport}
       zoom={zoom}
     >
       <div
@@ -227,18 +269,30 @@ export function TreeEdges({ edgeClassName }: TreeEdgesProps): JSX.Element {
           strokeDasharray={edge.kind === "adoptive" || edge.kind === "guardian" || edge.status === "former" ? "4 4" : undefined}
           strokeLinecap={context.lineShape === "curved" ? "round" : "butt"}
           strokeLinejoin={context.lineShape === "curved" ? "round" : "miter"}
-          strokeWidth="var(--tree-edge-width, 2)"
+          style={{ strokeWidth: "var(--tree-edge-width, 2)" }}
         />
       ))}
     </svg>
   );
 }
 
-export function TreeNodeLayer<Person>({ card: Card, cardClassName }: TreeNodeLayerProps<Person>): JSX.Element {
+export function TreeNodeLayer<Person, CardExtraProps extends object = Record<string, never>>({
+  card: Card,
+  cardClassName,
+  cardProps,
+}: TreeNodeLayerProps<Person, CardExtraProps>): JSX.Element {
   const context = useTreeLayout<Person>();
 
   const handleFamilyClick = useCallback(
     (person: Person, personId: PersonId) => {
+      context.onPersonClick?.(person, personId);
+    },
+    [context],
+  );
+  const handleFamilyKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLElement>, person: Person, personId: PersonId) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
       context.onPersonClick?.(person, personId);
     },
     [context],
@@ -248,12 +302,13 @@ export function TreeNodeLayer<Person>({ card: Card, cardClassName }: TreeNodeLay
     <>
       {context.layout.cards.map((layoutCard) => {
         const isSelected = context.selected ? context.selected === layoutCard.personId : layoutCard.personId === context.subject;
-        const cardProps: FamilyCardProps<Person> = {
+        const personLabel = context.getPersonLabel?.(layoutCard.person, layoutCard.personId) ?? layoutCard.personId;
+        const treeCardProps: FamilyCardProps<Person> = {
           person: layoutCard.person,
           personId: layoutCard.personId,
           relation: layoutCard.relation,
           selected: isSelected,
-          focused: false,
+          focused: isSelected,
           collapsed: context.collapsedIds.has(layoutCard.personId),
           readOnly: context.readOnly,
           className: cardClassName,
@@ -262,14 +317,28 @@ export function TreeNodeLayer<Person>({ card: Card, cardClassName }: TreeNodeLay
               ? undefined
               : () => context.onAddRelationship?.(layoutCard.person, layoutCard.personId),
           "aria-selected": isSelected,
+          "aria-label": `${personLabel}, ${layoutCard.relation.label}${isSelected ? ", selected" : ""}`,
+          "data-focused": isSelected ? "" : undefined,
           "data-family-card": "",
           "data-tree-card": "",
           "data-person-id": layoutCard.personId,
           "data-relation": layoutCard.relation.label,
           "data-generation": layoutCard.relation.generation,
+          "data-selected": isSelected ? "" : undefined,
           "data-side": layoutCard.relation.side,
           onClick: context.onPersonClick ? () => handleFamilyClick(layoutCard.person, layoutCard.personId) : undefined,
+          onKeyDown: context.onPersonClick
+            ? (event) => handleFamilyKeyDown(event, layoutCard.person, layoutCard.personId)
+            : undefined,
+          role: context.onPersonClick ? "button" : undefined,
+          tabIndex: context.onPersonClick ? 0 : undefined,
         };
+        const extraCardProps =
+          typeof cardProps === "function" ? cardProps(layoutCard.person, treeCardProps) : cardProps;
+        const resolvedCardProps = {
+          ...extraCardProps,
+          ...treeCardProps,
+        } as FamilyCardProps<Person> & CardExtraProps;
 
         return (
           <div
@@ -285,7 +354,7 @@ export function TreeNodeLayer<Person>({ card: Card, cardClassName }: TreeNodeLay
             }}
           >
             <div data-family-measure data-family-measure-id={layoutCard.personId}>
-              <Card {...cardProps} />
+              <Card {...resolvedCardProps} />
             </div>
           </div>
         );

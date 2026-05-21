@@ -57,6 +57,33 @@ function LayoutProbe() {
   return <output data-cards={context.layout.cards.length} data-edges={context.layout.edges.length} />;
 }
 
+interface AppCardProps {
+  actionLabel: string;
+  tone: "memoir" | "quiet";
+}
+
+function AppCard({
+  actionLabel,
+  collapsed: _collapsed,
+  focused: _focused,
+  onAddRelationship: _onAddRelationship,
+  person,
+  personId: _personId,
+  readOnly: _readOnly,
+  relation,
+  selected: _selected,
+  tone,
+  ...props
+}: FamilyCardProps<Person> & AppCardProps) {
+  return (
+    <article {...props} data-tone={tone}>
+      <strong>{person.name}</strong>
+      <small>{relation.label}</small>
+      <button type="button">{actionLabel}</button>
+    </article>
+  );
+}
+
 describe("tree primitives", () => {
   test("compose a family tree with the same layout data as the wrapper path", () => {
     const expected = buildFamilyTreeLayout({ subject: "henry", people, relationships });
@@ -74,11 +101,13 @@ describe("tree primitives", () => {
     expect(markup).toContain(`data-edges="${expected.edges.length}"`);
     expect(markup).toContain("data-family-card");
     expect(markup).toContain("data-family-edge");
+    expect(markup).toContain("stroke-width:var(--tree-edge-width, 2)");
   });
 
   test("renders a family tree through Memoir-shaped aliases", () => {
     const markup = renderToStaticMarkup(
       <FamilyTree
+        ariaLabel="Henry family map"
         profiles={people}
         relationships={relationships}
         renderProfileCard={(
@@ -105,7 +134,12 @@ describe("tree primitives", () => {
     );
 
     expect(markup).toContain("Henry");
+    expect(markup).toContain("aria-label=\"Henry family map\"");
+    expect(markup).toContain("aria-label=\"Henry, self, selected\"");
+    expect(markup).toContain("data-selected");
     expect(markup).toContain("data-tree-subject=\"henry\"");
+    expect(markup).toContain("role=\"button\"");
+    expect(markup).toContain("tabindex=\"0\"");
   });
 
   test("applies controlled zoom to the tree surface", () => {
@@ -120,5 +154,40 @@ describe("tree primitives", () => {
     );
 
     expect(markup).toContain("scale(1.5)");
+  });
+
+  test("accepts a controlled viewport", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree
+        card={FamilyCard}
+        people={people}
+        relationships={relationships}
+        subject="henry"
+        viewport={{ x: 12, y: 24, zoom: 1.75 }}
+      />,
+    );
+
+    expect(markup).toContain("scale(1.75)");
+  });
+
+  test("passes app-owned props through to custom cards", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree<Person, AppCardProps>
+        card={AppCard}
+        cardProps={(person) => ({
+          actionLabel: person.role === "admin" ? "Manage" : "View",
+          tone: person.id === "henry" ? "memoir" : "quiet",
+        })}
+        people={{
+          ...people,
+          henry: { id: "henry", name: "Henry", role: "admin" },
+        }}
+        relationships={relationships}
+        subject="henry"
+      />,
+    );
+
+    expect(markup).toContain("data-tone=\"memoir\"");
+    expect(markup).toContain(">Manage</button>");
   });
 });

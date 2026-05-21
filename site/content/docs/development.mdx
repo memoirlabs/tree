@@ -71,9 +71,11 @@ Tests are focused on pure behavior:
 
 - Relationship helper rows.
 - Subject-centered family indexing.
+- Explicit neighborhood limits.
 - Measured layout derivation.
 - Relationship graph traversal.
-- Relationship chart level building.
+- Theme variable mapping.
+- Primitive SSR markup for data attributes, accessibility props, custom card props, and viewport scale.
 
 ## Linting
 
@@ -87,3 +89,17 @@ After layout or rendering changes:
 2. Open `http://localhost:3000`.
 3. Inspect the console.
 4. Capture a screenshot of the homepage family tree demo and a docs page.
+
+## Documentation
+
+Keep the public docs aligned when changing the API:
+
+- `README.md`
+- `AGENTS.md`
+- `site/content/docs/index.mdx`
+- `site/content/docs/family-tree.mdx`
+- `site/content/docs/api.mdx`
+- `site/content/docs/design.mdx`
+- `site/content/docs/org-chart.mdx`
+
+New examples should prefer the clean public names: `people`, `subject`, `card`, and `onPersonClick`. Keep `profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile` documented as compatibility aliases.

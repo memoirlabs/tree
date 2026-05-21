@@ -11,31 +11,13 @@ if (command !== "whoami" && command !== "pack" && command !== "publish") {
   process.exit(1);
 }
 
-const token = process.env.NPM_ACCESS_TOKEN ?? process.env.NPM_TOKEN ?? process.env.NODE_AUTH_TOKEN;
-
-if (!token) {
-  console.error("Missing npm token. Set NPM_ACCESS_TOKEN in .env or export NPM_TOKEN/NODE_AUTH_TOKEN.");
-  process.exit(1);
-}
-
 const registry = "https://registry.npmjs.org/";
-const tempDir = await mkdtemp(join(tmpdir(), "memoir-tree-npm-"));
-const userConfigPath = join(tempDir, ".npmrc");
-
-await Bun.write(
-  userConfigPath,
-  `registry=${registry}
-//registry.npmjs.org/:_authToken=${token}
-access=public
-`,
-);
+const { NPM_ACCESS_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, NPM_CONFIG_USERCONFIG: _NPM_CONFIG_USERCONFIG, ...envWithoutNpmTokens } =
+  process.env;
+const token = NPM_ACCESS_TOKEN ?? NPM_TOKEN ?? NODE_AUTH_TOKEN;
 
 const env: Record<string, string | undefined> = {
-  ...process.env,
-  NPM_ACCESS_TOKEN: token,
-  NPM_TOKEN: token,
-  NODE_AUTH_TOKEN: token,
-  NPM_CONFIG_USERCONFIG: userConfigPath,
+  ...envWithoutNpmTokens,
   NPM_CONFIG_REGISTRY: registry,
 };
 
@@ -54,24 +36,45 @@ async function run(args: string[]) {
   }
 }
 
-try {
-  if (command === "whoami") {
-    await run(["bunx", "npm", "whoami", "--registry", registry, "--userconfig", userConfigPath]);
-  } else if (command === "pack") {
-    await run(["bun", "publish", "--dry-run"]);
-  } else {
-    await run([
-      "bunx",
-      "npm",
-      "publish",
-      "--access",
-      "public",
-      "--registry",
-      registry,
-      "--userconfig",
-      userConfigPath,
-    ]);
+if (command === "pack") {
+  await run(["bun", "scripts/audit-npm-package.ts"]);
+} else {
+  if (!token) {
+    console.error("Missing npm token. Set NPM_ACCESS_TOKEN in .env or export NPM_TOKEN/NODE_AUTH_TOKEN.");
+    process.exit(1);
   }
-} finally {
-  await rm(tempDir, { recursive: true, force: true });
+
+  const tempDir = await mkdtemp(join(tmpdir(), "memoir-tree-npm-"));
+  const userConfigPath = join(tempDir, ".npmrc");
+
+  await Bun.write(
+    userConfigPath,
+    `registry=${registry}
+//registry.npmjs.org/:_authToken=${token}
+access=public
+`,
+  );
+
+  env.NPM_CONFIG_USERCONFIG = userConfigPath;
+
+  try {
+    if (command === "whoami") {
+      await run(["bunx", "npm", "whoami", "--registry", registry, "--userconfig", userConfigPath]);
+    } else {
+      await run(["bun", "scripts/audit-npm-package.ts"]);
+      await run([
+        "bunx",
+        "npm",
+        "publish",
+        "--access",
+        "public",
+        "--registry",
+        registry,
+        "--userconfig",
+        userConfigPath,
+      ]);
+    }
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
 }

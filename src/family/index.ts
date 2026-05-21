@@ -11,10 +11,12 @@ export type {
   ComputedRelationSide,
   FamilyCardProps,
   FamilyGuardianshipRelationship,
+  FamilyNeighborhoodLimits,
   FamilyParentageRelationship,
   FamilyPartnershipRelationship,
   FamilyRelationship,
   FamilyRelationshipStatus,
+  FamilyTreeCardProps,
   FamilyTreeProps,
   FamilyTreeSize,
   FamilyTreePersonHandler,
@@ -26,8 +28,10 @@ export type {
   RenderProfileCard,
   TreeLineShape,
   TreeInteractionMode,
+  TreeApi,
   TreeStylePreset,
   TreeTheme,
+  TreeViewport,
 } from "./types";
 
 export type {
@@ -42,7 +46,7 @@ export type {
 } from "./TreePrimitives";
 
 export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./indexing";
-export { collectFamilyNeighborhood, createFamilyIndex } from "./indexing";
+export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./indexing";
 
 export type {
   BuildFamilyTreeLayoutInput,
