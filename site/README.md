@@ -2,10 +2,10 @@
 
 This is the single website for `@memoir/tree`.
 
-- `/` is the library landing page with the live playground.
+- `/` is the library landing page with a simple rendered family tree demo.
 - `/docs` is the Fumadocs documentation.
 - `content/docs/` contains the MDX docs.
-- `components/playground.tsx` embeds examples that import the local library source from `../src`.
+- `components/simple-family-tree-demo.tsx` embeds the homepage example that imports the local library source from `../src`.
 
 Run development server:
 
@@ -30,6 +30,6 @@ bun run build
 | --- | --- |
 | `app/(home)/page.tsx` | Landing page |
 | `app/docs` | Fumadocs routes and layout |
-| `components/playground.tsx` | Embedded homepage playground |
-| `content/docs` | Fumadocs MDX content |
+| `components/simple-family-tree-demo.tsx` | Embedded homepage demo |
+| `content/docs` | Fumadocs MDX content, including getting started, FamilyTree, styling, API, and contributor docs |
 | `lib/source.ts` | Fumadocs source loader |

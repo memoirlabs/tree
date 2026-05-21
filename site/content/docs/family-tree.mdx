@@ -11,8 +11,8 @@ description: Render a subject-centered family neighborhood from app-owned person
     <div className="docs-copy">Choose the person in focus and the layout computes their visible family neighborhood.</div>
   </div>
   <div className="docs-card">
-    <strong>Clickable</strong>
-    <div className="docs-copy">Use `selected` and `onPersonClick` to build inspectors, profile drawers, and editors.</div>
+    <strong>Controlled</strong>
+    <div className="docs-copy">Use `selected`, `onSelectProfile`, and edit hooks to build inspectors, drawers, and mutation flows.</div>
   </div>
   <div className="docs-card">
     <strong>Scrollable or pannable</strong>
@@ -24,22 +24,63 @@ description: Render a subject-centered family neighborhood from app-owned person
 
 ```ts
 type FamilyTreeProps<Person> = {
-  subject: string;
-  people: Record<string, Person>;
+  rootProfileId?: string;
+  subject?: string;
+  profiles?: Record<string, Person>;
+  people?: Record<string, Person>;
   relationships: FamilyRelationship[];
   card?: React.ComponentType<FamilyCardProps<Person>>;
+  renderProfileCard?: (profile: Person, props: FamilyCardProps<Person>) => React.JSX.Element;
   className?: string;
   style?: React.CSSProperties;
   cardClassName?: string;
   edgeClassName?: string;
   interactionMode?: "pan" | "scroll" | "none";
+  lineShape?: "orthogonal" | "curved";
+  zoom?: number;
+  defaultZoom?: number;
+  minZoom?: number;
+  maxZoom?: number;
+  onZoomChange?: (zoom: number) => void;
+  spacing?: Partial<FamilyTreeSpacing>;
+  theme?: "memoir" | "system" | TreeTheme;
+  selected?: string;
+  collapsed?: string[];
+  readOnly?: boolean;
+  onSelectProfile?: (person: Person, personId: string) => void;
+  onAddRelationship?: (person: Person, personId: string) => void;
   onPersonClick?: (person: Person, personId: string) => void;
 };
 ```
 
-The library does not require `name`, `avatarUrl`, profile fields, or nested relationship arrays. It only needs stable person IDs.
+The Memoir-shaped names are `profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile`. The older generic names, `people`, `subject`, `card`, and `onPersonClick`, still work for compatibility.
 
-By default, `FamilyTree` is self-contained: it fills the parent width, inherits parent height when one exists, falls back to a usable minimum height, clips overflow, and lets users drag-pan the tree horizontally and vertically. Host apps should only pass `style`, `className`, or `interactionMode` when they want to override those defaults.
+The library does not require `name`, `avatarUrl`, profile fields, or nested relationship arrays. It only needs stable profile IDs.
+
+By default, `FamilyTree` is self-contained: it fills the parent width, inherits parent height when one exists, falls back to a usable minimum height, clips overflow, and lets users drag-pan the tree horizontally and vertically. Host apps can pass `zoom`, `style`, `className`, or `interactionMode` when they want to override those defaults.
+
+## Controlled Selection
+
+Use `selected` and `onSelectProfile` when the host app owns profile drawers, route state, or inspectors:
+
+```tsx
+function FamilyPanel() {
+  const [selectedProfileId, setSelectedProfileId] = useState("alex");
+
+  return (
+    <FamilyTree
+      profiles={profiles}
+      relationships={relationships}
+      rootProfileId="alex"
+      selected={selectedProfileId}
+      onSelectProfile={(_profile, profileId) => setSelectedProfileId(profileId)}
+      renderProfileCard={renderProfileCard}
+    />
+  );
+}
+```
+
+`onPersonClick` is still available as the older generic name. Prefer `onSelectProfile` in new Memoir-style integrations.
 
 ## Relationship Facts
 
@@ -65,21 +106,49 @@ The helpers produce plain rows:
 - `partnership`: spouse, partner, or coparent facts.
 - `guardianship`: guardian/child facts.
 
+Relationship options let you preserve real family nuance without giving the renderer business rules:
+
+```ts
+const relationships = [
+  rel.parents("quinn", ["alex", "jordan"], { relation: "adoptive" }),
+  rel.partner("alex", "drew", { relation: "coparent", status: "former" }),
+  rel.guardians("quinn", ["robin"], { relation: "guardian" }),
+];
+```
+
+Supported parentage relations are `biological`, `adoptive`, `step`, `foster`, and `unknown`. Supported partnership relations are `spouse`, `partner`, `coparent`, and `unknown`. Supported statuses are `current`, `former`, `divorced`, `separated`, and `unknown`.
+
 ## Card Contract
 
-If you omit `card`, `FamilyTree` uses `DefaultFamilyCard`, which displays `name`, `label`, `profile.display`, or the person ID.
+If you omit `renderProfileCard`, `FamilyTree` uses `DefaultFamilyCard`, which displays `name`, `label`, `profile.display`, or the profile ID.
 
-Your custom card receives the person object and computed relation metadata:
+Your custom card receives the profile object, computed relation metadata, selected state, collapse state, and edit hooks:
 
 ```tsx
 import type { FamilyCardProps } from "@memoir/tree";
 
-function PersonCard({ person, relation, selected, ...props }: FamilyCardProps<Person>) {
+function ProfileCard({
+  collapsed,
+  focused: _focused,
+  onAddRelationship,
+  person,
+  personId,
+  readOnly,
+  relation,
+  selected,
+  ...props
+}: FamilyCardProps<Person>) {
   return (
-    <article {...props}>
+    <article {...props} className="memoir-profile-card">
       <strong>{person.profile.display}</strong>
       <small>{relation.label}</small>
       {selected ? <span>Selected</span> : null}
+      {collapsed ? <span>Collapsed</span> : null}
+      {!readOnly ? (
+        <button type="button" onClick={() => onAddRelationship?.(person, personId)}>
+          Add relative
+        </button>
+      ) : null}
     </article>
   );
 }
@@ -101,6 +170,31 @@ Cards are measured with `ResizeObserver`. The first pass uses a fallback size, t
 
 The root element owns the viewport behavior. `interactionMode="pan"` uses a clipped drag-panning viewport, `interactionMode="scroll"` exposes native scrollbars, and `interactionMode="none"` clips without user navigation.
 
+Use `collapsed` to hide deeper ancestor or descendant rows while keeping the collapsed profile visible:
+
+```tsx
+<FamilyTree
+  profiles={profiles}
+  relationships={relationships}
+  rootProfileId="alex"
+  collapsed={["riley"]}
+/>
+```
+
+Use `zoom` for a controlled viewport or `defaultZoom` for an uncontrolled starting value:
+
+```tsx
+<FamilyTree
+  profiles={profiles}
+  relationships={relationships}
+  rootProfileId="alex"
+  zoom={zoom}
+  minZoom={0.6}
+  maxZoom={2}
+  onZoomChange={setZoom}
+/>
+```
+
 ## Styling Hooks
 
 `FamilyTree` emits stable attributes:
@@ -110,7 +204,7 @@ The root element owns the viewport behavior. `interactionMode="pan"` uses a clip
 - `data-family-card-positioner`
 - `data-family-measure`
 - `data-family-card`
-- `data-family-person-id`
+- `data-person-id`
 - `data-relation`
-- `data-selected`
+- `aria-selected`
 - `data-family-edge`

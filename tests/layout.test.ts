@@ -81,6 +81,19 @@ test("accepts custom family spacing and curved edge routing", () => {
   expect(compact.edges.some((edge) => edge.path.includes(" C "))).toBe(true);
 });
 
+test("hides descendant branch rows for collapsed family cards", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships,
+    collapsed: ["ava"],
+  });
+
+  expect(layout.cards.map((card) => card.personId)).toContain("ava");
+  expect(layout.cards.map((card) => card.personId)).not.toContain("noah");
+  expect(layout.edges.every((edge) => edge.sourceId !== "ava" && edge.targetId !== "noah")).toBe(true);
+});
+
 test("creates org chart nodes from a nested reporting tree", () => {
   const chart = createOrgChart({
     id: "ceo",

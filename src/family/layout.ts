@@ -45,6 +45,7 @@ export interface BuildFamilyTreeLayoutInput<Person> {
   subject: PersonId;
   people: PeopleById<Person>;
   relationships: FamilyRelationship[];
+  collapsed?: PersonId[];
   measurements?: Record<PersonId, FamilyTreeSize>;
   spacing?: Partial<FamilyTreeSpacing>;
   lineShape?: TreeLineShape;
@@ -80,6 +81,36 @@ const getSize = (
   personId: PersonId,
 ): FamilyTreeSize => measurements[personId] ?? fallbackCardSize;
 
+const shouldHideCollapsedRelative = <Person>(
+  relative: FamilyRelative<Person>,
+  subject: PersonId,
+  collapsedRelatives: Map<PersonId, ComputedRelation>,
+): boolean => {
+  if (relative.personId === subject) return false;
+
+  for (const [collapsedId, collapsedRelation] of collapsedRelatives) {
+    if (collapsedId === subject) return true;
+
+    if (
+      collapsedRelation.side === "ancestor" &&
+      relative.relation.side === "ancestor" &&
+      relative.relation.generation < collapsedRelation.generation
+    ) {
+      return true;
+    }
+
+    if (
+      collapsedRelation.side === "descendant" &&
+      relative.relation.side === "descendant" &&
+      relative.relation.generation > collapsedRelation.generation
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 const placeRow = <Person>(
   relatives: FamilyRelative<Person>[],
   y: number,
@@ -114,6 +145,7 @@ export function buildFamilyTreeLayout<Person>({
   subject,
   people,
   relationships,
+  collapsed = [],
   measurements = {},
   spacing: spacingOverrides,
   lineShape = "orthogonal",
@@ -143,10 +175,25 @@ export function buildFamilyTreeLayout<Person>({
     uniqueRelatives(neighborhood.grandchildren),
   ].filter((row) => row.length > 0);
 
+  const relativesById = new Map<PersonId, ComputedRelation>();
+  for (const row of rows) {
+    for (const relative of row) {
+      relativesById.set(relative.personId, relative.relation);
+    }
+  }
+  const collapsedRelatives = new Map<PersonId, ComputedRelation>();
+  for (const personId of collapsed) {
+    const relation = relativesById.get(personId);
+    if (relation) collapsedRelatives.set(personId, relation);
+  }
+  const visibleRows = rows
+    .map((row) => row.filter((relative) => !shouldHideCollapsedRelative(relative, subject, collapsedRelatives)))
+    .filter((row) => row.length > 0);
+
   let y = 0;
   const cards: FamilyTreeLayoutCard<Person>[] = [];
 
-  for (const row of rows) {
+  for (const row of visibleRows) {
     const rowCards = placeRow(row, y, measurements, fallbackCardSize, spacing.column);
     cards.push(...rowCards);
     const maxHeight = rowCards.reduce((height, card) => Math.max(height, card.height), 0);

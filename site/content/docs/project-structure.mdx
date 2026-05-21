@@ -14,10 +14,15 @@ The repository is organized around headless logic first and React rendering seco
 │   │   ├── indexing.ts
 │   │   ├── index.ts
 │   │   ├── layout.ts
+│   │   ├── org.ts
+│   │   ├── org-layout.ts
 │   │   ├── rel.ts
+│   │   ├── theme.ts
+│   │   ├── tree-dsl.ts
 │   │   ├── types.ts
 │   │   └── use-card-measurements.ts
 │   ├── index.ts
+│   ├── styles.css
 │   └── utils.ts
 ├── tests/
 │   ├── family-index.test.ts
@@ -31,7 +36,7 @@ The repository is organized around headless logic first and React rendering seco
 │   │   └── docs/
 │   ├── components/
 │   │   ├── mdx.tsx
-│   │   └── playground.tsx
+│   │   └── simple-family-tree-demo.tsx
 │   ├── content/
 │   │   └── docs/
 │   ├── lib/
@@ -48,14 +53,20 @@ The repository is organized around headless logic first and React rendering seco
 
 - `src/family/indexing.ts`: Pure relationship fact indexing and subject-relative labels.
 - `src/family/layout.ts`: Pure measured row placement.
+- `src/family/org.ts`: Nested org chart normalization.
+- `src/family/org-layout.ts`: Pure org chart measured row placement.
 - `src/family/edge-routing.ts`: Pure SVG path generation.
+- `src/family/theme.ts`: Theme presets and CSS variable mapping.
+- `src/family/tree-dsl.ts`: Small diagram syntax for docs, demos, and tests.
 - `src/family/use-card-measurements.ts`: DOM measurement hook.
 - `src/family/FamilyTree.tsx`: Thin React renderer for cards, canvas, and edges.
+- `src/family/TreePrimitives.tsx`: Composable provider, canvas, edge, and node layers.
+- `src/styles.css`: Optional package stylesheet.
 - `tests/`: Bun tests for helpers, family logic, and layout behavior.
-- `site/`: Next.js app with the landing page, embedded playground, and Fumadocs docs.
+- `site/`: Next.js app with the landing page, simple rendered demo, and Fumadocs docs.
 - `site/app/(home)/page.tsx`: Landing page at `/`.
 - `site/app/docs`: Fumadocs routes at `/docs`.
-- `site/components/playground.tsx`: Homepage playground that imports local library source.
+- `site/components/simple-family-tree-demo.tsx`: Static homepage demo that imports local library source.
 - `site/content/docs`: Fumadocs MDX content.
 - `dist/`: Generated package output.
 
@@ -72,4 +83,4 @@ Only these files ship via npm:
 - `README.md`
 - `LICENSE`
 
-Tests, scripts, playground code, and docs stay local.
+Tests, scripts, demo code, and docs stay local.

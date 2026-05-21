@@ -45,6 +45,12 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json && bun scripts/fix-dist-imports.ts",
     "check": "bun run lint && bun run typecheck && bun test && bun run build",
+    "ci": "bun run ci:package && bun run ci:site",
+    "ci:package": "bun run check",
+    "ci:site": "bun run --cwd site ci",
+    "deploy:package": "bun run npm:publish",
+    "deploy:site": "bunx vercel deploy site --yes --no-wait",
+    "deploy:site:prod": "bunx vercel deploy site --prod --yes --no-wait",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "portclean": "bash scripts/portclean.sh",

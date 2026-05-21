@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import {
+  FamilyTree,
   TreeCanvas,
   TreeEdges,
   TreeNodeLayer,
@@ -20,7 +21,7 @@ type Person = {
   role?: string;
 };
 
-const people = {
+const people: Record<string, Person> = {
   henry: { id: "henry", name: "Henry" },
   carol: { id: "carol", name: "Carol" },
   james: { id: "james", name: "James" },
@@ -37,8 +38,10 @@ const relationships = [
 function FamilyCard({
   collapsed: _collapsed,
   focused: _focused,
+  onAddRelationship: _onAddRelationship,
   person,
   personId: _personId,
+  readOnly: _readOnly,
   relation,
   selected: _selected,
   ...props
@@ -93,6 +96,52 @@ describe("tree primitives", () => {
     expect(markup).toContain(`data-edges="${expected.edges.length}"`);
     expect(markup).toContain("data-family-card");
     expect(markup).toContain("data-family-edge");
+  });
+
+  test("renders a family tree through Memoir-shaped aliases", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree
+        profiles={people}
+        relationships={relationships}
+        renderProfileCard={(
+          profile,
+          {
+            collapsed: _collapsed,
+            focused: _focused,
+            onAddRelationship: _onAddRelationship,
+            person: _person,
+            personId: _personId,
+            readOnly: _readOnly,
+            relation: _relation,
+            selected: _selected,
+            ...props
+          },
+        ) => (
+          <article {...props}>
+            <strong>{profile.name}</strong>
+          </article>
+        )}
+        rootProfileId="henry"
+        onSelectProfile={() => undefined}
+      />,
+    );
+
+    expect(markup).toContain("Henry");
+    expect(markup).toContain("data-tree-subject=\"henry\"");
+  });
+
+  test("applies controlled zoom to the tree surface", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree
+        card={FamilyCard}
+        people={people}
+        relationships={relationships}
+        subject="henry"
+        zoom={1.5}
+      />,
+    );
+
+    expect(markup).toContain("scale(1.5)");
   });
 
   test("compose an org chart with the same layout data as the wrapper path", () => {

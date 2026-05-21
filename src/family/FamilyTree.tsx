@@ -92,6 +92,8 @@ export function DefaultFamilyCard<Person>({
   selected,
   focused: _focused,
   collapsed: _collapsed,
+  readOnly: _readOnly,
+  onAddRelationship: _onAddRelationship,
   ...props
 }: FamilyCardProps<Person>): JSX.Element {
   const profileImage = getDefaultProfileImage(person);
@@ -108,36 +110,74 @@ export function DefaultFamilyCard<Person>({
 
 export function FamilyTree<Person>({
   subject,
+  rootProfileId,
   people,
+  profiles,
   relationships,
   card: Card = DefaultFamilyCard,
+  renderProfileCard,
   className,
   style,
   cardClassName,
   edgeClassName,
   interactionMode = "pan",
   lineShape = "orthogonal",
+  zoom,
+  defaultZoom,
+  minZoom,
+  maxZoom,
+  onZoomChange,
   spacing,
   theme,
   selected,
   collapsed,
+  readOnly = false,
   onPersonClick,
+  onSelectProfile,
+  onAddRelationship,
 }: FamilyTreeProps<Person>): JSX.Element {
+  const resolvedSubject = subject ?? rootProfileId;
+  const resolvedPeople = people ?? profiles;
+
+  if (!resolvedSubject) {
+    throw new Error("FamilyTree requires `subject` or `rootProfileId`.");
+  }
+  if (!resolvedPeople) {
+    throw new Error("FamilyTree requires `people` or `profiles`.");
+  }
+
+  const ResolvedCard = renderProfileCard
+    ? (props: FamilyCardProps<Person>) => renderProfileCard(props.person, props)
+    : Card;
+  const handlePersonClick = onPersonClick ?? onSelectProfile;
+
   return (
     <TreeProvider
       type="family"
       collapsed={collapsed}
       lineShape={lineShape}
-      onPersonClick={onPersonClick}
-      people={people}
+      onAddRelationship={onAddRelationship}
+      onPersonClick={handlePersonClick}
+      people={resolvedPeople}
+      readOnly={readOnly}
       relationships={relationships}
       selected={selected}
       spacing={spacing}
-      subject={subject}
+      subject={resolvedSubject}
     >
-      <TreeCanvas className={className} interactionMode={interactionMode} style={style} theme={theme}>
+      <TreeCanvas
+        className={className}
+        defaultZoom={defaultZoom}
+        interactionMode={interactionMode}
+        maxZoom={maxZoom}
+        minZoom={minZoom}
+        onZoomChange={onZoomChange}
+        style={style}
+        theme={theme}
+        zoom={zoom}
+      >
         <TreeEdges edgeClassName={edgeClassName} />
-        <TreeNodeLayer<Person> card={Card} cardClassName={cardClassName} />
+        <TreeNodeLayer<Person> card={ResolvedCard} cardClassName={cardClassName} />
       </TreeCanvas>
     </TreeProvider>
   );

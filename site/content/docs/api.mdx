@@ -3,16 +3,68 @@ title: Public API
 description: Public exports from @memoir/tree.
 ---
 
-All public exports come from `@memoir/tree`.
+All public exports come from `@memoir/tree`. Import styles separately from `@memoir/tree/styles.css`.
+
+```tsx
+import { FamilyTree, rel } from "@memoir/tree";
+import type { FamilyTreeProps, FamilyRelationship } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+```
 
 ## Family Tree
 
 - `FamilyTree`
 - `DefaultFamilyCard`
 - `rel`
+- `createFamilyTree(source, options?)`
 - `createFamilyIndex(people, relationships)`
 - `collectFamilyNeighborhood(index, subject)`
 - `buildFamilyTreeLayout(input)`
+
+Use `FamilyTree` for normal app rendering. Use the pure helpers when you need to test relationship logic, precompute a layout, or build a custom renderer with the lower-level primitives.
+
+```ts
+type FamilyTreeProps<Person> = {
+  profiles?: Record<string, Person>;
+  rootProfileId?: string;
+  relationships: FamilyRelationship[];
+  renderProfileCard?: (profile: Person, props: FamilyCardProps<Person>) => React.JSX.Element;
+  selected?: string;
+  collapsed?: string[];
+  readOnly?: boolean;
+  onSelectProfile?: (person: Person, personId: string) => void;
+  onAddRelationship?: (person: Person, personId: string) => void;
+};
+```
+
+Compatibility aliases are also exported: `people` for `profiles`, `subject` for `rootProfileId`, `card` for `renderProfileCard`, and `onPersonClick` for `onSelectProfile`.
+
+## Relationship Helpers
+
+- `rel.parents(child, parents, options?)`
+- `rel.children(parents, children, options?)`
+- `rel.partner(a, b, options?)`
+- `rel.guardians(child, guardians, options?)`
+
+```ts
+rel.parents("alex", ["morgan", "casey"], {
+  relation: "biological",
+  status: "current",
+  order: 0,
+});
+
+rel.partner("alex", "jordan", {
+  relation: "spouse",
+  status: "current",
+});
+```
+
+Relationship option types:
+
+- `ParentageRelation`: `biological`, `adoptive`, `step`, `foster`, `unknown`.
+- `PartnershipRelation`: `spouse`, `partner`, `coparent`, `unknown`.
+- `GuardianshipRelation`: `guardian`, `foster`, `unknown`.
+- `FamilyRelationshipStatus`: `current`, `former`, `divorced`, `separated`, `unknown`.
 
 ## Org Chart
 
@@ -38,13 +90,33 @@ Use `generations` and `maxGeneration` to show how far the chart goes. Use `repor
 ## Shared Surface
 
 - `TreeSurface`
+- `TreeProvider`
+- `TreeCanvas`
+- `TreeEdges`
+- `TreeNodeLayer`
+- `useTreeLayout()`
 - `TreeInteractionMode`
+- `TreeLineShape`
+- `TreeTheme`
 - optional CSS from `@memoir/tree/styles.css`
+
+Use primitives when the default wrapper is not enough but you still want package-owned layout, measurement, edges, pan, and zoom:
+
+```tsx
+<TreeProvider type="family" people={profiles} relationships={relationships} subject="alex">
+  <TreeCanvas>
+    <TreeEdges />
+    <TreeNodeLayer card={ProfileCard} />
+  </TreeCanvas>
+</TreeProvider>
+```
 
 ## Family Types
 
 - `PersonId`
 - `PeopleById<Person>`
+- `RenderProfileCard<Person>`
+- `FamilyTreePersonHandler<Person>`
 - `FamilyRelationship`
 - `FamilyParentageRelationship`
 - `FamilyPartnershipRelationship`
@@ -53,6 +125,10 @@ Use `generations` and `maxGeneration` to show how far the chart goes. Use `repor
 - `FamilyCardProps<Person>`
 - `FamilyTreeProps<Person>`
 - `FamilyTreeLayoutResult<Person>`
+- `FamilyTreeLayoutCard<Person>`
+- `FamilyTreeLayoutEdge`
+- `FamilyTreeBounds`
+- `BuildFamilyTreeLayoutInput<Person>`
 
 ## Org Types
 
@@ -64,12 +140,20 @@ Use `generations` and `maxGeneration` to show how far the chart goes. Use `repor
 - `OrgChartCardProps<Person>`
 - `OrgChartProps<Person>`
 - `OrgChartLayoutResult<Person>`
+- `OrgChartLayoutCard<Person>`
+- `OrgChartLayoutEdge`
+- `OrgChartBounds`
+- `BuildOrgChartLayoutInput<Person>`
 
-## Relationship Helpers
+## DSL Helpers
 
-- `rel.parents(child, parents, options?)`
-- `rel.children(parents, children, options?)`
-- `rel.partner(a, b, options?)`
-- `rel.guardians(child, guardians, options?)`
+- `createFamilyTree(source, options?)`
+- `createOrgTree(source, options?)`
+- `TreeDslError`
+- `TreeDslNode`
+- `TreeDslNodeInput`
+- `TreeDslAttributeValue`
+- `FamilyTreeDefinition<Person>`
+- `OrgTreeDefinition<Person>`
 
-Use family relationship facts for the ergonomic `FamilyTree` API.
+The DSL helpers are useful for docs, demos, tests, and user-authored diagrams. Production apps can skip them and pass database rows directly.

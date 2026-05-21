@@ -1,4 +1,4 @@
-import type { ComponentType, CSSProperties, HTMLAttributes } from "react";
+import type { ComponentType, CSSProperties, HTMLAttributes, JSX } from "react";
 import type { TreeLineShape, TreeStylePreset, TreeTheme } from "./theme";
 
 export type PersonId = string;
@@ -74,6 +74,8 @@ export interface FamilyCardProps<Person> extends HTMLAttributes<HTMLElement> {
   selected: boolean;
   focused: boolean;
   collapsed: boolean;
+  readOnly: boolean;
+  onAddRelationship?: FamilyTreePersonHandler<Person>;
   className?: string;
   style?: CSSProperties;
   "data-family-card"?: string;
@@ -91,22 +93,37 @@ export interface FamilyTreeSize {
 
 export type TreeInteractionMode = "pan" | "scroll" | "none";
 
+export type RenderProfileCard<Person> = (profile: Person, props: FamilyCardProps<Person>) => JSX.Element;
+
+export type FamilyTreePersonHandler<Person> = (person: Person, personId: PersonId) => void;
+
 export interface FamilyTreeProps<Person> {
-  subject: PersonId;
-  people: PeopleById<Person>;
+  subject?: PersonId;
+  rootProfileId?: PersonId;
+  people?: PeopleById<Person>;
+  profiles?: PeopleById<Person>;
   relationships: FamilyRelationship[];
   card?: ComponentType<FamilyCardProps<Person>>;
+  renderProfileCard?: RenderProfileCard<Person>;
   className?: string;
   style?: CSSProperties;
   cardClassName?: string;
   edgeClassName?: string;
   interactionMode?: TreeInteractionMode;
   lineShape?: TreeLineShape;
+  zoom?: number;
+  defaultZoom?: number;
+  minZoom?: number;
+  maxZoom?: number;
+  onZoomChange?: (zoom: number) => void;
   spacing?: Partial<FamilyTreeSpacing>;
   theme?: TreeStylePreset | TreeTheme;
   selected?: PersonId;
   collapsed?: PersonId[];
-  onPersonClick?: (person: Person, personId: PersonId) => void;
+  readOnly?: boolean;
+  onPersonClick?: FamilyTreePersonHandler<Person>;
+  onSelectProfile?: FamilyTreePersonHandler<Person>;
+  onAddRelationship?: FamilyTreePersonHandler<Person>;
 }
 
 export interface FamilyTreeSpacing {

@@ -32,6 +32,9 @@ type OrgChartProps<Person> = {
   cardClassName?: string;
   edgeClassName?: string;
   interactionMode?: "pan" | "scroll" | "none";
+  lineShape?: "orthogonal" | "curved";
+  spacing?: Partial<FamilyTreeSpacing>;
+  theme?: "memoir" | "system" | TreeTheme;
   selected?: string;
   collapsed?: string[];
   onPersonClick?: (person: Person, personId: string) => void;
@@ -107,7 +110,7 @@ function PersonCard({
 }
 
 export function Page() {
-  return <OrgChart {...chart} card={PersonCard} />;
+  return <OrgChart {...chart} card={PersonCard} theme="memoir" />;
 }
 ```
 
@@ -163,6 +166,7 @@ The root surface is intentionally shared across tree types:
 - `interactionMode="scroll"` exposes native scrollbars.
 - `interactionMode="none"` clips without navigation.
 - `style` and `className` apply to the surface, not each node.
+- `lineShape="curved"` uses curved edges instead of orthogonal edges.
 
 ## Styling Hooks
 

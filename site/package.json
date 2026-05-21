@@ -3,10 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "dev": "next dev",
-    "start": "next start",
-    "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
+    "build": "bun --bun next build",
+    "check": "bun run types:check && bun run lint && bun run build",
+    "ci": "bun run check",
+    "deploy": "bunx vercel deploy --yes --no-wait",
+    "deploy:prod": "bunx vercel deploy --prod --yes --no-wait",
+    "dev": "bun --bun next dev",
+    "start": "bun --bun next start",
+    "types:check": "bun --bun fumadocs-mdx && bun --bun next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
     "lint": "oxlint"
   },

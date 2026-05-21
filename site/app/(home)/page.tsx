@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Playground } from "@/components/playground";
+import { SimpleFamilyTreeDemo } from "@/components/simple-family-tree-demo";
 import logo from "../../../public/logo-transparent.png";
 
 const features = [
@@ -28,7 +28,7 @@ export default function HomePage() {
         </Link>
         <nav className="landing-nav" aria-label="Primary navigation">
           <Link href="/docs">Docs</Link>
-          <a href="#playground">Playground</a>
+          <a href="#demo">Demo</a>
         </nav>
       </header>
 
@@ -50,14 +50,14 @@ export default function HomePage() {
               <Link className="primary-button" href="/docs">
                 Read the docs
               </Link>
-              <a className="secondary-button" href="#playground">
-                View the demo
+              <a className="secondary-button" href="#demo">
+                See the renderer
               </a>
             </div>
             <div className="hero-highlights" aria-label="Package highlights">
               <span>React 18+</span>
               <span>TypeScript</span>
-              <span>unstyled</span>
+              <span>custom cards</span>
               <span>measured layout</span>
             </div>
           </div>
@@ -82,15 +82,29 @@ export default function HomePage() {
           ))}
         </section>
 
-        <section id="playground" className="playground-section" aria-label="Family tree playground">
+        <section id="demo" className="demo-section" aria-label="Family tree demo">
           <div className="section-heading">
-            <p className="eyebrow">Live example</p>
-            <h2>Names, relationships, and layout. Nothing extra.</h2>
+            <p className="eyebrow">Simple renderer</p>
+            <h2>Install it, pass your data, render Memoir-style cards.</h2>
             <p>
-              Type into the controls, click cards, add people, and watch the family tree and org chart update live.
+              The package owns the measured layout, connectors, pan surface, and zoom behavior. Your app owns the data,
+              profile UI, permissions, and mutations.
             </p>
           </div>
-          <Playground />
+          <div className="demo-panel">
+            <div className="demo-copy">
+              <p className="tree-example-label">Package-ready API</p>
+              <h3>Controlled React renderer, not a family tree app in a box.</h3>
+              <p>
+                Use `profiles`, `relationships`, `rootProfileId`, and a custom card. The black-shadow card style is
+                just CSS on top of stable data attributes.
+              </p>
+              <pre aria-label="Install command">
+                <code>bun add @memoir/tree</code>
+              </pre>
+            </div>
+            <SimpleFamilyTreeDemo />
+          </div>
         </section>
       </main>
     </>

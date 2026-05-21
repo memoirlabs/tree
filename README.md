@@ -11,22 +11,22 @@
 [![npm](https://img.shields.io/npm/v/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 [![npm downloads](https://img.shields.io/npm/dw/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 
-`@memoir/tree` is a focused React library for rendering subject-centered family trees and org charts. Give it your app-owned records and one normal card component. It handles measured layout, SVG edges, and a shared clipped drag-panning surface.
+`@memoir/tree` is a focused React library for rendering subject-centered family trees and org charts. Give it your app-owned records and one normal card component. It handles measured layout, SVG edges, pan, zoom, and card placement.
 
 ## Why
 
-Most tree UIs force your app into a specific data model or a fixed card design. Memoir Tree stays small: your app owns the data, your app owns the card markup, and the library handles layout, measurement, and viewport behavior.
+Most tree UIs force your app into a specific data model or a fixed card design. Memoir Tree stays small: your app owns the data, permissions, mutations, and card markup; the library handles layout, measurement, connectors, and viewport behavior.
 
 ## Features
 
-- Bring your own person shape.
+- Bring your own profile shape.
 - Describe family facts with `rel.parents`, `rel.children`, `rel.partner`, and `rel.guardians`.
 - Or describe family trees and org charts with a small Mermaid-like text syntax.
 - Render org charts from a nested reporting tree or flat `{ id, person, parentId }` nodes.
 - Start with the built-in `DefaultFamilyCard`, then swap in any React card component.
 - Get computed labels like `self`, `parent`, `sibling`, `half-sibling`, `partner`, `grandparent`, and `grandchild`.
 - Compose lower-level primitives when the default wrapper is not enough.
-- Style with stable data attributes instead of a bundled theme.
+- Style with stable data attributes, CSS variables, or the `theme` prop.
 - Use pure indexing and layout helpers in tests, previews, or custom renderers.
 
 ## Install
@@ -42,7 +42,7 @@ import { FamilyTree, rel } from "@memoir/tree";
 import type { FamilyCardProps } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 
-type Person = {
+type Profile = {
   id: string;
   profile: {
     display: string;
@@ -50,7 +50,7 @@ type Person = {
   };
 };
 
-const people: Record<string, Person> = {
+const profiles: Record<string, Profile> = {
   henry: { id: "henry", profile: { display: "Henry" } },
   carol: { id: "carol", profile: { display: "Carol" } },
   james: { id: "james", profile: { display: "James" } },
@@ -64,27 +64,44 @@ const relationships = [
   rel.children(["henry", "emma"], ["ava"]),
 ];
 
-function PersonCard({ person, relation, ...props }: FamilyCardProps<Person>) {
+function ProfileCard({
+  collapsed: _collapsed,
+  focused: _focused,
+  onAddRelationship: _onAddRelationship,
+  person,
+  personId: _personId,
+  readOnly: _readOnly,
+  relation,
+  selected,
+  ...props
+}: FamilyCardProps<Profile>) {
   return (
-    <article {...props}>
+    <article {...props} className="memoir-profile-card">
       <strong>{person.profile.display}</strong>
-      <small>{relation.label}</small>
+      <small>{selected ? "selected" : relation.label}</small>
     </article>
   );
 }
 
 export function Page() {
-  return <FamilyTree subject="henry" people={people} relationships={relationships} card={PersonCard} />;
+  return (
+    <FamilyTree
+      profiles={profiles}
+      relationships={relationships}
+      rootProfileId="henry"
+      renderProfileCard={(_profile, props) => <ProfileCard {...props} />}
+    />
+  );
 }
 ```
 
-For a quick first render, omit `card`. The built-in default card displays `name`, `label`, `profile.display`, or the person ID:
+For a quick first render, omit `renderProfileCard`. The built-in default card displays `name`, `label`, `profile.display`, or the profile ID:
 
 ```tsx
-<FamilyTree subject="henry" people={people} relationships={relationships} />
+<FamilyTree profiles={profiles} rootProfileId="henry" relationships={relationships} />
 ```
 
-`FamilyTree` owns its viewport defaults. It fills the parent width, inherits parent height when available, falls back to a usable minimum height, clips overflow, and supports drag-panning horizontally and vertically without requiring wrapper CSS. Use `style`, `className`, or `interactionMode="scroll"` only when a host app wants a different container contract.
+`FamilyTree` owns its viewport defaults. It fills the parent width, inherits parent height when available, falls back to a usable minimum height, clips overflow, and supports drag-panning and zooming without requiring wrapper CSS. Use `style`, `className`, `zoom`, or `interactionMode="scroll"` when a host app wants a different container contract.
 
 The same surface contract applies to `OrgChart`.
 
@@ -151,10 +168,10 @@ import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "@memoir/tree
 
 export function Page() {
   return (
-    <TreeProvider type="family" subject="henry" people={people} relationships={relationships}>
+    <TreeProvider type="family" subject="henry" people={profiles} relationships={relationships}>
       <TreeCanvas>
         <TreeEdges />
-        <TreeNodeLayer card={PersonCard} />
+        <TreeNodeLayer card={ProfileCard} />
       </TreeCanvas>
     </TreeProvider>
   );
@@ -278,13 +295,13 @@ const relationships = [
 ];
 ```
 
-For the intended Memoir surface, card, and edge styling, import the optional stylesheet. It uses sharp corners, square outlined profile images, 1px black outlines, white and cream surfaces, and the Memoir orange accent:
+For the intended Memoir surface, card, and edge styling, import the optional stylesheet. It uses CSS variables, stable data attributes, sharp corners, cream surfaces, black outlines, black shadows, and the Memoir orange accent:
 
 ```tsx
 import "@memoir/tree/styles.css";
 ```
 
-The helpers produce plain relationship rows. The library computes labels and placement from those facts relative to the current `subject`.
+The helpers produce plain relationship rows. The library computes labels and placement from those facts relative to the current root profile.
 
 ## Styling
 
@@ -292,15 +309,19 @@ The helpers produce plain relationship rows. The library computes labels and pla
 
 ```tsx
 <FamilyTree
-  subject="henry"
-  people={people}
+  rootProfileId="henry"
+  profiles={profiles}
   relationships={relationships}
   theme={{
     surfaceBackground: "#fffdf4",
-    cardRadius: 12,
-    edgeWidth: 3,
-    profileRadius: 999,
-    accent: "#f97316",
+    canvasBackground: "#f4efdc",
+    cardBackground: "#fffdf4",
+    cardBorder: "#030201",
+    cardRadius: 0,
+    cardShadow: "6px 6px 0 #030201",
+    edge: "#3b342e",
+    edgeWidth: 2,
+    accent: "#ec5a44",
   }}
   spacing={{ row: 140, column: 44, padding: 40 }}
   lineShape="curved"
@@ -313,19 +334,20 @@ The card receives normal HTML props and stable data attributes:
 
 ```css
 [data-family-card] {
-  min-width: 220px;
-  padding: 12px 16px;
-  border: 1px solid currentColor;
-  border-radius: 16px;
-  background: white;
+  min-width: 128px;
+  padding: 10px 12px;
+  border: 2px solid currentColor;
+  border-radius: 0;
+  background: #fffdf4;
+  box-shadow: 6px 6px 0 #030201;
 }
 
 [data-family-card][data-relation="self"] {
-  border-width: 2px;
+  background: #ec5a44;
 }
 
 [data-family-edge] {
-  color: #94a3b8;
+  color: #3b342e;
 }
 ```
 
@@ -360,6 +382,7 @@ The public API is intentionally small:
 ## Local Development
 
 ```bash
+bun run ci
 bun run typecheck
 bun test
 bun run build
@@ -367,6 +390,19 @@ bun run site
 ```
 
 `bun run site` starts the local Next.js/Fumadocs site in `site/`.
+
+## CI and Deploy
+
+```bash
+bun run ci
+bun run ci:package
+bun run ci:site
+bun run deploy:package
+bun run deploy:site
+bun run deploy:site:prod
+```
+
+`deploy:package` publishes the npm package. `deploy:site` creates a Vercel preview deployment for the docs site, and `deploy:site:prod` deploys that site to production.
 
 ## License
 
