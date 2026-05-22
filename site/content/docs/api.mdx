@@ -6,8 +6,8 @@ description: Exports from @memoir/tree.
 All public exports come from `@memoir/tree`. Import styles separately from `@memoir/tree/styles.css`.
 
 ```tsx
-import { FamilyTree, rel } from "@memoir/tree";
-import type { FamilyTreeProps, FamilyRelationship, FamilyTreeSpacing, TreeApi, TreeViewport } from "@memoir/tree";
+import { FamilyTree, OrgChart, org, rel } from "@memoir/tree";
+import type { FamilyTreeProps, FamilyRelationship, FamilyTreeSpacing, OrgChartProps, TreeApi, TreeViewport } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 ```
 
@@ -15,6 +15,7 @@ import "@memoir/tree/styles.css";
 
 - `FamilyTree`
 - `DefaultFamilyCard`
+- `StyledFamilyCard`
 - `rel`
 - `createFamilyIndex(people, relationships)`
 - `collectFamilyNeighborhood(index, subject, limits?)`
@@ -51,7 +52,7 @@ type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, neve
   treeApiRef?: React.Ref<TreeApi>;
   limits?: Partial<FamilyNeighborhoodLimits>;
   spacing?: Partial<FamilyTreeSpacing>;
-  theme?: "memoir" | "system" | TreeTheme;
+  theme?: "memoir" | "system";
   getPersonLabel?: (person: Person, personId: string) => string;
   selected?: string;
   collapsed?: string[];
@@ -105,7 +106,7 @@ These are the user-facing callbacks and imperative actions:
 | `limits` | Explicit visible-relative caps; use `null` to disable a cap. |
 | `spacing` | Row, column, and padding spacing overrides. |
 | `lineShape` | `"orthogonal"` or `"curved"` SVG edge routing. |
-| `theme` | `"memoir"`, `"system"`, or a `TreeTheme` object. |
+| `theme` | `"memoir"` or `"system"`. Use CSS variables/classes for custom colors. |
 | `className` / `style` | Applied to the tree surface. |
 | `cardClassName` / `edgeClassName` | Applied to cards and edge paths. |
 
@@ -136,6 +137,34 @@ Relationship option types:
 - `GuardianshipRelation`: `guardian`, `foster`, `unknown`.
 - `FamilyRelationshipStatus`: `current`, `former`, `divorced`, `separated`, `unknown`.
 
+## Org Chart
+
+- `OrgChart`
+- `DefaultOrgCard`
+- `org`
+- `createOrgChartIndex(people, relationships)`
+- `collectOrgChartSubtree(index, root, options?)`
+- `buildOrgChartLayout(input)`
+
+Use `OrgChart` for people-based manager/report hierarchies:
+
+```tsx
+const relationships = [
+  org.reports("ceo", ["vp-eng", "vp-sales"]),
+];
+
+<OrgChart
+  people={people}
+  root="ceo"
+  relationships={relationships}
+  renderCard={({ person, rootProps }) => (
+    <article {...rootProps}>{person.name}</article>
+  )}
+/>;
+```
+
+`org.reports(managerId, reportIds, options?)` creates flat reporting facts. Org charts do not use family labels like `parent` or `sibling`; cards receive `depth` and `parentId`.
+
 ## Shared Surface
 
 - `TreeSurface`
@@ -148,7 +177,7 @@ Relationship option types:
 - `TreeViewport`
 - `TreeApi`
 - `TreeLineShape`
-- `TreeTheme`
+- `TreeViewportProps`
 - stylesheet from `@memoir/tree/styles.css`
 
 Use primitives when the default wrapper is not enough but you still want package-owned layout, measurement, edges, pan, and zoom:
@@ -173,15 +202,11 @@ Primitive responsibilities:
 | `TreeSurface` | Lower-level pan/zoom surface used by `TreeCanvas`. |
 | `useTreeLayout()` | Reads computed cards, edges, bounds, and tree context for custom renderers. |
 
-## Theme Helpers
+## Style Helpers
 
 | Export | Purpose |
 | --- | --- |
-| `memoirTreeTheme` | Default Memoir theme tokens. |
-| `systemTreeTheme` | Neutral system-color theme. |
-| `treeStylePresets` | Preset map for `memoir` and `system`. |
-| `resolveTreeTheme(theme)` | Resolves a preset or custom theme into a theme object. |
-| `createTreeThemeStyle(theme)` | Converts a theme to CSS variable style props. |
+| `treeStylePresets` | Preset names: `memoir` and `system`. |
 | `getTreeStyleName(theme)` | Returns the `data-tree-style` name used by the surface. |
 
 ## Family Types
@@ -205,4 +230,17 @@ Primitive responsibilities:
 - `FamilyTreeBounds`
 - `BuildFamilyTreeLayoutInput<Person>`
 
-The API is intentionally scoped to the family tree renderer. Pass app-owned relationship rows directly instead of going through a diagram DSL or package-owned database.
+## Org Types
+
+- `OrgChartProps<Person>`
+- `OrgCardProps<Person>`
+- `OrgReportingRelationship`
+- `OrgReportingRelation`
+- `OrgReportingStatus`
+- `OrgChartSpacing`
+- `OrgChartLayoutResult<Person>`
+- `OrgChartLayoutCard<Person>`
+- `OrgChartLayoutEdge`
+- `BuildOrgChartLayoutInput<Person>`
+
+The API is intentionally scoped to family and org tree renderers. Pass app-owned relationship rows directly instead of going through a generic graph DSL or package-owned database.

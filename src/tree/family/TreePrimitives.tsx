@@ -3,9 +3,13 @@
 import type { ComponentType, CSSProperties, JSX, KeyboardEvent, ReactNode, Ref, RefObject } from "react";
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
 
-import { buildFamilyTreeLayout } from "./layout";
-import { TreeSurface } from "./TreeSurface";
-import { useCardMeasurements } from "./use-card-measurements";
+import {
+  TreeCanvas as CoreTreeCanvas,
+  TreeEdges as CoreTreeEdges,
+  TreeNodeLayer as CoreTreeNodeLayer,
+  useCardMeasurements,
+} from "../core";
+import { buildFamilyTreeLayout } from "./family-layout";
 import type {
   FamilyCardProps,
   FamilyRelationship,
@@ -17,10 +21,11 @@ import type {
   PersonId,
   TreeApi,
   TreeInteractionMode,
+  TreeLineShape,
+  TreeStylePreset,
   TreeViewport,
 } from "./types";
-import type { FamilyTreeLayoutResult } from "./layout-types";
-import type { TreeLineShape, TreeStylePreset, TreeTheme } from "./theme";
+import type { FamilyTreeLayoutCard, FamilyTreeLayoutEdge, FamilyTreeLayoutResult } from "./layout-types";
 
 export type TreePrimitiveType = "family";
 
@@ -71,7 +76,7 @@ export interface TreeCanvasProps {
   onViewportChange?: (viewport: TreeViewport) => void;
   onZoomChange?: (zoom: number) => void;
   style?: CSSProperties;
-  theme?: TreeStylePreset | TreeTheme;
+  theme?: TreeStylePreset;
   treeApiRef?: Ref<TreeApi>;
   viewport?: TreeViewport;
   zoom?: number;
@@ -203,11 +208,13 @@ export function TreeCanvas({
   const context = useTreeLayout();
 
   return (
-    <TreeSurface
+    <CoreTreeCanvas
+      anchorId={context.subject}
       bounds={context.layout.bounds}
       cards={context.layout.cards}
       className={className}
       ariaLabel={ariaLabel}
+      containerRef={context.containerRef}
       defaultViewport={defaultViewport}
       defaultZoom={defaultZoom}
       interactionMode={interactionMode}
@@ -216,7 +223,6 @@ export function TreeCanvas({
       onViewportChange={onViewportChange}
       onZoomChange={onZoomChange}
       style={style}
-      subject={context.subject}
       theme={theme}
       treeApiRef={treeApiRef}
       treeType="family"
@@ -224,7 +230,6 @@ export function TreeCanvas({
       zoom={zoom}
     >
       <div
-        ref={context.containerRef}
         data-family-canvas
         data-family-interaction={interactionMode}
         data-family-subject={context.subject}
@@ -232,52 +237,29 @@ export function TreeCanvas({
       >
         {children}
       </div>
-    </TreeSurface>
+    </CoreTreeCanvas>
   );
 }
 
 export function TreeEdges({ edgeClassName }: TreeEdgesProps): JSX.Element {
   const context = useTreeLayout();
-
   return (
-    <svg
-      aria-hidden="true"
-      width={context.layout.bounds.width}
-      height={context.layout.bounds.height}
-      viewBox={`0 0 ${context.layout.bounds.width} ${context.layout.bounds.height}`}
-      fill="none"
-      style={{
-        inset: 0,
-        overflow: "visible",
-        pointerEvents: "none",
-        position: "absolute",
-      }}
-    >
-      {context.layout.edges.map((edge) => (
-        <path
-          key={edge.id}
-          className={edgeClassName}
-          d={edge.path}
-          data-edge-kind={edge.kind}
-          data-edge-status={edge.status}
-          data-family-edge
-          data-source-id={edge.sourceId}
-          data-target-id={edge.targetId}
-          data-tree-edge
-          fill="none"
-          stroke="currentColor"
-          strokeDasharray={edge.kind === "adoptive" || edge.kind === "guardian" || edge.status === "former" ? "4 4" : undefined}
-          strokeLinecap={context.lineShape === "curved" ? "round" : "butt"}
-          strokeLinejoin={context.lineShape === "curved" ? "round" : "miter"}
-          style={{ strokeWidth: "var(--tree-edge-width, 2)" }}
-        />
-      ))}
-    </svg>
+    <CoreTreeEdges
+      bounds={context.layout.bounds}
+      edgeClassName={edgeClassName}
+      edges={context.layout.edges}
+      lineShape={context.lineShape}
+      getEdgeProps={(edge: FamilyTreeLayoutEdge) => ({
+        "data-family-edge": "",
+        strokeDasharray:
+          edge.kind === "adoptive" || edge.kind === "guardian" || edge.status === "former" ? "4 4" : undefined,
+      })}
+    />
   );
 }
 
 export function TreeNodeLayer<Person, CardExtraProps extends object = Record<string, never>>({
-  card: Card,
+  card,
   cardClassName,
   cardProps,
 }: TreeNodeLayerProps<Person, CardExtraProps>): JSX.Element {
@@ -298,67 +280,64 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
     [context],
   );
 
-  return (
-    <>
-      {context.layout.cards.map((layoutCard) => {
-        const isSelected = context.selected ? context.selected === layoutCard.personId : layoutCard.personId === context.subject;
-        const personLabel = context.getPersonLabel?.(layoutCard.person, layoutCard.personId) ?? layoutCard.personId;
-        const treeCardProps: FamilyCardProps<Person> = {
-          person: layoutCard.person,
-          personId: layoutCard.personId,
-          relation: layoutCard.relation,
-          selected: isSelected,
-          focused: isSelected,
-          collapsed: context.collapsedIds.has(layoutCard.personId),
-          readOnly: context.readOnly,
-          className: cardClassName,
-          onAddRelationship:
-            context.readOnly || !context.onAddRelationship
-              ? undefined
-              : () => context.onAddRelationship?.(layoutCard.person, layoutCard.personId),
-          "aria-selected": isSelected,
-          "aria-label": `${personLabel}, ${layoutCard.relation.label}${isSelected ? ", selected" : ""}`,
-          "data-focused": isSelected ? "" : undefined,
-          "data-family-card": "",
-          "data-tree-card": "",
-          "data-person-id": layoutCard.personId,
-          "data-relation": layoutCard.relation.label,
-          "data-generation": layoutCard.relation.generation,
-          "data-selected": isSelected ? "" : undefined,
-          "data-side": layoutCard.relation.side,
-          onClick: context.onPersonClick ? () => handleFamilyClick(layoutCard.person, layoutCard.personId) : undefined,
-          onKeyDown: context.onPersonClick
-            ? (event) => handleFamilyKeyDown(event, layoutCard.person, layoutCard.personId)
-            : undefined,
-          role: context.onPersonClick ? "button" : undefined,
-          tabIndex: context.onPersonClick ? 0 : undefined,
-        };
-        const extraCardProps =
-          typeof cardProps === "function" ? cardProps(layoutCard.person, treeCardProps) : cardProps;
-        const resolvedCardProps = {
-          ...extraCardProps,
-          ...treeCardProps,
-        } as FamilyCardProps<Person> & CardExtraProps;
+  const getCardProps = useCallback(
+    (layoutCard: FamilyTreeLayoutCard<Person>) => {
+      const isSelected = context.selected === layoutCard.personId;
+      const isFocused = context.selected ? isSelected : layoutCard.personId === context.subject;
+      const personLabel = context.getPersonLabel?.(layoutCard.person, layoutCard.personId) ?? layoutCard.personId;
+      const relationLabel = isFocused && layoutCard.personId === context.subject ? "root node" : layoutCard.relation.label;
+      const treeCardProps: FamilyCardProps<Person> = {
+        person: layoutCard.person,
+        personId: layoutCard.personId,
+        relation: layoutCard.relation,
+        selected: isSelected,
+        focused: isFocused,
+        collapsed: context.collapsedIds.has(layoutCard.personId),
+        readOnly: context.readOnly,
+        className: cardClassName,
+        onAddRelationship:
+          context.readOnly || !context.onAddRelationship
+            ? undefined
+            : () => context.onAddRelationship?.(layoutCard.person, layoutCard.personId),
+        "aria-selected": isSelected || undefined,
+        "aria-label": `${personLabel}, ${relationLabel}`,
+        "data-focused": isFocused ? "" : undefined,
+        "data-family-card": "",
+        "data-tree-card": "",
+        "data-person-id": layoutCard.personId,
+        "data-relation": layoutCard.relation.label,
+        "data-generation": layoutCard.relation.generation,
+        "data-selected": isSelected ? "" : undefined,
+        "data-side": layoutCard.relation.side,
+        onClick: context.onPersonClick ? () => handleFamilyClick(layoutCard.person, layoutCard.personId) : undefined,
+        onKeyDown: context.onPersonClick
+          ? (event) => handleFamilyKeyDown(event, layoutCard.person, layoutCard.personId)
+          : undefined,
+        role: context.onPersonClick ? "button" : undefined,
+        tabIndex: context.onPersonClick ? 0 : undefined,
+      };
+      const extraCardProps =
+        typeof cardProps === "function" ? cardProps(layoutCard.person, treeCardProps) : cardProps;
+      return {
+        ...extraCardProps,
+        ...treeCardProps,
+      } as FamilyCardProps<Person> & CardExtraProps;
+    },
+    [cardClassName, cardProps, context, handleFamilyClick, handleFamilyKeyDown],
+  );
 
-        return (
-          <div
-            key={layoutCard.personId}
-            data-family-card-positioner
-            data-person-id={layoutCard.personId}
-            data-tree-card-positioner
-            style={{
-              left: 0,
-              position: "absolute",
-              top: 0,
-              transform: `translate(${layoutCard.x}px, ${layoutCard.y}px)`,
-            }}
-          >
-            <div data-family-measure data-family-measure-id={layoutCard.personId}>
-              <Card {...resolvedCardProps} />
-            </div>
-          </div>
-        );
+  return (
+    <CoreTreeNodeLayer<Person, FamilyTreeLayoutCard<Person>, FamilyCardProps<Person> & CardExtraProps>
+      card={card}
+      cards={context.layout.cards}
+      getCardProps={getCardProps}
+      getPositionerProps={() => ({
+        "data-family-card-positioner": "",
       })}
-    </>
+      getMeasureProps={(layoutCard) => ({
+        "data-family-measure": "",
+        "data-family-measure-id": layoutCard.personId,
+      })}
+    />
   );
 }

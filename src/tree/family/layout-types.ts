@@ -1,37 +1,21 @@
+import type { TreeBounds, TreeCardSize, TreeLayoutCardBase, TreeLayoutEdge } from "../core";
 import type {
   ComputedRelation,
   FamilyNeighborhoodLimits,
   FamilyRelationship,
-  FamilyTreeSize,
   FamilyTreeSpacing,
   PeopleById,
   PersonId,
+  TreeLineShape,
 } from "./types";
-import type { TreeLineShape } from "./theme";
 
-export interface FamilyTreeLayoutCard<Person> {
-  personId: PersonId;
-  person: Person;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+export interface FamilyTreeLayoutCard<Person> extends TreeLayoutCardBase<Person> {
   relation: ComputedRelation;
 }
 
-export interface FamilyTreeLayoutEdge {
-  id: string;
-  path: string;
-  kind: string;
-  status?: string;
-  sourceId?: PersonId;
-  targetId?: PersonId;
-}
+export type FamilyTreeLayoutEdge = TreeLayoutEdge;
 
-export interface FamilyTreeBounds {
-  width: number;
-  height: number;
-}
+export type FamilyTreeBounds = TreeBounds;
 
 export interface FamilyTreeLayoutResult<Person> {
   cards: FamilyTreeLayoutCard<Person>[];
@@ -44,7 +28,7 @@ export interface BuildFamilyTreeLayoutInput<Person> {
   people: PeopleById<Person>;
   relationships: FamilyRelationship[];
   collapsed?: PersonId[];
-  measurements?: Record<PersonId, FamilyTreeSize>;
+  measurements?: Record<PersonId, TreeCardSize>;
   spacing?: Partial<FamilyTreeSpacing>;
   limits?: Partial<FamilyNeighborhoodLimits>;
   lineShape?: TreeLineShape;

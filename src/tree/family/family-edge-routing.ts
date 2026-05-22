@@ -1,48 +1,16 @@
+import {
+  bottomCenterPoint,
+  centerPoint,
+  createTreeEdgePath,
+  roundTreeCoordinate,
+  topCenterPoint,
+} from "../core";
+import type { TreeLineShape } from "../core";
 import type { FamilyRelationship, PersonId } from "./types";
 import type { FamilyTreeLayoutCard, FamilyTreeLayoutEdge } from "./layout-types";
-import type { TreeLineShape } from "./theme";
-
-const round = (value: number) => Math.round(value * 100) / 100;
-
-const center = (card: FamilyTreeLayoutCard<unknown>) => ({
-  x: card.x + card.width / 2,
-  y: card.y + card.height / 2,
-});
-
-const topCenter = (card: FamilyTreeLayoutCard<unknown>) => ({
-  x: card.x + card.width / 2,
-  y: card.y,
-});
-
-const bottomCenter = (card: FamilyTreeLayoutCard<unknown>) => ({
-  x: card.x + card.width / 2,
-  y: card.y + card.height,
-});
 
 const cardById = <Person>(cards: FamilyTreeLayoutCard<Person>[]) =>
   new Map<PersonId, FamilyTreeLayoutCard<Person>>(cards.map((card) => [card.personId, card]));
-
-const createOrthogonalPath = (
-  start: { x: number; y: number },
-  end: { x: number; y: number },
-) => {
-  const midY = round((start.y + end.y) / 2);
-  return `M ${round(start.x)} ${round(start.y)} L ${round(start.x)} ${midY} L ${round(end.x)} ${midY} L ${round(end.x)} ${round(end.y)}`;
-};
-
-const createCurvedPath = (
-  start: { x: number; y: number },
-  end: { x: number; y: number },
-) => {
-  const midY = round((start.y + end.y) / 2);
-  return `M ${round(start.x)} ${round(start.y)} C ${round(start.x)} ${midY}, ${round(end.x)} ${midY}, ${round(end.x)} ${round(end.y)}`;
-};
-
-const createEdgePath = (
-  start: { x: number; y: number },
-  end: { x: number; y: number },
-  lineShape: TreeLineShape,
-) => (lineShape === "curved" ? createCurvedPath(start, end) : createOrthogonalPath(start, end));
 
 const partnershipKey = (a: PersonId, b: PersonId) => [a, b].toSorted().join("|");
 
@@ -58,9 +26,6 @@ export function routeFamilyEdges<Person>(
   const cardsById = cardById(cards);
   const edges: FamilyTreeLayoutEdge[] = [];
   const lineShape = options.lineShape ?? "orthogonal";
-
-  // Track which co-parent pairs already have a horizontal bar drawn so we
-  // never stack a partnership edge on top of an implicit co-parent bar.
   const drawnParentBars = new Set<string>();
 
   const drawParentBar = (
@@ -70,10 +35,10 @@ export function routeFamilyEdges<Person>(
     status: FamilyRelationship["status"],
   ) => {
     const [first, second] = pair;
-    const y = (center(first).y + center(second).y) / 2;
+    const y = (centerPoint(first).y + centerPoint(second).y) / 2;
     edges.push({
       id,
-      path: `M ${round(first.x + first.width)} ${round(y)} L ${round(second.x)} ${round(y)}`,
+      path: `M ${roundTreeCoordinate(first.x + first.width)} ${roundTreeCoordinate(y)} L ${roundTreeCoordinate(second.x)} ${roundTreeCoordinate(y)}`,
       kind,
       status,
       sourceId: first.personId,
@@ -110,8 +75,6 @@ export function routeFamilyEdges<Person>(
     }
 
     if (relationship.type === "parentage") {
-      // Two co-parents → always draw a horizontal parent bar between them and
-      // drop one shared line to each child from the bar's midpoint.
       if (relationship.parents.length === 2) {
         const [parentAId, parentBId] = relationship.parents;
         if (parentAId && parentBId) {
@@ -119,7 +82,7 @@ export function routeFamilyEdges<Person>(
           if (pair) {
             const key = partnershipKey(parentAId, parentBId);
             const join = drawnParentBars.has(key)
-              ? { x: (pair[0].x + pair[0].width + pair[1].x) / 2, y: (center(pair[0]).y + center(pair[1]).y) / 2 }
+              ? { x: (pair[0].x + pair[0].width + pair[1].x) / 2, y: (centerPoint(pair[0]).y + centerPoint(pair[1]).y) / 2 }
               : drawParentBar(
                   pair,
                   `${relationship.id ?? `parentage-${relationshipIndex}`}-bar`,
@@ -131,7 +94,7 @@ export function routeFamilyEdges<Person>(
               if (!childCard) continue;
               edges.push({
                 id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${parentAId}-${parentBId}-${childId}`,
-                path: createEdgePath(join, topCenter(childCard), lineShape),
+                path: createTreeEdgePath(join, topCenterPoint(childCard), lineShape),
                 kind: relationship.relation ?? "biological",
                 status: relationship.status,
                 sourceId: parentAId,
@@ -151,7 +114,7 @@ export function routeFamilyEdges<Person>(
           if (!childCard) continue;
           edges.push({
             id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${parentId}-${childId}`,
-            path: createEdgePath(bottomCenter(parentCard), topCenter(childCard), lineShape),
+            path: createTreeEdgePath(bottomCenterPoint(parentCard), topCenterPoint(childCard), lineShape),
             kind: relationship.relation ?? "biological",
             status: relationship.status,
             sourceId: parentId,
@@ -170,7 +133,7 @@ export function routeFamilyEdges<Person>(
         if (!childCard) continue;
         edges.push({
           id: `${relationship.id ?? `guardianship-${relationshipIndex}`}-${guardianId}-${childId}`,
-          path: createEdgePath(bottomCenter(guardianCard), topCenter(childCard), lineShape),
+          path: createTreeEdgePath(bottomCenterPoint(guardianCard), topCenterPoint(childCard), lineShape),
           kind: relationship.relation ?? "guardian",
           status: relationship.status,
           sourceId: guardianId,

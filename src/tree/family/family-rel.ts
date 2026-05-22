@@ -2,10 +2,10 @@ import type {
   FamilyGuardianshipRelationship,
   FamilyParentageRelationship,
   FamilyPartnershipRelationship,
+  FamilyRelationshipStatus,
   GuardianshipRelation,
   ParentageRelation,
   PartnershipRelation,
-  FamilyRelationshipStatus,
   PersonId,
 } from "./types";
 

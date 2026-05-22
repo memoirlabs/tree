@@ -6,9 +6,6 @@
   --tree-card-bg: #fafafa;
   --tree-card-fg: #030201;
   --tree-card-border: #030201;
-  --tree-card-selected-bg: #ec5a44;
-  --tree-card-selected-fg: #030201;
-  --tree-card-selected-border: #030201;
   --tree-card-shadow: 4px 4px 0 #030201;
   --tree-edge: #030201;
   --tree-edge-width: 1;
@@ -35,9 +32,6 @@
   --tree-card-bg: color-mix(in srgb, Canvas 96%, CanvasText 4%);
   --tree-card-fg: CanvasText;
   --tree-card-border: color-mix(in srgb, CanvasText 16%, transparent);
-  --tree-card-selected-bg: var(--tree-card-bg);
-  --tree-card-selected-fg: var(--tree-card-fg);
-  --tree-card-selected-border: color-mix(in srgb, CanvasText 54%, transparent);
   --tree-card-shadow: none;
   --tree-edge: color-mix(in srgb, CanvasText 34%, transparent);
   --tree-edge-width: 2;
@@ -64,12 +58,6 @@
   box-shadow: var(--tree-card-shadow);
   color: var(--tree-card-fg, inherit);
   font: inherit;
-}
-
-[data-tree-card][aria-selected="true"] {
-  background: var(--tree-card-selected-bg);
-  border-color: var(--tree-card-selected-border);
-  color: var(--tree-card-selected-fg);
 }
 
 [data-tree-card-positioner] {

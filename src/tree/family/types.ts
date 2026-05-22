@@ -1,9 +1,25 @@
 import type { ComponentType, CSSProperties, HTMLAttributes, JSX, Ref } from "react";
-import type { TreeLineShape, TreeStylePreset, TreeTheme } from "./theme";
+import type {
+  PeopleById,
+  PersonId,
+  TreeApi,
+  TreeCardSize,
+  TreeInteractionMode,
+  TreeLineShape,
+  TreePersonHandler,
+  TreeStylePreset,
+  TreeViewport,
+} from "../core";
 
-export type PersonId = string;
-
-export type PeopleById<Person> = Record<PersonId, Person>;
+export type {
+  PeopleById,
+  PersonId,
+  TreeApi,
+  TreeInteractionMode,
+  TreeLineShape,
+  TreeStylePreset,
+  TreeViewport,
+} from "../core";
 
 export type ParentageRelation = "biological" | "adoptive" | "step" | "foster" | "unknown";
 export type PartnershipRelation = "spouse" | "partner" | "coparent" | "unknown";
@@ -98,29 +114,11 @@ export interface FamilyCardProps<Person> extends HTMLAttributes<HTMLElement> {
   "data-side"?: ComputedRelationSide;
 }
 
-export interface FamilyTreeSize {
-  width: number;
-  height: number;
-}
-
-export type TreeInteractionMode = "pan" | "scroll" | "none";
-
-export interface TreeViewport {
-  x: number;
-  y: number;
-  zoom: number;
-}
-
-export interface TreeApi {
-  centerPerson: (personId: PersonId) => void;
-  fitToSubject: () => void;
-  resetViewport: () => void;
-  zoomTo: (zoom: number) => void;
-}
+export type FamilyTreeSize = TreeCardSize;
 
 export type RenderProfileCard<Person> = (profile: Person, props: FamilyCardProps<Person>) => JSX.Element;
 
-export type FamilyTreePersonHandler<Person> = (person: Person, personId: PersonId) => void;
+export type FamilyTreePersonHandler<Person> = TreePersonHandler<Person>;
 
 export type FamilyTreeCardProps<Person, CardExtraProps extends object> =
   | CardExtraProps
@@ -152,7 +150,7 @@ export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<
   onZoomChange?: (zoom: number) => void;
   spacing?: Partial<FamilyTreeSpacing>;
   limits?: Partial<FamilyNeighborhoodLimits>;
-  theme?: TreeStylePreset | TreeTheme;
+  theme?: TreeStylePreset;
   treeApiRef?: Ref<TreeApi>;
   getPersonLabel?: (person: Person, personId: PersonId) => string;
   selected?: PersonId;
@@ -168,5 +166,3 @@ export interface FamilyTreeSpacing {
   column: number;
   padding: number;
 }
-
-export type { TreeLineShape, TreeStylePreset, TreeTheme };

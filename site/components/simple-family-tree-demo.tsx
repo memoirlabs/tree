@@ -34,14 +34,13 @@ function DemoProfileCard({
   personId: _personId,
   readOnly: _readOnly,
   relation,
-  selected,
   ...props
 }: FamilyCardProps<DemoProfile>) {
   return (
     <article {...props} className={`memoir-demo-card memoir-demo-card--${person.tone ?? "cream"}`}>
       <strong>{person.name}</strong>
       <small>{person.role}</small>
-      <span>{selected ? "selected" : relation.label}</span>
+      <span>{relation.label === "self" ? "root node" : relation.label}</span>
     </article>
   );
 }
@@ -57,7 +56,6 @@ export function SimpleFamilyTreeDemo() {
       edgeClassName="memoir-demo-edge"
       interactionMode="pan"
       readOnly
-      selected="noa"
       spacing={{ column: 40, padding: 36, row: 118 }}
       style={{ height: 520 }}
     />

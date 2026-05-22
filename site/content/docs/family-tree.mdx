@@ -34,7 +34,7 @@ type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, neve
   onZoomChange?: (zoom: number) => void;
   spacing?: Partial<FamilyTreeSpacing>;
   limits?: Partial<FamilyNeighborhoodLimits>;
-  theme?: "memoir" | "system" | TreeTheme;
+  theme?: "memoir" | "system";
   treeApiRef?: React.Ref<TreeApi>;
   getPersonLabel?: (person: Person, personId: string) => string;
   selected?: string;
@@ -143,27 +143,25 @@ Supported parentage relations are `biological`, `adoptive`, `step`, `foster`, an
 
 If you omit `card` and `renderProfileCard`, `FamilyTree` uses `DefaultFamilyCard`, which displays a common name field when present or falls back to the person ID. It can also show common avatar/image fields when present.
 
-Your custom card receives the person object, computed relation metadata, selected/focused state, accessibility props, stable data attributes, collapse state, and edit hooks. Always spread `...props` onto the card root:
+Your custom card receives the person object, computed relation metadata, root/app focus state, optional app-owned selection state, accessibility props, stable data attributes, collapse state, and edit hooks. Always spread `...props` onto the card root:
 
 ```tsx
 import type { FamilyCardProps } from "@memoir/tree";
 
 function ProfileCard({
   collapsed,
-  focused: _focused,
+  focused,
   onAddRelationship,
   person,
   personId,
   readOnly,
   relation,
-  selected,
   ...props
 }: FamilyCardProps<Person>) {
   return (
     <article {...props} className="memoir-profile-card">
       <strong>{person.name}</strong>
-      <small>{relation.label}</small>
-      {selected ? <span>Selected</span> : null}
+      <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
       {collapsed ? <span>Collapsed</span> : null}
       {!readOnly ? (
         <button type="button" onClick={() => onAddRelationship?.(person, personId)}>

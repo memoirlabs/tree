@@ -1,11 +1,13 @@
 # Agent Guide
 
-This repository is `@memoir/tree`: a lightweight React + TypeScript package for subject-centered family trees.
+This repository is `@memoir/tree`: a lightweight React + TypeScript package for relationship-aware tree renderers.
 
 ## Product Direction
 
-- Keep the package family-specific. Do not turn it into a generic graph editor, org chart framework, treeview library, or React Flow competitor.
-- The differentiator is the family relationship model: parentage, partnership, guardianship, subject-relative labels, measured cards, relationship edges, and a readable family neighborhood.
+- Keep the package focused on scoped tree renderers: `FamilyTree` and `OrgChart`. Do not turn it into a generic graph editor, treeview library, or React Flow competitor.
+- The differentiators are domain-specific models on top of a shared tree core:
+  - Family trees: parentage, partnership, guardianship, subject-relative labels, measured cards, relationship edges, and a readable family neighborhood.
+  - Org charts: people, manager/report relationships, rooted hierarchy layout, measured cards, and reporting edges.
 - Keep it lightweight and hackable. Do not add UI frameworks, CSS frameworks, Radix, shadcn, Tailwind, CVA, CSS-in-JS, animation libraries, or graph engines.
 - React stays a peer dependency. The package should not bundle React.
 - Use Bun for local commands and scripts.
@@ -14,7 +16,7 @@ This repository is `@memoir/tree`: a lightweight React + TypeScript package for 
 
 - The intended skin is the tiny package stylesheet: `import "@memoir/tree/styles.css";`.
 - The stylesheet is framework-free CSS using CSS variables and stable data attributes.
-- The default visual language is Memoir: cream canvas, white cards, sharp corners, black outlines/shadows, and orange selected state.
+- The default visual language is Memoir: cream canvas, white cards, sharp corners, black outlines/shadows, and root-node focus styling.
 - Design should stay hackable through:
   - CSS variables
   - stable data attributes
@@ -28,7 +30,7 @@ This repository is `@memoir/tree`: a lightweight React + TypeScript package for 
 
 ## API Direction
 
-Prefer the clean names in new docs and examples:
+Prefer the clean names in new family docs and examples:
 
 - `people`
 - `subject`
@@ -44,12 +46,22 @@ The Memoir-shaped aliases remain supported for app compatibility:
 
 Do not remove aliases without an explicit migration plan.
 
+For org charts, prefer:
+
+- `people`
+- `root`
+- `relationships`
+- `card`
+- `onPersonClick`
+
 ## Current API
 
 Main exports include:
 
 - `FamilyTree`
+- `OrgChart`
 - `DefaultFamilyCard`
+- `DefaultOrgCard`
 - `TreeProvider`
 - `TreeCanvas`
 - `TreeEdges`
@@ -57,7 +69,9 @@ Main exports include:
 - `TreeSurface`
 - `useTreeLayout`
 - `rel`
+- `org`
 - `buildFamilyTreeLayout`
+- `buildOrgChartLayout`
 - `createFamilyIndex`
 - `collectFamilyNeighborhood`
 - `defaultFamilyNeighborhoodLimits`
@@ -66,18 +80,21 @@ Important types include:
 
 - `FamilyTreeProps`
 - `FamilyCardProps`
+- `OrgChartProps`
+- `OrgCardProps`
 - `FamilyTreeCardProps`
 - `FamilyNeighborhoodLimits`
 - `TreeViewport`
 - `TreeApi`
 - family relationship types
+- org reporting relationship types
 - layout types
 
 ## Custom Cards
 
 Custom cards are central to the library. Preserve this flow:
 
-- `FamilyTree` provides layout, measurement, ARIA props, data attributes, relationship metadata, selected/focused/collapsed state, and handlers.
+- `FamilyTree` and `OrgChart` provide layout, measurement, ARIA props, data attributes, domain metadata, selected/focused/collapsed state, and handlers.
 - User cards render app-owned markup.
 - User cards should spread `...props` on the card root.
 - `cardProps` exists so users can pass app-owned typed props into cards without wrappers.
@@ -122,6 +139,16 @@ Family neighborhood caps must be explicit and configurable through `limits`.
 - Defaults live in `defaultFamilyNeighborhoodLimits`.
 - `null` disables a cap for a group.
 - Do not silently add new hard-coded caps.
+
+## Source Layout
+
+Shared code must live above the domain implementations:
+
+- `src/tree/core`: shared surface, viewport, measurement, edge helpers, theme names, and generic tree types.
+- `src/tree/family`: family-only relationships, indexing, layout, primitives, and `FamilyTree`.
+- `src/tree/org-chart`: org-chart-only reporting facts, indexing, layout, and `OrgChart`.
+
+Do not place shared tree code inside `src/tree/family` or `src/tree/org-chart`.
 
 ## Verification
 

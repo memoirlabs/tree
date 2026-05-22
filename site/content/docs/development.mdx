@@ -79,12 +79,12 @@ type Person = {
   avatarUrl?: string;
 };
 
-export function ProfileCard({ person, relation, selected, ...props }: FamilyCardProps<Person>) {
+export function ProfileCard({ focused, person, relation, ...props }: FamilyCardProps<Person>) {
   return (
     <article {...props}>
       {person.avatarUrl ? <img src={person.avatarUrl} alt="" /> : null}
       <strong>{person.name}</strong>
-      <small>{selected ? "selected" : relation.label}</small>
+      <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
     </article>
   );
 }

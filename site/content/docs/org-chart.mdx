@@ -1,41 +1,77 @@
 ---
 title: Org Chart
-description: "@memoir/tree is for family trees, not org charts."
+description: Render a people-based organization chart from flat reporting relationships.
 ---
 
-`@memoir/tree` does not currently export an `OrgChart` component.
+`OrgChart` renders a rooted reporting hierarchy from app-owned people and flat manager-to-report facts.
 
-That is intentional. This package is scoped to subject-centered family relationships: parentage, partnership, guardianship, siblings, descendants, ancestors, and relationship-aware labels.
+It uses the same tree core as `FamilyTree`: measured cards, SVG edges, pan, zoom, accessible card props, custom React cards, and the tiny stylesheet.
 
-## Use FamilyTree For Families
-
-Use `FamilyTree` when the data is family data:
+## Minimal Org Chart
 
 ```tsx
-import { FamilyTree, rel } from "@memoir/tree";
+import { OrgChart, org } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 
+const people = {
+  ceo: { id: "ceo", name: "Casey", title: "CEO" },
+  engineering: { id: "engineering", name: "Morgan", title: "VP Engineering" },
+  design: { id: "design", name: "Riley", title: "Design Lead" },
+};
+
 const relationships = [
-  rel.parents("alex", ["morgan", "casey"]),
-  rel.partner("alex", "jordan"),
+  org.reports("ceo", ["engineering", "design"]),
 ];
+
+export function TeamChart() {
+  return <OrgChart people={people} root="ceo" relationships={relationships} />;
+}
 ```
 
-## Do Not Import OrgChart
+You can omit `card` to use `DefaultOrgCard`.
+
+## Custom Card
 
 ```tsx
-import { OrgChart } from "@memoir/tree";
+<OrgChart
+  people={people}
+  root="ceo"
+  relationships={relationships}
+  renderCard={({ person, depth, rootProps }) => (
+    <article {...rootProps}>
+      <strong>{person.name}</strong>
+      <small>{person.title ?? `level ${depth}`}</small>
+    </article>
+  )}
+/>
 ```
 
-That import is not supported.
+`rootProps` includes the accessibility props, keyboard handlers, stable `data-*` attributes, and click handlers that belong on the card root.
 
-## Why Not Force It
+## Relationship Helper
 
-Org charts have different semantics from family trees:
+```ts
+org.reports("ceo", ["vp-eng", "vp-sales"], {
+  relation: "manager",
+  status: "current",
+  order: 0,
+});
+```
 
-- Managers and direct reports are not parentage.
-- Dotted-line reporting is not guardianship.
-- Teams, job titles, vacant roles, and reporting permissions need their own model.
-- Org chart labels should not be computed as family labels.
+`OrgChart` currently models people and reporting lines. Titles, teams, permissions, and actions belong on your person records or custom card props.
 
-If your data is not family data, use a tool designed for that model instead of reshaping it into family relationships.
+## Common Options
+
+```tsx
+<OrgChart
+  people={people}
+  root="ceo"
+  relationships={relationships}
+  selected={selectedPersonId}
+  collapsed={["engineering"]}
+  maxDepth={3}
+  onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
+/>
+```
+
+Use `selected` for app-owned selection, `collapsed` to hide deeper reports under a person, and `maxDepth` to cap the rendered hierarchy.

@@ -5,6 +5,17 @@ import type { CSSProperties, JSX } from "react";
 import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "./TreePrimitives";
 import type { FamilyCardProps, FamilyTreeProps, PersonId } from "./types";
 
+export type StyledFamilyCardRadius = CSSProperties["borderRadius"] | "square" | "soft" | "round" | "pill";
+export type StyledFamilyCardShadow = CSSProperties["boxShadow"] | "none" | "flat" | "soft";
+export type StyledFamilyCardAvatar = "auto" | "hidden" | "square" | "soft" | "round";
+
+export interface StyledFamilyCardProps<Person> extends FamilyCardProps<Person> {
+  avatar?: StyledFamilyCardAvatar;
+  outlined?: boolean;
+  radius?: StyledFamilyCardRadius;
+  shadow?: StyledFamilyCardShadow;
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
 const defaultCardStyle: CSSProperties = {
@@ -19,12 +30,6 @@ const defaultCardStyle: CSSProperties = {
   boxShadow: "var(--tree-card-shadow, none)",
   color: "var(--tree-card-fg, inherit)",
   textAlign: "center",
-};
-
-const defaultSelectedCardStyle: CSSProperties = {
-  background: "var(--tree-card-selected-bg, var(--tree-card-bg, Canvas))",
-  borderColor: "var(--tree-card-selected-border, var(--tree-card-border, currentColor))",
-  color: "var(--tree-card-selected-fg, var(--tree-card-fg, inherit))",
 };
 
 const defaultAvatarStyle: CSSProperties = {
@@ -49,16 +54,27 @@ const defaultRelationStyle: CSSProperties = {
   lineHeight: 1.2,
 };
 
-const defaultBadgeStyle: CSSProperties = {
-  display: "block",
-  padding: "2px 7px",
-  border: "var(--tree-outline-width, 1px) solid currentColor",
-  fontSize: "0.68rem",
-  fontWeight: 700,
-  letterSpacing: "0.08em",
-  lineHeight: 1.2,
-  textTransform: "uppercase",
-};
+function resolveCardRadius(radius: StyledFamilyCardRadius | undefined): CSSProperties["borderRadius"] | undefined {
+  if (radius === "square") return 0;
+  if (radius === "soft") return 8;
+  if (radius === "round") return 16;
+  if (radius === "pill") return 999;
+  return radius;
+}
+
+function resolveCardShadow(shadow: StyledFamilyCardShadow | undefined): CSSProperties["boxShadow"] | undefined {
+  if (shadow === "none") return "none";
+  if (shadow === "flat") return "var(--tree-card-shadow, 4px 4px 0 #030201)";
+  if (shadow === "soft") return "0 12px 32px color-mix(in srgb, var(--tree-card-border, #030201) 16%, transparent)";
+  return shadow;
+}
+
+function resolveAvatarRadius(avatar: StyledFamilyCardAvatar | undefined): CSSProperties["borderRadius"] | undefined {
+  if (avatar === "square") return 0;
+  if (avatar === "soft") return 8;
+  if (avatar === "round" || avatar === "auto") return 999;
+  return undefined;
+}
 
 function getDefaultPersonLabel<Person>(person: Person, personId: PersonId): string {
   if (!isRecord(person)) return personId;
@@ -85,27 +101,56 @@ function getDefaultProfileImage<Person>(person: Person): string | undefined {
   return undefined;
 }
 
-export function DefaultFamilyCard<Person>({
+export function StyledFamilyCard<Person>({
+  avatar = "auto",
+  outlined = true,
   person,
   personId,
+  radius,
   relation,
-  selected,
-  focused: _focused,
+  selected: _selected,
+  shadow,
+  focused,
   collapsed: _collapsed,
   readOnly: _readOnly,
   onAddRelationship: _onAddRelationship,
   ...props
-}: FamilyCardProps<Person>): JSX.Element {
+}: StyledFamilyCardProps<Person>): JSX.Element {
   const profileImage = getDefaultProfileImage(person);
+  const resolvedRadius = resolveCardRadius(radius);
+  const resolvedShadow = resolveCardShadow(shadow);
+  const avatarRadius = resolveAvatarRadius(avatar);
 
   return (
-    <article {...props} style={{ ...defaultCardStyle, ...(selected ? defaultSelectedCardStyle : {}), ...props.style }}>
-      {profileImage ? <img alt="" src={profileImage} style={defaultAvatarStyle} /> : null}
+    <article
+      {...props}
+      style={{
+        ...defaultCardStyle,
+        borderWidth: outlined ? "var(--tree-outline-width, 1px)" : 0,
+        borderRadius: resolvedRadius ?? defaultCardStyle.borderRadius,
+        boxShadow: resolvedShadow ?? defaultCardStyle.boxShadow,
+        ...props.style,
+      }}
+    >
+      {avatar !== "hidden" && profileImage ? (
+        <img
+          alt=""
+          src={profileImage}
+          style={{
+            ...defaultAvatarStyle,
+            borderWidth: outlined ? "var(--tree-outline-width, 1px)" : 0,
+            borderRadius: avatarRadius ?? defaultAvatarStyle.borderRadius,
+          }}
+        />
+      ) : null}
       <strong style={defaultNameStyle}>{getDefaultPersonLabel(person, personId)}</strong>
-      <small style={defaultRelationStyle}>{relation.label}</small>
-      {selected ? <span style={defaultBadgeStyle}>selected</span> : null}
+      <small style={defaultRelationStyle}>{focused && relation.label === "self" ? "root node" : relation.label}</small>
     </article>
   );
+}
+
+export function DefaultFamilyCard<Person>(props: FamilyCardProps<Person>): JSX.Element {
+  return <StyledFamilyCard {...props} />;
 }
 
 export function FamilyTree<Person, CardExtraProps extends object = Record<string, never>>({

@@ -1,10 +1,10 @@
 import type {
   ComputedRelation,
   FamilyGuardianshipRelationship,
+  FamilyNeighborhoodLimits,
   FamilyParentageRelationship,
   FamilyPartnershipRelationship,
   FamilyRelationship,
-  FamilyNeighborhoodLimits,
   PeopleById,
   PersonId,
 } from "./types";

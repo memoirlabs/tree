@@ -1,10 +1,12 @@
+"use client";
+
 import { useLayoutEffect, useState } from "react";
 import type { RefObject } from "react";
-import type { FamilyTreeSize, PersonId } from "./types";
+import type { PersonId, TreeCardSize } from "./types";
 
 const measurementsEqual = (
-  a: Record<PersonId, FamilyTreeSize>,
-  b: Record<PersonId, FamilyTreeSize>,
+  a: Record<PersonId, TreeCardSize>,
+  b: Record<PersonId, TreeCardSize>,
 ) => {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
@@ -12,23 +14,26 @@ const measurementsEqual = (
   return aKeys.every((key) => a[key]?.width === b[key]?.width && a[key]?.height === b[key]?.height);
 };
 
+const getMeasureId = (element: HTMLElement) => element.dataset.treeMeasureId ?? element.dataset.familyMeasureId;
+
 export function useCardMeasurements(
   containerRef: RefObject<HTMLElement | null>,
   measureKey: string,
-): Record<PersonId, FamilyTreeSize> {
-  const [measurements, setMeasurements] = useState<Record<PersonId, FamilyTreeSize>>({});
+): Record<PersonId, TreeCardSize> {
+  const [measurements, setMeasurements] = useState<Record<PersonId, TreeCardSize>>({});
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return undefined;
 
     let frameId: number | null = null;
+    const selector = "[data-tree-measure-id], [data-family-measure-id]";
 
     const readMeasurements = () => {
-      const nextMeasurements: Record<PersonId, FamilyTreeSize> = {};
-      const elements = container.querySelectorAll<HTMLElement>("[data-family-measure-id]");
+      const nextMeasurements: Record<PersonId, TreeCardSize> = {};
+      const elements = container.querySelectorAll<HTMLElement>(selector);
       for (const element of elements) {
-        const personId = element.dataset.familyMeasureId;
+        const personId = getMeasureId(element);
         if (!personId) continue;
         const rect = element.getBoundingClientRect();
         nextMeasurements[personId] = {
@@ -45,7 +50,7 @@ export function useCardMeasurements(
     };
 
     const observer = new ResizeObserver(scheduleRead);
-    const elements = container.querySelectorAll<HTMLElement>("[data-family-measure-id]");
+    const elements = container.querySelectorAll<HTMLElement>(selector);
     for (const element of elements) {
       observer.observe(element);
     }

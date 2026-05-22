@@ -1,6 +1,7 @@
-import { collectFamilyNeighborhood, createFamilyIndex } from "./indexing";
-import { routeFamilyEdges } from "./edge-routing";
-import type { FamilyRelative } from "./indexing";
+import { roundTreeCoordinate } from "../core";
+import { routeFamilyEdges } from "./family-edge-routing";
+import { collectFamilyNeighborhood, createFamilyIndex } from "./family-indexing";
+import type { FamilyRelative } from "./family-indexing";
 import type { BuildFamilyTreeLayoutInput, FamilyTreeLayoutCard, FamilyTreeLayoutResult } from "./layout-types";
 import type { ComputedRelation, FamilyTreeSize, FamilyTreeSpacing, PersonId } from "./types";
 
@@ -14,8 +15,6 @@ const defaultSpacing: FamilyTreeSpacing = {
   column: 32,
   padding: 32,
 };
-
-const round = (value: number) => Math.round(value * 100) / 100;
 
 const uniqueRelatives = <Person>(relatives: FamilyRelative<Person>[]) => {
   const seen = new Set<PersonId>();
@@ -176,16 +175,16 @@ export function buildFamilyTreeLayout<Person>({
   const offsetY = spacing.padding - minY;
 
   for (const card of cards) {
-    card.x = round(card.x + offsetX);
-    card.y = round(card.y + offsetY);
+    card.x = roundTreeCoordinate(card.x + offsetX);
+    card.y = roundTreeCoordinate(card.y + offsetY);
   }
 
   return {
     cards,
     edges: routeFamilyEdges(cards, relationships, { lineShape }),
     bounds: {
-      width: round(maxX - minX + spacing.padding * 2),
-      height: round(maxY - minY + spacing.padding * 2),
+      width: roundTreeCoordinate(maxX - minX + spacing.padding * 2),
+      height: roundTreeCoordinate(maxY - minY + spacing.padding * 2),
     },
   };
 }

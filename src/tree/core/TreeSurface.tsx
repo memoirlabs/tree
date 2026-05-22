@@ -3,10 +3,15 @@
 import type { CSSProperties, JSX, PointerEvent, ReactNode, Ref, UIEvent, WheelEvent } from "react";
 import { useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 
-import type { PersonId, TreeApi, TreeInteractionMode, TreeViewport } from "./types";
-import type { FamilyTreeLayoutCard } from "./layout-types";
-import type { TreeStylePreset, TreeTheme } from "./theme";
-import { createTreeThemeStyle, getTreeStyleName } from "./theme";
+import type {
+  PersonId,
+  TreeApi,
+  TreeInteractionMode,
+  TreeLayoutCardBase,
+  TreeStylePreset,
+  TreeViewport,
+} from "./types";
+import { getTreeStyleName } from "./theme";
 
 const defaultTreeSurfaceStyle: CSSProperties = {
   background: "var(--tree-surface-bg, Canvas)",
@@ -33,7 +38,7 @@ export interface TreeSurfaceProps {
     width: number;
     height: number;
   };
-  cards?: FamilyTreeLayoutCard<unknown>[];
+  cards?: TreeLayoutCardBase<unknown>[];
   children: ReactNode;
   className?: string;
   ariaLabel?: string;
@@ -46,9 +51,9 @@ export interface TreeSurfaceProps {
   onZoomChange?: (zoom: number) => void;
   treeApiRef?: Ref<TreeApi>;
   style?: CSSProperties;
-  subject?: string;
-  theme?: TreeStylePreset | TreeTheme;
-  treeType: "family";
+  subject?: PersonId;
+  theme?: TreeStylePreset;
+  treeType: "family" | "org-chart";
   viewport?: TreeViewport;
   zoom?: number;
 }
@@ -66,7 +71,7 @@ export function TreeSurface({
   cards = [],
   children,
   className,
-  ariaLabel = "Family tree",
+  ariaLabel = "Tree",
   defaultViewport,
   defaultZoom = 1,
   interactionMode = "pan",
@@ -303,7 +308,6 @@ export function TreeSurface({
       onWheel={handleWheel}
       style={{
         ...defaultTreeSurfaceStyle,
-        ...createTreeThemeStyle(theme),
         cursor: interactionMode === "pan" ? "grab" : undefined,
         overflow: interactionMode === "scroll" ? "auto" : "hidden",
         ...style,

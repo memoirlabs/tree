@@ -1,16 +1,20 @@
 ---
 title: Getting Started
-description: Install @memoir/tree and render your first family tree.
+description: Install @memoir/tree and render your first family or org tree.
 ---
 
-`@memoir/tree` is a lightweight React renderer for subject-centered family trees. Your app owns the people, permissions, editing flows, and database writes. The package handles measured layout, SVG relationship edges, panning, zooming, card placement, accessibility props, and a tiny CSS-variable skin.
+import Image from "next/image";
+import logo from "../../../public/logo-transparent.png";
 
-<img className="docs-intro-logo" src="/logo-transparent.png" alt="Memoir Tree" />
+`@memoir/tree` is a lightweight React renderer for family trees and org charts. Your app owns the people, permissions, editing flows, and database writes. The package handles measured layout, SVG relationship edges, panning, zooming, card placement, accessibility props, and a tiny CSS-variable skin.
 
-The package is not a genealogy app in a box. It keeps persistence, routing, auth, permissions, and data fetching in the host application. It focuses on:
+<Image className="docs-intro-logo" src={logo} alt="Memoir Tree" />
+
+The package is not a database or editor in a box. It keeps persistence, routing, auth, permissions, and data fetching in the host application. It focuses on:
 
 - Normalizing relationship facts.
 - Computing subject-relative family labels.
+- Computing rooted org chart hierarchy.
 - Measuring custom cards.
 - Rendering automatic layouts, SVG edges, pan, zoom, and a small viewport API.
 
@@ -53,19 +57,18 @@ type Person = (typeof people)[string];
 
 function ProfileCard({
   collapsed: _collapsed,
-  focused: _focused,
+  focused,
   onAddRelationship: _onAddRelationship,
   person,
   personId: _personId,
   readOnly: _readOnly,
   relation,
-  selected,
   ...props
 }: FamilyCardProps<Person>) {
   return (
     <article {...props} className="memoir-profile-card">
       <strong>{person.name}</strong>
-      <small>{selected ? "selected" : relation.label}</small>
+      <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
     </article>
   );
 }
@@ -90,6 +93,43 @@ export function Page() {
 }
 ```
 
+## Minimal Org Chart
+
+```tsx
+import { OrgChart, org } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+
+const people = {
+  ceo: { id: "ceo", name: "Casey", title: "CEO" },
+  eng: { id: "eng", name: "Morgan", title: "VP Engineering" },
+  design: { id: "design", name: "Riley", title: "Design Lead" },
+};
+
+const relationships = [
+  org.reports("ceo", ["eng", "design"]),
+];
+
+export function Page() {
+  return <OrgChart people={people} root="ceo" relationships={relationships} />;
+}
+```
+
+For custom org cards, use `renderCard`. The `rootProps` object is the only thing that needs to be spread onto your card root:
+
+```tsx
+<OrgChart
+  people={people}
+  root="ceo"
+  relationships={relationships}
+  renderCard={({ person, depth, rootProps }) => (
+    <article {...rootProps}>
+      <strong>{person.name}</strong>
+      <small>{person.title ?? `level ${depth}`}</small>
+    </article>
+  )}
+/>
+```
+
 `profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile` remain supported Memoir-shaped aliases for app compatibility.
 
-Next: read [FamilyTree](./family-tree) for the full component contract, [App Structure](./project-structure) for integration shape, or [Design](./design) for theme and selector guidance.
+Next: read [FamilyTree](./family-tree), [Org Chart](./org-chart), [App Structure](./project-structure), or [Design](./design).

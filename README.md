@@ -1,13 +1,13 @@
 <h1 align="center">Memoir Tree</h1>
 
 <p align="center">
-  Ergonomic React family trees.
+  Ergonomic React family trees and org charts.
 </p>
 
 [![npm](https://img.shields.io/npm/v/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 [![npm downloads](https://img.shields.io/npm/dw/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 
-`@memoir/tree` is a focused React library for rendering subject-centered family trees. Give it your app-owned records and one normal card component. It handles measured layout, SVG edges, pan, zoom, card placement, and a tiny CSS-variable skin you can override.
+`@memoir/tree` is a focused React library for rendering family trees and org charts. Give it your app-owned records and one normal card component. It handles measured layout, SVG edges, pan, zoom, card placement, and a tiny CSS-variable skin you can override.
 
 ## Why
 
@@ -21,6 +21,7 @@ Most tree UIs force your app into a specific data model or a fixed card design. 
 
 - Bring your own profile shape.
 - Describe family facts with `rel.parents`, `rel.children`, `rel.partner`, and `rel.guardians`.
+- Describe org reporting facts with `org.reports`.
 - Start with the built-in `DefaultFamilyCard`, then swap in any React card component and pass your own typed card props.
 - Get computed labels like `self`, `parent`, `sibling`, `half-sibling`, `partner`, `grandparent`, and `grandchild`.
 - Compose lower-level primitives when the default wrapper is not enough.
@@ -37,7 +38,7 @@ bun add @memoir/tree
 
 ## Usage
 
-Import the stylesheet once for the intended Memoir skin. It is small, framework-free CSS: cream canvas, white cards, sharp corners, black outlines/shadows, and the Memoir orange selected state.
+Import the stylesheet once for the intended Memoir skin. It is small, framework-free CSS: cream canvas, white cards, sharp corners, black outlines/shadows, and root-node focus styling.
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
@@ -77,13 +78,12 @@ function ProfileCard({
   personId: _personId,
   readOnly: _readOnly,
   relation,
-  selected,
   ...props
 }: FamilyCardProps<Profile>) {
   return (
     <article {...props} className="memoir-profile-card">
       <strong>{person.profile.display}</strong>
-      <small>{selected ? "selected" : relation.label}</small>
+      <small>{relation.label === "self" ? "root node" : relation.label}</small>
     </article>
   );
 }
@@ -100,10 +100,50 @@ export function Page() {
 }
 ```
 
+## Org Chart
+
+```tsx
+import { OrgChart, org } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+
+const people = {
+  ceo: { id: "ceo", name: "Casey", title: "CEO" },
+  eng: { id: "eng", name: "Morgan", title: "VP Engineering" },
+  design: { id: "design", name: "Riley", title: "Design Lead" },
+};
+
+const relationships = [
+  org.reports("ceo", ["eng", "design"]),
+];
+
+export function Page() {
+  return <OrgChart people={people} root="ceo" relationships={relationships} />;
+}
+```
+
 For a quick first render, omit `renderProfileCard`. The built-in default card displays `name`, `label`, `profile.display`, or the profile ID:
 
 ```tsx
 <FamilyTree profiles={profiles} rootProfileId="henry" relationships={relationships} />
+```
+
+For a configurable card without custom boilerplate, use `StyledFamilyCard` with `cardProps`:
+
+```tsx
+import { FamilyTree, StyledFamilyCard } from "@memoir/tree";
+
+<FamilyTree
+  card={StyledFamilyCard}
+  cardProps={{
+    radius: "round",
+    outlined: true,
+    shadow: "flat",
+    avatar: "round",
+  }}
+  profiles={profiles}
+  relationships={relationships}
+  rootProfileId="henry"
+/>
 ```
 
 The clean API names are `people` and `subject`:
@@ -118,20 +158,20 @@ The clean API names are `people` and `subject`:
 
 ## Custom Cards
 
-Most apps should bring their own card. Memoir Tree passes normal HTML props, accessibility props, stable data attributes, relation metadata, selection state, and your original person record into the card. Spread `...props` onto your root element so keyboard selection, data attributes, and styling hooks keep working:
+Most apps should bring their own card. Memoir Tree passes normal HTML props, accessibility props, stable data attributes, relation metadata, root focus state, optional app-owned selection state, and your original person record into the card. Spread `...props` onto your root element so keyboard handlers, data attributes, and styling hooks keep working:
 
 ```tsx
 function ProfileCard({
+  focused,
   person,
   relation,
-  selected,
   ...props
 }: FamilyCardProps<Profile>) {
   return (
     <article {...props} className="profile-card">
       <img alt="" src={person.profile.avatar} />
       <strong>{person.profile.display}</strong>
-      <small>{selected ? "selected" : relation.label}</small>
+      <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
     </article>
   );
 }
@@ -319,30 +359,20 @@ The default stylesheet is intentionally hackable. Override CSS variables for bro
 
 ### Theme Prop
 
-Use the `theme` prop for app-owned tokens without writing CSS:
+Use the `theme` prop only to pick a built-in preset:
 
 ```tsx
 <FamilyTree
   rootProfileId="henry"
   profiles={profiles}
   relationships={relationships}
-  theme={{
-    surfaceBackground: "#fffdf4",
-    canvasBackground: "#f4efdc",
-    cardBackground: "#fffdf4",
-    cardBorder: "#030201",
-    cardRadius: 0,
-    cardShadow: "6px 6px 0 #030201",
-    edge: "#3b342e",
-    edgeWidth: 2,
-    accent: "#ec5a44",
-  }}
+  theme="system"
   spacing={{ row: 140, column: 44, padding: 40 }}
   lineShape="curved"
 />
 ```
 
-Use `theme="memoir"` for the default Memoir preset or `theme="system"` for neutral system colors. A theme object can pass app-owned colors, outline width, edge width, card/profile corner radius, shadows, and font family. `lineShape="orthogonal"` keeps 90-degree connector turns; `lineShape="curved"` uses curved connectors. The same theme presets and helpers are exported as `memoirTreeTheme`, `systemTreeTheme`, `treeStylePresets`, `resolveTreeTheme`, and `createTreeThemeStyle`.
+Use `theme="memoir"` for the default Memoir preset or `theme="system"` for neutral system colors. For colors, outlines, radii, shadows, and fonts, set CSS variables with `className` or `style`. `lineShape="orthogonal"` keeps 90-degree connector turns; `lineShape="curved"` uses curved connectors.
 
 ### CSS Variables
 

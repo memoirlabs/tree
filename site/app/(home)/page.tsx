@@ -107,15 +107,16 @@ export default async function HomePage() {
             <svg
               className="preview-lines"
               viewBox="0 0 400 520"
-              preserveAspectRatio="none"
+              preserveAspectRatio="xMidYMid meet"
               aria-hidden="true"
             >
               <path
-                d="M200 70 V150 H312 V229 M88 229 V330 H312 V229 M200 330 V395"
+                d="M200 70 V150 H312 V229 M88 229 H312 M200 229 V395"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="square"
+                vectorEffect="non-scaling-stroke"
               />
             </svg>
             <div className="preview-node preview-node--gp">

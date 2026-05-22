@@ -3,7 +3,7 @@ title: Design
 description: Design @memoir/tree with CSS variables, stable selectors, and custom card components.
 ---
 
-`@memoir/tree` ships a small framework-free stylesheet for the intended Memoir skin: warm canvas, light cards, sharp corners, black outlines, and orange selected state.
+`@memoir/tree` ships a small framework-free stylesheet for the intended Memoir skin: warm canvas, light cards, sharp corners, black outlines, and root-node focus styling.
 
 ## Import Styles
 
@@ -14,6 +14,29 @@ import "@memoir/tree/styles.css";
 ```
 
 You can override the variables or replace the card markup.
+
+## Styled Card
+
+Use `StyledFamilyCard` when you want a ready-made card with simple box controls instead of writing a custom component:
+
+```tsx
+import { FamilyTree, StyledFamilyCard } from "@memoir/tree";
+
+<FamilyTree
+  card={StyledFamilyCard}
+  cardProps={{
+    radius: "round",
+    outlined: true,
+    shadow: "flat",
+    avatar: "round",
+  }}
+  people={people}
+  relationships={relationships}
+  subject={personId}
+/>
+```
+
+`radius` accepts `"square"`, `"soft"`, `"round"`, `"pill"`, or any CSS radius value. `shadow` accepts `"none"`, `"flat"`, `"soft"`, or any CSS shadow value. `avatar` accepts `"auto"`, `"hidden"`, `"square"`, `"soft"`, or `"round"`.
 
 ## Memoir Look
 
@@ -26,7 +49,6 @@ Use this as the starting point for flat product UIs:
   --tree-card-bg: #fafafa;
   --tree-card-fg: #030201;
   --tree-card-border: #030201;
-  --tree-card-selected-bg: #EC5A44;
   --tree-card-shadow: 4px 4px 0 #030201;
   --tree-edge: #030201;
   --tree-edge-width: 1;
@@ -68,28 +90,13 @@ function ProfileCard({
 
 ## Theme Prop
 
-For small changes, use `theme` instead of writing CSS variables manually:
+Use `theme` only to pick a built-in preset:
 
 ```tsx
-<FamilyTree
-  people={people}
-  relationships={relationships}
-  subject="alex"
-  theme={{
-    surfaceBackground: "#fffdf4",
-    canvasBackground: "#f4efdc",
-    cardBackground: "#fffdf4",
-    cardBorder: "#030201",
-    cardRadius: 0,
-    cardShadow: "6px 6px 0 #030201",
-    edge: "#3b342e",
-    edgeWidth: 2,
-    cardSelectedBackground: "#ec5a44",
-  }}
-/>
+<FamilyTree people={people} relationships={relationships} subject="alex" theme="system" />
 ```
 
-Use `theme="memoir"` for the package default or `theme="system"` for neutral system colors.
+Use `theme="memoir"` for the package default or `theme="system"` for neutral system colors. For custom colors, pass `className` or `style` and set CSS variables yourself. The package does not take color tokens through React props.
 
 ## Selectors
 
@@ -106,8 +113,8 @@ The family renderer emits these selectors:
 - `data-relation`: computed relation label like `self`, `parent`, or `half-sibling`.
 - `data-generation`: generation relative to the subject.
 - `data-side`: `ancestor`, `descendant`, `sibling`, `partner`, or `self`.
-- `data-selected`: present on the selected card.
-- `data-focused`: present on the focused card.
+- `data-selected`: present only when the host app passes a matching `selected` profile ID.
+- `data-focused`: present on the root node by default, or on the app-selected card when `selected` is controlled.
 - `data-family-edge`: SVG edge path.
 - `data-source-id`: source person ID for an edge.
 - `data-target-id`: target person ID for an edge.
@@ -127,7 +134,7 @@ The family renderer emits these selectors:
 
 ## Card Root
 
-Your card receives normal HTML props plus tree metadata. Always spread the props onto the root element so selection, data attributes, click handlers, and accessibility metadata reach the DOM:
+Your card receives normal HTML props plus tree metadata. Always spread the props onto the root element so data attributes, click handlers, and accessibility metadata reach the DOM:
 
 ```tsx
 function ProfileCard({
@@ -136,14 +143,14 @@ function ProfileCard({
   personId,
   readOnly,
   relation,
-  selected,
+  focused,
   onAddRelationship,
   ...props
 }: FamilyCardProps<Profile>) {
   return (
     <article {...props} className="memoir-profile-card">
       <strong>{person.name}</strong>
-      <small>{selected ? "selected" : relation.label}</small>
+      <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
       {!readOnly ? (
         <button type="button" onClick={() => onAddRelationship?.(person, personId)}>
           Add relative

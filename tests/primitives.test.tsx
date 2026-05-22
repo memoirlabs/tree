@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import {
   FamilyTree,
+  StyledFamilyCard,
   TreeCanvas,
   TreeEdges,
   TreeNodeLayer,
@@ -135,8 +136,9 @@ describe("tree primitives", () => {
 
     expect(markup).toContain("Henry");
     expect(markup).toContain("aria-label=\"Henry family map\"");
-    expect(markup).toContain("aria-label=\"Henry, self, selected\"");
-    expect(markup).toContain("data-selected");
+    expect(markup).toContain("aria-label=\"Henry, root node\"");
+    expect(markup).toContain("data-focused");
+    expect(markup).not.toContain("data-selected");
     expect(markup).toContain("data-tree-subject=\"henry\"");
     expect(markup).toContain("role=\"button\"");
     expect(markup).toContain("tabindex=\"0\"");
@@ -189,5 +191,29 @@ describe("tree primitives", () => {
 
     expect(markup).toContain("data-tone=\"memoir\"");
     expect(markup).toContain(">Manage</button>");
+  });
+
+  test("renders configurable styled cards without custom card boilerplate", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree<Person, { radius: "round"; shadow: "flat" }>
+        card={StyledFamilyCard}
+        cardProps={{
+          radius: "round",
+          shadow: "flat",
+        }}
+        people={{
+          ...people,
+          henry: { id: "henry", name: "Henry", role: "Founder" },
+        }}
+        relationships={relationships}
+        subject="henry"
+      />,
+    );
+
+    expect(markup).toContain("Henry");
+    expect(markup).toContain("root node");
+    expect(markup).not.toContain("selected</span>");
+    expect(markup).toContain("border-radius:16px");
+    expect(markup).toContain("box-shadow:var(--tree-card-shadow, 4px 4px 0 #030201)");
   });
 });
