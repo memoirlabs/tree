@@ -1,9 +1,12 @@
-# Memoir Tree Release v0.2.0
-Generated on 2026-05-21.
+# Memoir Tree Release v0.3.0
+Generated on 2026-05-22.
 Includes all commits because no previous git tag was found.
-Total commits: 23
+Total commits: 30
 ## Documentation
 
+- Docs: switch to people/subject API and package fixes ([`e57eeca`](https://github.com/memoirlabs/tree/commit/e57eeca7c3ffec20e3f47fc645f1d880987193e8), Henryoman, 2026-05-21)
+- Refine site styles, layout, docs, and deps ([`93c9c0f`](https://github.com/memoirlabs/tree/commit/93c9c0f311e71d086f0abbac2af03eb0bd54be93), Henryoman, 2026-05-21)
+- Add release tooling and revamp docs/site ([`4d66976`](https://github.com/memoirlabs/tree/commit/4d66976cb4c577819d860ca36bcd26969fa18915), Henryoman, 2026-05-21)
 - Add Bun CI and revamp docs/site demo ([`3146ed3`](https://github.com/memoirlabs/tree/commit/3146ed39837945a00f9e6eab2c08d3a8b296b64f), Henryoman, 2026-05-20)
 - Add DefaultFamilyCard and update docs/site ([`8d36398`](https://github.com/memoirlabs/tree/commit/8d363983b4b7010de4b58d994164e49d84eee253), Henryoman, 2026-05-16)
 - Update README, include logo, adjust tsconfig ([`cb8a64d`](https://github.com/memoirlabs/tree/commit/cb8a64dc6f9e919c5feb4dcb9d2e5147ba44b6d3), Henryoman, 2026-05-16)
@@ -13,6 +16,10 @@ Total commits: 23
 
 ## Other Changes
 
+- Rename 'profile' to 'person' and add sidebar label ([`2a742c0`](https://github.com/memoirlabs/tree/commit/2a742c01e1266fa70dff9c64514a2e6070ea288c), Henryoman, 2026-05-21)
+- Remove zoom support; switch to panning-only surface ([`e28de2c`](https://github.com/memoirlabs/tree/commit/e28de2c807a40378698a164be1ca0d933e48a719), Henryoman, 2026-05-21)
+- Add StyledFamilyCard; simplify theme API ([`b68aa26`](https://github.com/memoirlabs/tree/commit/b68aa26f55a565f8ccf7899062c63116811c09c3), Henryoman, 2026-05-21)
+- Centralize syntax theme and refine site styles ([`0c9edf4`](https://github.com/memoirlabs/tree/commit/0c9edf46bb85e0439dcd69091bd0d3e79b9a6d08), Henryoman, 2026-05-21)
 - Remove org chart & DSL; scope to family ([`842bbf7`](https://github.com/memoirlabs/tree/commit/842bbf7998d2bc7c1d2f34cdec6f8d2c179ffcfc), Henryoman, 2026-05-20)
 - Migrate publishing to npm and remove Deno/JSR files ([`b6a0f79`](https://github.com/memoirlabs/tree/commit/b6a0f79d3b07eaf809a2cb26c58b7961d8f73e79), Henryoman, 2026-05-19)
 - Add Tree primitives and DSL; refactor trees ([`5f1798e`](https://github.com/memoirlabs/tree/commit/5f1798e550f98c5984a9cb0f7f5f41aeaa3ff1ef), Henryoman, 2026-05-19)
