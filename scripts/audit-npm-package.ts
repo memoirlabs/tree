@@ -76,6 +76,12 @@ if (missingRequiredPaths.length > 0) {
   fail(`npm package is missing required files:\n${missingRequiredPaths.map((path) => `- ${path}`).join("\n")}`);
 }
 
+try {
+  await import(`${process.cwd()}/dist/index.js?audit=${Date.now()}`);
+} catch (error) {
+  fail(`npm package entry point failed to import:\n${error instanceof Error ? error.stack : String(error)}`);
+}
+
 const forbiddenPaths = paths.filter((path) => forbiddenPathPatterns.some((pattern) => pattern.test(path)));
 
 if (forbiddenPaths.length > 0) {

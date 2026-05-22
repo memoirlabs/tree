@@ -1,7 +1,7 @@
-# Memoir Tree Release v0.3.0
+# Memoir Tree Release v0.3.1
 Generated on 2026-05-22.
 Includes all commits because no previous git tag was found.
-Total commits: 30
+Total commits: 31
 ## Documentation
 
 - Docs: switch to people/subject API and package fixes ([`e57eeca`](https://github.com/memoirlabs/tree/commit/e57eeca7c3ffec20e3f47fc645f1d880987193e8), Henryoman, 2026-05-21)
@@ -16,6 +16,7 @@ Total commits: 30
 
 ## Other Changes
 
+- Release v0.3.0 announcement ([`630e82b`](https://github.com/memoirlabs/tree/commit/630e82b72a48c95c7f7b5d278d1990e5e9855c7c), Henryoman, 2026-05-21)
 - Rename 'profile' to 'person' and add sidebar label ([`2a742c0`](https://github.com/memoirlabs/tree/commit/2a742c01e1266fa70dff9c64514a2e6070ea288c), Henryoman, 2026-05-21)
 - Remove zoom support; switch to panning-only surface ([`e28de2c`](https://github.com/memoirlabs/tree/commit/e28de2c807a40378698a164be1ca0d933e48a719), Henryoman, 2026-05-21)
 - Add StyledFamilyCard; simplify theme API ([`b68aa26`](https://github.com/memoirlabs/tree/commit/b68aa26f55a565f8ccf7899062c63116811c09c3), Henryoman, 2026-05-21)
