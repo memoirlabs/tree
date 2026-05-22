@@ -107,11 +107,11 @@ export default async function HomePage() {
             <svg
               className="preview-lines"
               viewBox="0 0 400 520"
-              preserveAspectRatio="xMidYMid meet"
+              preserveAspectRatio="none"
               aria-hidden="true"
             >
               <path
-                d="M200 70 V150 H312 V229 M88 229 H312 M200 229 V395"
+                d="M200 112 V192 H312 V271 M88 271 H312 M200 271 V437"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -149,21 +149,15 @@ export default async function HomePage() {
 
         <section id="demo" className="demo-section" aria-label="Family tree demo">
           <div className="section-heading">
-            <p className="eyebrow">Simple renderer</p>
-            <h2>Install it, pass your data, render product-style cards.</h2>
+            <h2>Drop it in. Pass your data. Ship the tree.</h2>
             <p>
-              The package owns the measured layout, connectors, pan surface, and zoom behavior. Your app owns the data,
+              The package owns the measured layout, connectors, and pan surface. Your app owns the data,
               profile UI, permissions, and mutations.
             </p>
           </div>
 
           <div className="demo-copy demo-copy--standalone">
-            <p className="tree-example-label">Package-ready API</p>
-            <h3>Controlled React renderer, not a family tree app in a box.</h3>
-            <p>
-              Use <code>profiles</code>, <code>relationships</code>, <code>rootProfileId</code>, and a custom card. The
-              black-shadow card style is just CSS on top of stable data attributes.
-            </p>
+            <p className="tree-example-label">Install</p>
             <pre aria-label="Install command">
               <InstallCommand command="bun add @memoir/tree" />
             </pre>
@@ -178,6 +172,12 @@ export default async function HomePage() {
             <SimpleFamilyTreeDemo />
           </div>
         </section>
+
+        <footer className="landing-footer">
+          <a href="https://labs.memoir.ag" target="_blank" rel="noreferrer">
+            © Memoir Labs 2026
+          </a>
+        </footer>
       </main>
     </>
   );

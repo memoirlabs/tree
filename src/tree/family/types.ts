@@ -140,14 +140,9 @@ export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<
   edgeClassName?: string;
   interactionMode?: TreeInteractionMode;
   lineShape?: TreeLineShape;
-  zoom?: number;
-  defaultZoom?: number;
   viewport?: TreeViewport;
   defaultViewport?: Partial<TreeViewport>;
   onViewportChange?: (viewport: TreeViewport) => void;
-  minZoom?: number;
-  maxZoom?: number;
-  onZoomChange?: (zoom: number) => void;
   spacing?: Partial<FamilyTreeSpacing>;
   limits?: Partial<FamilyNeighborhoodLimits>;
   theme?: TreeStylePreset;

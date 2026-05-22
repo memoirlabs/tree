@@ -57,7 +57,7 @@ export function SimpleFamilyTreeDemo() {
       interactionMode="pan"
       readOnly
       spacing={{ column: 40, padding: 36, row: 118 }}
-      style={{ height: 520 }}
+      style={{ height: "100%" }}
     />
   );
 }

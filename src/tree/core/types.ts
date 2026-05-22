@@ -47,14 +47,12 @@ export type TreeInteractionMode = "pan" | "scroll" | "none";
 export interface TreeViewport {
   x: number;
   y: number;
-  zoom: number;
 }
 
 export interface TreeApi {
   centerPerson: (personId: PersonId) => void;
   fitToSubject: () => void;
   resetViewport: () => void;
-  zoomTo: (zoom: number) => void;
 }
 
 export type TreeLineShape = "orthogonal" | "curved";
@@ -73,17 +71,12 @@ export interface TreeViewportProps {
   ariaLabel?: string;
   className?: string;
   defaultViewport?: Partial<TreeViewport>;
-  defaultZoom?: number;
   interactionMode?: TreeInteractionMode;
-  maxZoom?: number;
-  minZoom?: number;
   onViewportChange?: (viewport: TreeViewport) => void;
-  onZoomChange?: (zoom: number) => void;
   style?: CSSProperties;
   theme?: TreeStylePreset;
   treeApiRef?: Ref<TreeApi>;
   viewport?: TreeViewport;
-  zoom?: number;
 }
 
 export interface TreeCardRootProps extends HTMLAttributes<HTMLElement> {

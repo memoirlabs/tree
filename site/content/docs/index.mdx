@@ -6,7 +6,7 @@ description: Install @memoir/tree and render your first family or org tree.
 import Image from "next/image";
 import logo from "../../../public/logo-transparent.png";
 
-`@memoir/tree` is a lightweight React renderer for family trees and org charts. Your app owns the people, permissions, editing flows, and database writes. The package handles measured layout, SVG relationship edges, panning, zooming, card placement, accessibility props, and a tiny CSS-variable skin.
+`@memoir/tree` is a lightweight React renderer for family trees and org charts. Your app owns the people, permissions, editing flows, and database writes. The package handles measured layout, SVG relationship edges, panning, card placement, accessibility props, and a tiny CSS-variable skin.
 
 <Image className="docs-intro-logo" src={logo} alt="Memoir Tree" />
 
@@ -16,7 +16,7 @@ The package is not a database or editor in a box. It keeps persistence, routing,
 - Computing subject-relative family labels.
 - Computing rooted org chart hierarchy.
 - Measuring custom cards.
-- Rendering automatic layouts, SVG edges, pan, zoom, and a small viewport API.
+- Rendering automatic layouts, SVG edges, panning, and a small viewport API.
 
 ## Install
 
@@ -85,7 +85,7 @@ export function Page() {
 }
 ```
 
-You can also omit `renderProfileCard` to use the built-in default card:
+You can also omit `card` to use the built-in default card:
 
 ```tsx
 export function Page() {

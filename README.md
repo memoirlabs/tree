@@ -7,7 +7,7 @@
 [![npm](https://img.shields.io/npm/v/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 [![npm downloads](https://img.shields.io/npm/dw/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 
-`@memoir/tree` is a focused React library for rendering family trees and org charts. Give it your app-owned records and one normal card component. It handles measured layout, SVG edges, pan, zoom, card placement, and a tiny CSS-variable skin you can override.
+`@memoir/tree` is a focused React library for rendering family trees and org charts. Give it your app-owned records and one normal card component. It handles measured layout, SVG edges, panning, card placement, and a tiny CSS-variable skin you can override.
 
 ## Why
 
@@ -56,7 +56,7 @@ type Profile = {
   };
 };
 
-const profiles: Record<string, Profile> = {
+const people: Record<string, Profile> = {
   henry: { id: "henry", profile: { display: "Henry" } },
   carol: { id: "carol", profile: { display: "Carol" } },
   james: { id: "james", profile: { display: "James" } },
@@ -91,10 +91,10 @@ function ProfileCard({
 export function Page() {
   return (
     <FamilyTree
-      profiles={profiles}
+      people={people}
       relationships={relationships}
-      rootProfileId="henry"
-      renderProfileCard={(_profile, props) => <ProfileCard {...props} />}
+      subject="henry"
+      card={ProfileCard}
     />
   );
 }
@@ -121,10 +121,10 @@ export function Page() {
 }
 ```
 
-For a quick first render, omit `renderProfileCard`. The built-in default card displays `name`, `label`, `profile.display`, or the profile ID:
+For a quick first render, omit `card`. The built-in default card displays `name`, `label`, `profile.display`, or the profile ID:
 
 ```tsx
-<FamilyTree profiles={profiles} rootProfileId="henry" relationships={relationships} />
+<FamilyTree people={people} subject="henry" relationships={relationships} />
 ```
 
 For a configurable card without custom boilerplate, use `StyledFamilyCard` with `cardProps`:
@@ -140,21 +140,21 @@ import { FamilyTree, StyledFamilyCard } from "@memoir/tree";
     shadow: "flat",
     avatar: "round",
   }}
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 
-The clean API names are `people` and `subject`:
+The compatibility names are still available for Memoir-shaped app data:
 
 ```tsx
-<FamilyTree people={profiles} subject="henry" relationships={relationships} />
+<FamilyTree profiles={people} rootProfileId="henry" relationships={relationships} />
 ```
 
-`profiles` and `rootProfileId` remain supported Memoir-shaped aliases for app compatibility.
+Prefer `people`, `subject`, `card`, and `onPersonClick` in new code.
 
-`FamilyTree` owns its viewport defaults. It fills the parent width, inherits parent height when available, falls back to a usable minimum height, clips overflow, and supports drag-panning and zooming without requiring wrapper CSS. Use `style`, `className`, `zoom`, or `interactionMode="scroll"` when a host app wants a different container contract.
+`FamilyTree` owns its viewport defaults. It fills the parent width, inherits parent height when available, falls back to a usable minimum height, clips overflow, and supports drag-panning without requiring wrapper CSS. Use `style`, `className`, or `interactionMode="scroll"` when a host app wants a different container contract.
 
 ## Custom Cards
 
@@ -178,9 +178,9 @@ function ProfileCard({
 
 <FamilyTree
   card={ProfileCard}
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 
@@ -222,17 +222,17 @@ function ProfileCard({
     density: "compact",
     onOpenProfile,
   })}
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 
-Use `renderProfileCard` when you prefer a render function or need to close over app state directly.
+`renderProfileCard` remains available as a compatibility render-function path when an existing app already uses it.
 
 ## Accessibility
 
-`FamilyTree` labels the viewport as a region and passes selection, focus, keyboard, and ARIA props into each card. If cards are clickable through `onPersonClick` or `onSelectProfile`, Memoir Tree adds `role="button"`, `tabIndex={0}`, and Enter/Space activation props. Always spread `...props` onto your card root so those props are preserved.
+`FamilyTree` labels the viewport and passes selection, focus, keyboard, and ARIA props into each card. If cards are clickable through `onPersonClick` or `onSelectProfile`, Memoir Tree adds `role="button"`, `tabIndex={0}`, and Enter/Space activation props. Always spread `...props` onto your card root so those props are preserved.
 
 Use `ariaLabel` to name the tree surface and `getPersonLabel` to generate readable labels for each card:
 
@@ -241,9 +241,9 @@ Use `ariaLabel` to name the tree surface and `getPersonLabel` to generate readab
   ariaLabel="Henry's family tree"
   getPersonLabel={(profile) => profile.profile.display}
   onPersonClick={(profile) => openProfile(profile.id)}
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 
@@ -251,17 +251,17 @@ If your custom card contains nested interactive controls, keep spreading the pro
 
 ## Viewport
 
-The tree has a small viewport API instead of becoming a generic graph editor. Use `viewport` when your app owns pan and zoom state, or `defaultViewport` for an initial uncontrolled position:
+The tree has a small viewport API instead of becoming a generic graph editor. Use `viewport` when your app owns pan state, or `defaultViewport` for an initial uncontrolled position:
 
 ```tsx
-const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+const [viewport, setViewport] = useState({ x: 0, y: 0 });
 
 <FamilyTree
   viewport={viewport}
   onViewportChange={setViewport}
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 
@@ -279,9 +279,9 @@ const treeApiRef = useRef<TreeApi | null>(null);
 
 <FamilyTree
   treeApiRef={treeApiRef}
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 
@@ -289,8 +289,7 @@ The imperative API stays intentionally tiny:
 
 - `centerPerson(personId)` scrolls a person into the center of the viewport.
 - `fitToSubject()` centers the current subject.
-- `resetViewport()` returns to `defaultViewport` / `defaultZoom`.
-- `zoomTo(zoom)` sets the current zoom.
+- `resetViewport()` returns to `defaultViewport`.
 
 ## Neighborhood Limits
 
@@ -303,9 +302,9 @@ Memoir Tree is family-specific and renders a subject-centered neighborhood. To a
     children: null,
     grandchildren: 16,
   }}
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 
@@ -320,7 +319,7 @@ import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "@memoir/tree
 
 export function Page() {
   return (
-    <TreeProvider type="family" subject="henry" people={profiles} relationships={relationships}>
+    <TreeProvider type="family" subject="henry" people={people} relationships={relationships}>
       <TreeCanvas>
         <TreeEdges />
         <TreeNodeLayer card={ProfileCard} />
@@ -351,7 +350,7 @@ For the intended Memoir surface, card, and edge styling, import the stylesheet. 
 import "@memoir/tree/styles.css";
 ```
 
-The helpers produce plain relationship rows. The library computes labels and placement from those facts relative to the current root profile.
+The helpers produce plain relationship rows. The library computes labels and placement from those facts relative to the current subject.
 
 ## Design
 
@@ -363,8 +362,8 @@ Use the `theme` prop only to pick a built-in preset:
 
 ```tsx
 <FamilyTree
-  rootProfileId="henry"
-  profiles={profiles}
+  subject="henry"
+  people={people}
   relationships={relationships}
   theme="system"
   spacing={{ row: 140, column: 44, padding: 40 }}
@@ -381,9 +380,9 @@ Override variables on the tree root with `className`:
 ```tsx
 <FamilyTree
   className="my-family-tree"
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 
@@ -425,7 +424,7 @@ Cards and edges receive stable attributes for precise styling:
 Useful selectors include:
 
 - `[data-tree-surface]` for the viewport.
-- `[data-tree-canvas]` for the scaled canvas.
+- `[data-tree-canvas]` for the positioned canvas.
 - `[data-family-card]` / `[data-tree-card]` for cards.
 - `[data-family-edge]` / `[data-tree-edge]` for SVG connectors.
 - `[data-person-id]` for a specific person.
@@ -439,9 +438,9 @@ Use `cardClassName` and `edgeClassName` when your app prefers class selectors:
 <FamilyTree
   cardClassName="profile-card"
   edgeClassName="family-edge"
-  profiles={profiles}
+  people={people}
   relationships={relationships}
-  rootProfileId="henry"
+  subject="henry"
 />
 ```
 

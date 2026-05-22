@@ -107,14 +107,9 @@ export interface OrgChartProps<Person, CardExtraProps extends object = Record<st
   edgeClassName?: string;
   interactionMode?: TreeInteractionMode;
   lineShape?: TreeLineShape;
-  zoom?: number;
-  defaultZoom?: number;
   viewport?: TreeViewport;
   defaultViewport?: Partial<TreeViewport>;
   onViewportChange?: (viewport: TreeViewport) => void;
-  minZoom?: number;
-  maxZoom?: number;
-  onZoomChange?: (zoom: number) => void;
   spacing?: Partial<OrgChartSpacing>;
   maxDepth?: number | null;
   theme?: TreeStylePreset;

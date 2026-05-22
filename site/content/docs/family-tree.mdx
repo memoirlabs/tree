@@ -24,14 +24,9 @@ type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, neve
   edgeClassName?: string;
   interactionMode?: "pan" | "scroll" | "none";
   lineShape?: "orthogonal" | "curved";
-  zoom?: number;
-  defaultZoom?: number;
   viewport?: TreeViewport;
   defaultViewport?: Partial<TreeViewport>;
   onViewportChange?: (viewport: TreeViewport) => void;
-  minZoom?: number;
-  maxZoom?: number;
-  onZoomChange?: (zoom: number) => void;
   spacing?: Partial<FamilyTreeSpacing>;
   limits?: Partial<FamilyNeighborhoodLimits>;
   theme?: "memoir" | "system";
@@ -50,7 +45,7 @@ Prefer the clean public names in new integrations: `people`, `subject`, `card`, 
 
 The library does not require `name`, `avatarUrl`, profile fields, or nested relationship arrays. It only needs stable profile IDs.
 
-By default, `FamilyTree` is self-contained: it fills the parent width, inherits parent height when one exists, falls back to a usable minimum height, clips overflow, and lets users drag-pan the tree horizontally and vertically. Host apps can pass `zoom`, `style`, `className`, or `interactionMode` when they want to override those defaults.
+By default, `FamilyTree` is self-contained: it fills the parent width, inherits parent height when one exists, falls back to a usable minimum height, clips overflow, and lets users drag-pan the tree horizontally and vertically. Host apps can pass `style`, `className`, or `interactionMode` when they want to override those defaults.
 
 ## Controlled Selection
 
@@ -82,8 +77,7 @@ function FamilyPanel() {
 - `onPersonClick` opens selection, drawers, routes, or inspectors.
 - `onSelectProfile` is the Memoir-shaped alias for selection.
 - `onAddRelationship` is passed into cards so the app can open an add-relative flow.
-- `onViewportChange` reports pan and zoom.
-- `onZoomChange` reports only zoom.
+- `onViewportChange` reports pan position.
 
 For viewport buttons, use `treeApiRef`:
 
@@ -251,7 +245,7 @@ Use `collapsed` to hide deeper ancestor or descendant rows while keeping the col
 />
 ```
 
-Use `viewport` for controlled pan and zoom, or `defaultViewport` for an uncontrolled starting position:
+Use `viewport` for controlled pan, or `defaultViewport` for an uncontrolled starting position:
 
 ```tsx
 <FamilyTree
@@ -260,14 +254,10 @@ Use `viewport` for controlled pan and zoom, or `defaultViewport` for an uncontro
   subject="alex"
   viewport={viewport}
   onViewportChange={setViewport}
-  minZoom={0.6}
-  maxZoom={2}
 />
 ```
 
-For simple zoom-only integrations, `zoom`, `defaultZoom`, and `onZoomChange` remain available.
-
-Available helpers are `centerPerson(personId)`, `fitToSubject()`, `resetViewport()`, and `zoomTo(zoom)`.
+Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
 
 ## Neighborhood Limits
 

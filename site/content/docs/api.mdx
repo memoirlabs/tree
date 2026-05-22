@@ -41,14 +41,9 @@ type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, neve
   edgeClassName?: string;
   interactionMode?: "pan" | "scroll" | "none";
   lineShape?: "orthogonal" | "curved";
-  zoom?: number;
-  defaultZoom?: number;
   viewport?: TreeViewport;
   defaultViewport?: Partial<TreeViewport>;
   onViewportChange?: (viewport: TreeViewport) => void;
-  minZoom?: number;
-  maxZoom?: number;
-  onZoomChange?: (zoom: number) => void;
   treeApiRef?: React.Ref<TreeApi>;
   limits?: Partial<FamilyNeighborhoodLimits>;
   spacing?: Partial<FamilyTreeSpacing>;
@@ -74,12 +69,10 @@ These are the user-facing callbacks and imperative actions:
 | `onPersonClick(person, personId)` | Fires when an interactive card is clicked or activated with Enter/Space. Prefer this in new code. |
 | `onSelectProfile(person, personId)` | Memoir-shaped alias for `onPersonClick`. |
 | `onAddRelationship(person, personId)` | Passed into cards so apps can open an “add relative” flow. The library does not mutate data. |
-| `onViewportChange(viewport)` | Fires when pan or zoom changes. Use it with controlled `viewport`. |
-| `onZoomChange(zoom)` | Zoom-only callback for simpler integrations. |
+| `onViewportChange(viewport)` | Fires when pan position changes. Use it with controlled `viewport`. |
 | `treeApiRef.current.centerPerson(personId)` | Scrolls a rendered person card toward the center of the viewport. |
 | `treeApiRef.current.fitToSubject()` | Centers the current `subject`. |
-| `treeApiRef.current.resetViewport()` | Returns to `defaultViewport` / `defaultZoom`. |
-| `treeApiRef.current.zoomTo(zoom)` | Sets the zoom while preserving the current pan position. |
+| `treeApiRef.current.resetViewport()` | Returns to `defaultViewport`. |
 
 ## FamilyTree Props
 
@@ -98,10 +91,8 @@ These are the user-facing callbacks and imperative actions:
 | `selected` | App-owned selected person ID. |
 | `collapsed` | Person IDs whose deeper ancestor/descendant rows should be hidden. |
 | `readOnly` | Disables add-relationship handlers passed to cards. |
-| `viewport` | Controlled pan/zoom state: `{ x, y, zoom }`. |
-| `defaultViewport` | Initial uncontrolled pan/zoom state. |
-| `zoom` / `defaultZoom` | Zoom-only controlled/uncontrolled props. |
-| `minZoom` / `maxZoom` | Zoom bounds. |
+| `viewport` | Controlled pan state: `{ x, y }`. |
+| `defaultViewport` | Initial uncontrolled pan state. |
 | `interactionMode` | `"pan"`, `"scroll"`, or `"none"`. |
 | `limits` | Explicit visible-relative caps; use `null` to disable a cap. |
 | `spacing` | Row, column, and padding spacing overrides. |
@@ -180,10 +171,10 @@ const relationships = [
 - `TreeViewportProps`
 - stylesheet from `@memoir/tree/styles.css`
 
-Use primitives when the default wrapper is not enough but you still want package-owned layout, measurement, edges, pan, and zoom:
+Use primitives when the default wrapper is not enough but you still want package-owned layout, measurement, edges, and panning:
 
 ```tsx
-<TreeProvider type="family" people={profiles} relationships={relationships} subject="alex">
+<TreeProvider type="family" people={people} relationships={relationships} subject="alex">
   <TreeCanvas ariaLabel="Alex's family tree">
     <TreeEdges />
     <TreeNodeLayer card={ProfileCard} />
@@ -196,10 +187,10 @@ Primitive responsibilities:
 | Primitive | Purpose |
 | --- | --- |
 | `TreeProvider` | Creates family layout context from people, relationships, selection, collapse state, labels, limits, and spacing. |
-| `TreeCanvas` | Renders the viewport surface, pan/zoom behavior, and canvas container. |
+| `TreeCanvas` | Renders the viewport surface, pan behavior, and canvas container. |
 | `TreeEdges` | Renders SVG relationship edges from the computed layout. |
 | `TreeNodeLayer` | Renders measured card nodes with accessibility and data attributes. |
-| `TreeSurface` | Lower-level pan/zoom surface used by `TreeCanvas`. |
+| `TreeSurface` | Lower-level pan surface used by `TreeCanvas`. |
 | `useTreeLayout()` | Reads computed cards, edges, bounds, and tree context for custom renderers. |
 
 ## Style Helpers

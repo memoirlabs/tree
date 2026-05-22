@@ -118,9 +118,6 @@ The viewport API should remain small:
 - `viewport`
 - `defaultViewport`
 - `onViewportChange`
-- `zoom`
-- `defaultZoom`
-- `onZoomChange`
 - `treeApiRef`
 
 `TreeApi` intentionally exposes only:
@@ -128,7 +125,6 @@ The viewport API should remain small:
 - `centerPerson(personId)`
 - `fitToSubject()`
 - `resetViewport()`
-- `zoomTo(zoom)`
 
 Do not expand into generic graph controls unless explicitly requested.
 

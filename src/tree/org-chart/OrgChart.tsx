@@ -99,14 +99,9 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
   edgeClassName,
   interactionMode = "pan",
   lineShape = "orthogonal",
-  zoom,
-  defaultZoom,
   viewport,
   defaultViewport,
   onViewportChange,
-  minZoom,
-  maxZoom,
-  onZoomChange,
   spacing,
   maxDepth,
   theme,
@@ -214,18 +209,13 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
       ariaLabel={ariaLabel}
       containerRef={containerRef}
       defaultViewport={defaultViewport}
-      defaultZoom={defaultZoom}
       interactionMode={interactionMode}
-      maxZoom={maxZoom}
-      minZoom={minZoom}
       onViewportChange={onViewportChange}
-      onZoomChange={onZoomChange}
       style={style}
       theme={theme}
       treeApiRef={treeApiRef}
       treeType="org-chart"
       viewport={viewport}
-      zoom={zoom}
     >
       <div data-org-chart data-org-root={resolvedRoot}>
         <TreeEdges

@@ -144,32 +144,19 @@ describe("tree primitives", () => {
     expect(markup).toContain("tabindex=\"0\"");
   });
 
-  test("applies controlled zoom to the tree surface", () => {
+  test("renders a pan-only tree surface", () => {
     const markup = renderToStaticMarkup(
       <FamilyTree
         card={FamilyCard}
         people={people}
         relationships={relationships}
         subject="henry"
-        zoom={1.5}
+        viewport={{ x: 12, y: 24 }}
       />,
     );
 
-    expect(markup).toContain("scale(1.5)");
-  });
-
-  test("accepts a controlled viewport", () => {
-    const markup = renderToStaticMarkup(
-      <FamilyTree
-        card={FamilyCard}
-        people={people}
-        relationships={relationships}
-        subject="henry"
-        viewport={{ x: 12, y: 24, zoom: 1.75 }}
-      />,
-    );
-
-    expect(markup).toContain("scale(1.75)");
+    expect(markup).toContain("data-tree-surface");
+    expect(markup).not.toContain("scale(");
   });
 
   test("passes app-owned props through to custom cards", () => {

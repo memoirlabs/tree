@@ -26,17 +26,12 @@ export function TreeCanvas<Person>({
   ariaLabel,
   className,
   defaultViewport,
-  defaultZoom,
   interactionMode = "pan",
-  maxZoom,
-  minZoom,
   onViewportChange,
-  onZoomChange,
   style,
   theme,
   treeApiRef,
   viewport,
-  zoom,
 }: TreeCanvasProps<Person>): JSX.Element {
   return (
     <TreeSurface
@@ -45,19 +40,14 @@ export function TreeCanvas<Person>({
       className={className}
       ariaLabel={ariaLabel}
       defaultViewport={defaultViewport}
-      defaultZoom={defaultZoom}
       interactionMode={interactionMode}
-      maxZoom={maxZoom}
-      minZoom={minZoom}
       onViewportChange={onViewportChange}
-      onZoomChange={onZoomChange}
       style={style}
       subject={anchorId}
       theme={theme}
       treeApiRef={treeApiRef}
       treeType={treeType}
       viewport={viewport}
-      zoom={zoom}
     >
       <div ref={containerRef} data-tree-root={anchorId} data-tree-renderer={treeType}>
         {children}

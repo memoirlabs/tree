@@ -69,17 +69,12 @@ export interface TreeCanvasProps {
   ariaLabel?: string;
   className?: string;
   defaultViewport?: Partial<TreeViewport>;
-  defaultZoom?: number;
   interactionMode?: TreeInteractionMode;
-  maxZoom?: number;
-  minZoom?: number;
   onViewportChange?: (viewport: TreeViewport) => void;
-  onZoomChange?: (zoom: number) => void;
   style?: CSSProperties;
   theme?: TreeStylePreset;
   treeApiRef?: Ref<TreeApi>;
   viewport?: TreeViewport;
-  zoom?: number;
 }
 
 export interface TreeEdgesProps {
@@ -193,17 +188,12 @@ export function TreeCanvas({
   ariaLabel,
   className,
   defaultViewport,
-  defaultZoom,
   interactionMode = "pan",
-  maxZoom,
-  minZoom,
   onViewportChange,
-  onZoomChange,
   style,
   theme,
   treeApiRef,
   viewport,
-  zoom,
 }: TreeCanvasProps): JSX.Element {
   const context = useTreeLayout();
 
@@ -216,18 +206,13 @@ export function TreeCanvas({
       ariaLabel={ariaLabel}
       containerRef={context.containerRef}
       defaultViewport={defaultViewport}
-      defaultZoom={defaultZoom}
       interactionMode={interactionMode}
-      maxZoom={maxZoom}
-      minZoom={minZoom}
       onViewportChange={onViewportChange}
-      onZoomChange={onZoomChange}
       style={style}
       theme={theme}
       treeApiRef={treeApiRef}
       treeType="family"
       viewport={viewport}
-      zoom={zoom}
     >
       <div
         data-family-canvas

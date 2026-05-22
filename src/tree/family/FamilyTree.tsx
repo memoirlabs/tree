@@ -169,14 +169,9 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
   edgeClassName,
   interactionMode = "pan",
   lineShape = "orthogonal",
-  zoom,
-  defaultZoom,
   viewport,
   defaultViewport,
   onViewportChange,
-  minZoom,
-  maxZoom,
-  onZoomChange,
   spacing,
   limits,
   theme,
@@ -225,17 +220,12 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
         ariaLabel={ariaLabel}
         className={className}
         defaultViewport={defaultViewport}
-        defaultZoom={defaultZoom}
         interactionMode={interactionMode}
-        maxZoom={maxZoom}
-        minZoom={minZoom}
         onViewportChange={onViewportChange}
-        onZoomChange={onZoomChange}
         style={style}
         theme={theme}
         treeApiRef={treeApiRef}
         viewport={viewport}
-        zoom={zoom}
       >
         <TreeEdges edgeClassName={edgeClassName} />
         <TreeNodeLayer<Person, CardExtraProps>
