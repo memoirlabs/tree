@@ -753,6 +753,23 @@ html[data-docs-scrollbars] body::-webkit-scrollbar-thumb,
   text-transform: uppercase;
 }
 
+#nd-sidebar div.flex.text-fd-muted-foreground.items-center.border.bg-fd-secondary\/50.p-0\.5.pe-0.rounded-lg.empty\:hidden {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 12px !important;
+  color: #fff !important;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+#nd-sidebar div.flex.text-fd-muted-foreground.items-center.border.bg-fd-secondary\/50.p-0\.5.pe-0.rounded-lg.empty\:hidden::before {
+  content: "Memoir Labs";
+}
+
 #nd-sidebar a,
 #nd-toc a {
   border-radius: 0 !important;

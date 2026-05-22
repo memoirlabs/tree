@@ -121,7 +121,7 @@ export function Page() {
 }
 ```
 
-For a quick first render, omit `card`. The built-in default card displays `name`, `label`, `profile.display`, or the profile ID:
+For a quick first render, omit `card`. The built-in default card displays `name`, `label`, `profile.display`, or the person ID:
 
 ```tsx
 <FamilyTree people={people} subject="henry" relationships={relationships} />
@@ -190,7 +190,7 @@ If your card needs app-owned props, pass them through `cardProps`. Use an object
 type ProfileCardExtraProps = {
   canEdit: boolean;
   density: "compact" | "comfortable";
-  onOpenProfile: (profileId: string) => void;
+  onOpenProfile: (personId: string) => void;
 };
 
 function ProfileCard({

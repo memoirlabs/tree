@@ -43,7 +43,7 @@ type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, neve
 
 Prefer the clean public names in new integrations: `people`, `subject`, `card`, and `onPersonClick`. The Memoir-shaped names `profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile` remain supported aliases for app compatibility.
 
-The library does not require `name`, `avatarUrl`, profile fields, or nested relationship arrays. It only needs stable profile IDs.
+The library does not require `name`, `avatarUrl`, profile fields, or nested relationship arrays. It only needs stable person IDs.
 
 By default, `FamilyTree` is self-contained: it fills the parent width, inherits parent height when one exists, falls back to a usable minimum height, clips overflow, and lets users drag-pan the tree horizontally and vertically. Host apps can pass `style`, `className`, or `interactionMode` when they want to override those defaults.
 
@@ -53,15 +53,15 @@ Use `selected` and `onPersonClick` when the host app owns profile drawers, route
 
 ```tsx
 function FamilyPanel() {
-  const [selectedProfileId, setSelectedProfileId] = useState("alex");
+  const [selectedPersonId, setSelectedPersonId] = useState("alex");
 
   return (
     <FamilyTree
       people={people}
       relationships={relationships}
       subject="alex"
-      selected={selectedProfileId}
-      onPersonClick={(_profile, profileId) => setSelectedProfileId(profileId)}
+      selected={selectedPersonId}
+      onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
       card={ProfileCard}
     />
   );
