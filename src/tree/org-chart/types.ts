@@ -92,10 +92,8 @@ export type OrgChartCardProps<Person, CardExtraProps extends object> = TreeCardP
 >;
 
 export interface OrgChartProps<Person, CardExtraProps extends object = Record<string, never>> {
-  root?: PersonId;
-  rootProfileId?: PersonId;
-  people?: PeopleById<Person>;
-  profiles?: PeopleById<Person>;
+  root: PersonId;
+  people: PeopleById<Person>;
   relationships: OrgReportingRelationship[];
   ariaLabel?: string;
   card?: ComponentType<OrgCardProps<Person> & CardExtraProps>;

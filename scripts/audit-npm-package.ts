@@ -37,6 +37,7 @@ const secretPatterns = [
 ];
 
 const textFilePattern = /\.(?:css|d\.ts|js|json|md|ts|tsx)$/;
+const requiredPackagePaths = ["dist/index.js", "dist/index.d.ts", "dist/styles.css", "README.md", "LICENSE"];
 
 function fail(message: string): never {
   console.error(message);
@@ -69,6 +70,12 @@ async function packDryRun() {
 
 const files = await packDryRun();
 const paths = files.map((file) => file.path);
+const pathSet = new Set(paths);
+const missingRequiredPaths = requiredPackagePaths.filter((path) => !pathSet.has(path));
+if (missingRequiredPaths.length > 0) {
+  fail(`npm package is missing required files:\n${missingRequiredPaths.map((path) => `- ${path}`).join("\n")}`);
+}
+
 const forbiddenPaths = paths.filter((path) => forbiddenPathPatterns.some((pattern) => pattern.test(path)));
 
 if (forbiddenPaths.length > 0) {

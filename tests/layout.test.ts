@@ -94,3 +94,17 @@ test("hides descendant branch rows for collapsed family cards", () => {
   expect(layout.edges.every((edge) => edge.sourceId !== "ava" && edge.targetId !== "noah")).toBe(true);
 });
 
+test("does not draw duplicate guardian edges when the guardian is already a parent", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "ava",
+    people,
+    relationships: [
+      rel.parents("ava", ["henry", "emma"]),
+      rel.guardians("ava", ["henry"]),
+    ],
+  });
+
+  const henryToAvaEdges = layout.edges.filter((edge) => edge.sourceId === "henry" && edge.targetId === "ava");
+  expect(henryToAvaEdges).toHaveLength(1);
+});
+

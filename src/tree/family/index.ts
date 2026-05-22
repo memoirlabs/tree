@@ -32,7 +32,6 @@ export type {
   PartnershipRelation,
   PeopleById,
   PersonId,
-  RenderProfileCard,
   TreeApi,
   TreeInteractionMode,
   TreeLineShape,

@@ -1,7 +1,7 @@
 {
   "name": "@memoir/tree",
-  "version": "0.2.0",
-  "description": "Ergonomic React family tree component with relationship-aware layout.",
+  "version": "0.3.0",
+  "description": "Ergonomic React family trees and org charts with relationship-aware layout.",
   "homepage": "https://github.com/memoirlabs/tree#readme",
   "repository": {
     "type": "git",
@@ -12,6 +12,8 @@
   },
   "keywords": [
     "family-tree",
+    "org-chart",
+    "organization-chart",
     "react",
     "genealogy",
     "visualization"
@@ -35,7 +37,7 @@
     "LICENSE"
   ],
   "sideEffects": [
-    "*.css"
+    "**/*.css"
   ],
   "publishConfig": {
     "access": "public",
@@ -61,6 +63,7 @@
     "npm:whoami": "bun scripts/npm-registry.ts whoami",
     "npm:pack": "bun scripts/npm-registry.ts pack",
     "npm:publish": "bun scripts/npm-registry.ts publish",
+    "prepack": "bun run build",
     "prepublishOnly": "bun run check",
     "release": "bun scripts/release.ts",
     "release:dry-run": "bun scripts/release.ts --dry-run",
@@ -77,7 +80,6 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "react": ">=19.0.0 <20.0.0",
-    "react-dom": ">=19.0.0 <20.0.0"
+    "react": ">=19.0.0 <20.0.0"
   }
 }

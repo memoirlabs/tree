@@ -87,6 +87,31 @@ const compactIds = (ids: Iterable<PersonId>): PersonId[] => {
   return compacted;
 };
 
+const assertNoParentageCycles = (parentageByParent: Map<PersonId, FamilyParentageRelationship[]>) => {
+  const visiting = new Set<PersonId>();
+  const visited = new Set<PersonId>();
+
+  const visit = (personId: PersonId) => {
+    if (visiting.has(personId)) {
+      throw new Error(`FamilyTree contains a parentage cycle at "${personId}".`);
+    }
+    if (visited.has(personId)) return;
+
+    visiting.add(personId);
+    for (const relationship of parentageByParent.get(personId) ?? []) {
+      for (const childId of relationship.children) {
+        visit(childId);
+      }
+    }
+    visiting.delete(personId);
+    visited.add(personId);
+  };
+
+  for (const personId of parentageByParent.keys()) {
+    visit(personId);
+  }
+};
+
 const intersectionSize = (a: Set<PersonId>, b: Set<PersonId>) => {
   let count = 0;
   for (const value of a) {
@@ -138,6 +163,8 @@ export function createFamilyIndex<Person>(
       }
     }
   }
+
+  assertNoParentageCycles(parentageByParent);
 
   return {
     people,

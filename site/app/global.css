@@ -741,33 +741,33 @@ html[data-docs-scrollbars] body::-webkit-scrollbar-thumb,
   display: none;
 }
 
-#nd-sidebar .docs-sidebar-lab {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 8px;
-  font-family: inherit;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-#nd-sidebar div.flex.text-fd-muted-foreground.items-center.border.bg-fd-secondary\/50.p-0\.5.pe-0.rounded-lg.empty\:hidden {
-  display: flex !important;
+.docs-sidebar-lab {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 30;
+  display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 12px !important;
-  color: #fff !important;
-  font-size: 0.78rem;
-  font-weight: 500;
+  width: calc(var(--fd-sidebar-width, 268px) - 32px);
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--color-site-fg);
+  background: var(--color-site-bg);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 400;
   letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
+  pointer-events: auto;
 }
 
-#nd-sidebar div.flex.text-fd-muted-foreground.items-center.border.bg-fd-secondary\/50.p-0\.5.pe-0.rounded-lg.empty\:hidden::before {
-  content: "Memoir Labs";
+@media (max-width: 767px) {
+  .docs-sidebar-lab {
+    display: none;
+  }
 }
 
 #nd-sidebar a,

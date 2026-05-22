@@ -37,14 +37,7 @@ Prefer the clean names in new family docs and examples:
 - `card`
 - `onPersonClick`
 
-The Memoir-shaped aliases remain supported for app compatibility:
-
-- `profiles`
-- `rootProfileId`
-- `renderProfileCard`
-- `onSelectProfile`
-
-Do not remove aliases without an explicit migration plan.
+The old Memoir-shaped aliases (`profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile`) were removed in the breaking API cleanup. Do not reintroduce them unless there is an explicit migration plan.
 
 For org charts, prefer:
 

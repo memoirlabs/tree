@@ -155,14 +155,11 @@ export function DefaultFamilyCard<Person>(props: FamilyCardProps<Person>): JSX.E
 
 export function FamilyTree<Person, CardExtraProps extends object = Record<string, never>>({
   subject,
-  rootProfileId,
   people,
-  profiles,
   relationships,
   ariaLabel,
   card,
   cardProps,
-  renderProfileCard,
   className,
   style,
   cardClassName,
@@ -181,23 +178,9 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
   collapsed,
   readOnly = false,
   onPersonClick,
-  onSelectProfile,
   onAddRelationship,
 }: FamilyTreeProps<Person, CardExtraProps>): JSX.Element {
-  const resolvedSubject = subject ?? rootProfileId;
-  const resolvedPeople = people ?? profiles;
-
-  if (!resolvedSubject) {
-    throw new Error("FamilyTree requires `subject` or `rootProfileId`.");
-  }
-  if (!resolvedPeople) {
-    throw new Error("FamilyTree requires `people` or `profiles`.");
-  }
-
-  const ResolvedCard = renderProfileCard
-    ? (props: FamilyCardProps<Person> & CardExtraProps) => renderProfileCard(props.person, props)
-    : (card ?? DefaultFamilyCard);
-  const handlePersonClick = onPersonClick ?? onSelectProfile;
+  const ResolvedCard = card ?? DefaultFamilyCard;
   const resolvePersonLabel = getPersonLabel ?? getDefaultPersonLabel;
 
   return (
@@ -208,13 +191,13 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
       limits={limits}
       lineShape={lineShape}
       onAddRelationship={onAddRelationship}
-      onPersonClick={handlePersonClick}
-      people={resolvedPeople}
+      onPersonClick={onPersonClick}
+      people={people}
       readOnly={readOnly}
       relationships={relationships}
       selected={selected}
       spacing={spacing}
-      subject={resolvedSubject}
+      subject={subject}
     >
       <TreeCanvas
         ariaLabel={ariaLabel}

@@ -54,3 +54,12 @@ test("accepts explicit neighborhood limits", () => {
   expect(capped?.children.map((relative) => relative.personId)).toEqual(["ava"]);
   expect(uncapped?.children.map((relative) => relative.personId)).toEqual(["ava", "milo"]);
 });
+
+test("rejects parentage cycles", () => {
+  expect(() =>
+    createFamilyIndex(people, [
+      rel.parents("henry", ["carol"]),
+      rel.parents("carol", ["henry"]),
+    ]),
+  ).toThrow("parentage cycle");
+});

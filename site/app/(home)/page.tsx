@@ -7,7 +7,7 @@ import logo from "../../../public/logo-transparent.png";
 
 const exampleCode = `import { FamilyTree, rel } from "@memoir/tree";
 
-const profiles = {
+const people = {
   maren: { id: "maren", name: "Maren" },
   june:  { id: "june",  name: "June"  },
   ellis: { id: "ellis", name: "Ellis" },
@@ -26,12 +26,9 @@ const relationships = [
 export function Tree() {
   return (
     <FamilyTree
-      profiles={profiles}
+      people={people}
       relationships={relationships}
-      rootProfileId="noa"
-      renderProfileCard={(p, props) => (
-        <article {...props}>{p.name}</article>
-      )}
+      subject="noa"
     />
   );
 }`;

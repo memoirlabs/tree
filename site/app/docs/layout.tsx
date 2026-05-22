@@ -7,6 +7,7 @@ export default function Layout({ children }: LayoutProps<'/docs'>) {
   return (
     <DocsLayout tree={source.getPageTree()} {...baseOptions()}>
       <DocsTransientScrollbars />
+      <div className="docs-sidebar-lab">Memoir Labs</div>
       {children}
     </DocsLayout>
   );

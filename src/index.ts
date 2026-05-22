@@ -63,7 +63,6 @@ export type {
   GuardianshipRelation,
   ParentageRelation,
   PartnershipRelation,
-  RenderProfileCard,
 } from "./tree/family";
 
 export type {

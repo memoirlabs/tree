@@ -1,297 +1,92 @@
 ---
 title: FamilyTree
-description: Render a subject-centered family neighborhood from app-owned person data.
+description: Render a subject-centered family neighborhood from flat relationship facts.
 ---
 
-`FamilyTree` renders a subject-centered family neighborhood from app-owned person data and plain relationship facts.
+`FamilyTree` renders one person's readable family neighborhood from app-owned people and flat relationship facts.
 
-## Props
+It handles measured cards, SVG relationship edges, panning, accessible card props, custom React cards, and the tiny stylesheet.
 
-```ts
-type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, never>> = {
-  subject?: string;
-  people?: Record<string, Person>;
-  rootProfileId?: string;
-  profiles?: Record<string, Person>;
-  relationships: FamilyRelationship[];
-  ariaLabel?: string;
-  card?: React.ComponentType<FamilyCardProps<Person> & CardExtraProps>;
-  cardProps?: CardExtraProps | ((person: Person, props: FamilyCardProps<Person>) => CardExtraProps);
-  renderProfileCard?: (profile: Person, props: FamilyCardProps<Person>) => React.JSX.Element;
-  className?: string;
-  style?: React.CSSProperties;
-  cardClassName?: string;
-  edgeClassName?: string;
-  interactionMode?: "pan" | "scroll" | "none";
-  lineShape?: "orthogonal" | "curved";
-  viewport?: TreeViewport;
-  defaultViewport?: Partial<TreeViewport>;
-  onViewportChange?: (viewport: TreeViewport) => void;
-  spacing?: Partial<FamilyTreeSpacing>;
-  limits?: Partial<FamilyNeighborhoodLimits>;
-  theme?: "memoir" | "system";
-  treeApiRef?: React.Ref<TreeApi>;
-  getPersonLabel?: (person: Person, personId: string) => string;
-  selected?: string;
-  collapsed?: string[];
-  readOnly?: boolean;
-  onPersonClick?: (person: Person, personId: string) => void;
-  onSelectProfile?: (person: Person, personId: string) => void;
-  onAddRelationship?: (person: Person, personId: string) => void;
+## Minimal Family Tree
+
+```tsx
+import { FamilyTree, rel } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+
+const people = {
+  alex: { id: "alex", name: "Alex" },
+  morgan: { id: "morgan", name: "Morgan" },
+  casey: { id: "casey", name: "Casey" },
+  jordan: { id: "jordan", name: "Jordan" },
+  riley: { id: "riley", name: "Riley" },
 };
-```
-
-Prefer the clean public names in new integrations: `people`, `subject`, `card`, and `onPersonClick`. The Memoir-shaped names `profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile` remain supported aliases for app compatibility.
-
-The library does not require `name`, `avatarUrl`, profile fields, or nested relationship arrays. It only needs stable person IDs.
-
-By default, `FamilyTree` is self-contained: it fills the parent width, inherits parent height when one exists, falls back to a usable minimum height, clips overflow, and lets users drag-pan the tree horizontally and vertically. Host apps can pass `style`, `className`, or `interactionMode` when they want to override those defaults.
-
-## Controlled Selection
-
-Use `selected` and `onPersonClick` when the host app owns profile drawers, route state, or inspectors:
-
-```tsx
-function FamilyPanel() {
-  const [selectedPersonId, setSelectedPersonId] = useState("alex");
-
-  return (
-    <FamilyTree
-      people={people}
-      relationships={relationships}
-      subject="alex"
-      selected={selectedPersonId}
-      onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
-      card={ProfileCard}
-    />
-  );
-}
-```
-
-`onSelectProfile` remains available as the Memoir-shaped alias.
-
-## Actions
-
-`FamilyTree` never mutates your data. It only calls your handlers:
-
-- `onPersonClick` opens selection, drawers, routes, or inspectors.
-- `onSelectProfile` is the Memoir-shaped alias for selection.
-- `onAddRelationship` is passed into cards so the app can open an add-relative flow.
-- `onViewportChange` reports pan position.
-
-For viewport buttons, use `treeApiRef`:
-
-```tsx
-const treeApiRef = useRef<TreeApi | null>(null);
-
-<button type="button" onClick={() => treeApiRef.current?.fitToSubject()}>
-  Center subject
-</button>
-
-<button type="button" onClick={() => treeApiRef.current?.resetViewport()}>
-  Reset view
-</button>
-
-<FamilyTree
-  treeApiRef={treeApiRef}
-  people={people}
-  relationships={relationships}
-  subject="alex"
-/>
-```
-
-## Relationship Facts
-
-Store parentage, partnership, and guardianship as flat facts. Subject-relative labels are computed at render time.
-
-```ts
-import { rel } from "@memoir/tree";
 
 const relationships = [
   rel.parents("alex", ["morgan", "casey"]),
   rel.partner("alex", "jordan", { relation: "spouse" }),
-  rel.children(["alex", "jordan"], ["riley", "quinn"]),
-  rel.guardians("riley", ["morgan"]),
+  rel.children(["alex", "jordan"], ["riley"]),
 ];
+
+export function FamilyPanel() {
+  return <FamilyTree people={people} subject="alex" relationships={relationships} />;
+}
 ```
 
-The helpers produce plain rows:
+You can omit `card` to use `DefaultFamilyCard`.
 
-- `parentage`: parent/child facts.
-- `partnership`: spouse, partner, or coparent facts.
-- `guardianship`: guardian/child facts.
-
-Relationship options let you preserve real family nuance without giving the renderer business rules:
-
-```ts
-const relationships = [
-  rel.parents("quinn", ["alex", "jordan"], { relation: "adoptive" }),
-  rel.partner("alex", "drew", { relation: "coparent", status: "former" }),
-  rel.guardians("quinn", ["robin"], { relation: "guardian" }),
-];
-```
-
-Supported parentage relations are `biological`, `adoptive`, `step`, `foster`, and `unknown`. Supported partnership relations are `spouse`, `partner`, `coparent`, and `unknown`. Supported statuses are `current`, `former`, `divorced`, `separated`, and `unknown`.
-
-## Card Contract
-
-If you omit `card` and `renderProfileCard`, `FamilyTree` uses `DefaultFamilyCard`, which displays a common name field when present or falls back to the person ID. It can also show common avatar/image fields when present.
-
-Your custom card receives the person object, computed relation metadata, root/app focus state, optional app-owned selection state, accessibility props, stable data attributes, collapse state, and edit hooks. Always spread `...props` onto the card root:
+## Custom Card
 
 ```tsx
 import type { FamilyCardProps } from "@memoir/tree";
 
-function ProfileCard({
-  collapsed,
-  focused,
-  onAddRelationship,
-  person,
-  personId,
-  readOnly,
-  relation,
-  ...props
-}: FamilyCardProps<Person>) {
+type Person = (typeof people)[string];
+
+function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProps<Person>) {
   return (
-    <article {...props} className="memoir-profile-card">
+    <article {...rootProps}>
       <strong>{person.name}</strong>
       <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
-      {collapsed ? <span>Collapsed</span> : null}
-      {!readOnly ? (
-        <button type="button" onClick={() => onAddRelationship?.(person, personId)}>
-          Add relative
-        </button>
-      ) : null}
-    </article>
-  );
-}
-```
-
-Computed relation labels include `self`, `parent`, `grandparent`, `child`, `grandchild`, `sibling`, `half-sibling`, `partner`, `coparent`, `guardian`, and `unknown`.
-
-Pass app-owned props to a custom card with `cardProps`:
-
-```tsx
-type ProfileCardExtraProps = {
-  canEdit: boolean;
-  density: "compact" | "comfortable";
-};
-
-function ProfileCard({
-  canEdit,
-  density,
-  person,
-  ...props
-}: FamilyCardProps<Person> & ProfileCardExtraProps) {
-  return (
-    <article {...props} data-density={density}>
-      <strong>{person.name}</strong>
-      {canEdit ? <span>editable</span> : null}
     </article>
   );
 }
 
-<FamilyTree<Person, ProfileCardExtraProps>
-  people={people}
-  relationships={relationships}
-  subject="alex"
-  card={ProfileCard}
-  cardProps={() => ({
-    canEdit: true,
-    density: "compact",
-  })}
-/>
+<FamilyTree people={people} subject="alex" relationships={relationships} card={ProfileCard} />;
 ```
 
-## Accessibility
+The card receives accessibility props, keyboard handlers, stable `data-*` attributes, relationship metadata, selection state, and the original person record. Spread the remaining props onto the card root.
 
-`FamilyTree` labels the viewport and each interactive card. Use `ariaLabel` for the tree surface and `getPersonLabel` for readable card labels:
+## Relationship Helpers
 
-```tsx
-<FamilyTree
-  ariaLabel="Alex's family tree"
-  getPersonLabel={(person) => person.name}
-  people={people}
-  relationships={relationships}
-  subject="alex"
-  onPersonClick={openPerson}
-/>
+```ts
+rel.parents("alex", ["morgan", "casey"], {
+  relation: "biological",
+  status: "current",
+});
+
+rel.partner("alex", "jordan", {
+  relation: "spouse",
+  status: "current",
+});
+
+rel.guardians("riley", ["morgan"]);
 ```
 
-When a card is clickable, the tree passes `role="button"`, `tabIndex={0}`, keyboard activation handlers, `aria-selected`, `data-selected`, and `data-focused`.
+`FamilyTree` models parentage, partnership, and guardianship. App-specific data like permissions, profile drawers, images, and actions belongs on your person records or typed `cardProps`.
 
-## Layout
-
-The default layout shows a subject-centered family window:
-
-- generation `-2`: grandparents
-- generation `-1`: parents and guardians
-- generation `0`: siblings, half-siblings, subject, partners, coparents
-- generation `1`: children
-- generation `2`: grandchildren
-
-Cards are measured with `ResizeObserver`. The first pass uses a fallback size, then layout recalculates with the actual rendered card dimensions.
-
-The root element owns the viewport behavior. `interactionMode="pan"` uses a clipped drag-panning viewport, `interactionMode="scroll"` exposes native scrollbars, and `interactionMode="none"` clips without user navigation.
-
-Use `collapsed` to hide deeper ancestor or descendant rows while keeping the collapsed profile visible:
+## Common Options
 
 ```tsx
 <FamilyTree
   people={people}
-  relationships={relationships}
   subject="alex"
+  relationships={relationships}
+  selected={selectedPersonId}
   collapsed={["riley"]}
+  limits={{ children: null, siblings: 12 }}
+  onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
 />
 ```
 
-Use `viewport` for controlled pan, or `defaultViewport` for an uncontrolled starting position:
+Use `selected` for app-owned selection, `collapsed` to hide deeper ancestor or descendant rows, and `limits` to control visible-relative caps.
 
-```tsx
-<FamilyTree
-  people={people}
-  relationships={relationships}
-  subject="alex"
-  viewport={viewport}
-  onViewportChange={setViewport}
-/>
-```
-
-Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
-
-## Neighborhood Limits
-
-The layout renders a subject-centered family window. Defaults keep large families readable, and `limits` makes those caps explicit:
-
-```tsx
-<FamilyTree
-  people={people}
-  relationships={relationships}
-  subject="alex"
-  limits={{
-    siblings: 12,
-    children: null,
-    grandchildren: 16,
-  }}
-/>
-```
-
-Use `null` to disable a cap for a group. Defaults are exported as `defaultFamilyNeighborhoodLimits`.
-
-## Design Hooks
-
-`FamilyTree` emits stable attributes:
-
-- `data-family-tree`
-- `data-family-canvas`
-- `data-tree-surface`
-- `data-tree-canvas`
-- `data-family-card-positioner`
-- `data-family-measure`
-- `data-family-card`
-- `data-person-id`
-- `data-relation`
-- `aria-selected`
-- `data-selected`
-- `data-focused`
-- `data-family-edge`
+For viewport controls, pass `treeApiRef`. Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.

@@ -85,9 +85,7 @@ const createMeasurementKey = (root: PersonId, relationships: OrgChartProps<unkno
 
 export function OrgChart<Person, CardExtraProps extends object = Record<string, never>>({
   root,
-  rootProfileId,
   people,
-  profiles,
   relationships,
   ariaLabel,
   card,
@@ -112,25 +110,15 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
   readOnly = false,
   onPersonClick,
 }: OrgChartProps<Person, CardExtraProps>): JSX.Element {
-  const resolvedRoot = root ?? rootProfileId;
-  const resolvedPeople = people ?? profiles;
-
-  if (!resolvedRoot) {
-    throw new Error("OrgChart requires `root` or `rootProfileId`.");
-  }
-  if (!resolvedPeople) {
-    throw new Error("OrgChart requires `people` or `profiles`.");
-  }
-
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const measureKey = createMeasurementKey(resolvedRoot, relationships, collapsed);
+  const measureKey = createMeasurementKey(root, relationships, collapsed);
   const measurements = useCardMeasurements(containerRef, measureKey);
   const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
   const layout = useMemo(
     () =>
       buildOrgChartLayout({
-        root: resolvedRoot,
-        people: resolvedPeople,
+        root,
+        people,
         relationships,
         collapsed,
         measurements,
@@ -138,7 +126,7 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
         maxDepth,
         lineShape,
       }),
-    [collapsed, lineShape, maxDepth, measurements, relationships, resolvedPeople, resolvedRoot, spacing],
+    [collapsed, lineShape, maxDepth, measurements, people, relationships, root, spacing],
   );
   const ResolvedCard = renderCard
     ? (props: OrgCardProps<Person> & CardExtraProps) => renderCard(toOrgRenderCardProps(props))
@@ -164,7 +152,7 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
   const getCardProps = useCallback(
     (layoutCard: OrgChartLayoutCard<Person>) => {
       const isSelected = selected === layoutCard.personId;
-      const isFocused = selected ? isSelected : layoutCard.personId === resolvedRoot;
+      const isFocused = selected ? isSelected : layoutCard.personId === root;
       const personLabel = resolvePersonLabel(layoutCard.person, layoutCard.personId);
       const treeCardProps: OrgCardProps<Person> = {
         person: layoutCard.person,
@@ -197,12 +185,12 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
         ...treeCardProps,
       } as OrgCardProps<Person> & CardExtraProps;
     },
-    [cardClassName, cardProps, collapsedIds, handleClick, handleKeyDown, onPersonClick, readOnly, resolvePersonLabel, resolvedRoot, selected],
+    [cardClassName, cardProps, collapsedIds, handleClick, handleKeyDown, onPersonClick, readOnly, resolvePersonLabel, root, selected],
   );
 
   return (
     <TreeCanvas
-      anchorId={resolvedRoot}
+      anchorId={root}
       bounds={layout.bounds}
       cards={layout.cards}
       className={className}
@@ -217,7 +205,7 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
       treeType="org-chart"
       viewport={viewport}
     >
-      <div data-org-chart data-org-root={resolvedRoot}>
+      <div data-org-chart data-org-root={root}>
         <TreeEdges
           bounds={layout.bounds}
           edgeClassName={edgeClassName}

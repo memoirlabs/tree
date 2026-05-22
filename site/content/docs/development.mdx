@@ -3,23 +3,23 @@ title: Integration
 description: Build app features around @memoir/tree without moving your data model.
 ---
 
-`@memoir/tree` is meant to sit inside your existing React app. It does not bring a data layer, editor, router, auth system, or form flow.
+`@memoir/tree` is a renderer. It does not ship a database, editor, router, auth system, analytics layer, or form flow.
 
 ## App Responsibilities
 
-Keep these parts in your application:
+Keep these in your app:
 
 - Person records and profile fields.
 - Relationship creation, validation, and persistence.
-- Permissions for viewing or editing family information.
+- Permissions for viewing or editing family or org data.
 - Selection state, side panels, forms, routes, and analytics.
-- Custom card markup and app-specific actions.
+- Card markup and app-specific actions.
 
-The package handles rendering: layout, measured cards, SVG edges, panning, subject-relative labels, and accessibility props.
+The package handles layout, measured cards, SVG edges, panning, subject-relative family labels, org hierarchy, and accessibility props.
 
 ## Data Flow
 
-Fetch or compute your people and relationships before rendering the tree:
+Fetch or compute data before rendering the tree:
 
 ```tsx
 import { FamilyTree } from "@memoir/tree";
@@ -29,8 +29,8 @@ export function FamilyPanel({ family }: { family: FamilyData }) {
   return (
     <FamilyTree
       people={family.people}
-      relationships={family.relationships}
       subject={family.subjectId}
+      relationships={family.relationships}
       selected={family.selectedId}
       onPersonClick={family.openProfile}
     />
@@ -38,37 +38,27 @@ export function FamilyPanel({ family }: { family: FamilyData }) {
 }
 ```
 
-The tree never writes back to your data. When a user clicks a card or asks to add a relative, call your own app code.
+The tree never writes back to your data. Clicks and add-relative actions call your handlers.
 
 ## Editing Flows
 
-Use callbacks to connect tree interactions to your UI:
-
 ```tsx
 <FamilyTree
   people={people}
-  relationships={relationships}
   subject="alex"
+  relationships={relationships}
   selected={selectedPersonId}
   onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
   onAddRelationship={(_person, personId) => openAddRelativeDialog(personId)}
-/>
-```
-
-Set `readOnly` when cards should not receive add-relationship actions:
-
-```tsx
-<FamilyTree
-  people={people}
-  relationships={relationships}
-  subject="alex"
   readOnly={!canEditFamily}
 />
 ```
 
+`readOnly` prevents `onAddRelationship` from being passed into cards. It does not block selection.
+
 ## Custom Cards
 
-Custom cards are regular React components. Spread the props onto the root element so the tree can attach accessibility handlers and stable data attributes:
+Custom cards are regular React components:
 
 ```tsx
 import type { FamilyCardProps } from "@memoir/tree";
@@ -79,9 +69,9 @@ type Person = {
   avatarUrl?: string;
 };
 
-export function ProfileCard({ focused, person, relation, ...props }: FamilyCardProps<Person>) {
+export function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProps<Person>) {
   return (
-    <article {...props}>
+    <article {...rootProps}>
       {person.avatarUrl ? <img src={person.avatarUrl} alt="" /> : null}
       <strong>{person.name}</strong>
       <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
@@ -90,14 +80,16 @@ export function ProfileCard({ focused, person, relation, ...props }: FamilyCardP
 }
 ```
 
-## Practical Checks
+Spread `rootProps` so the tree can attach accessibility props, handlers, and stable data attributes.
 
-When integrating the tree into an app, check:
+## Checks
 
-- Cards render with the expected names and labels.
-- Clicking a card opens your app's selection UI.
-- Keyboard activation works when `onPersonClick` is provided.
-- Large families stay readable with `limits`.
-- Custom card roots spread `...props`.
+When integrating:
 
-For the full prop surface, see [FamilyTree](./family-tree) and [API](./api).
+- Confirm cards render the expected names and labels.
+- Confirm click and keyboard activation work when `onPersonClick` is provided.
+- Confirm nested buttons inside cards behave the way your app expects.
+- Use `limits` for large families.
+- Keep the stylesheet import near your app root if many pages use the tree.
+
+For the exact prop surface, see [API](./api).

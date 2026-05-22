@@ -1,4 +1,4 @@
-import type { ComponentType, CSSProperties, HTMLAttributes, JSX, Ref } from "react";
+import type { ComponentType, CSSProperties, HTMLAttributes, Ref } from "react";
 import type {
   PeopleById,
   PersonId,
@@ -64,10 +64,8 @@ export type ComputedRelationLabel =
   | "self"
   | "parent"
   | "grandparent"
-  | "great-grandparent"
   | "child"
   | "grandchild"
-  | "great-grandchild"
   | "sibling"
   | "half-sibling"
   | "partner"
@@ -116,8 +114,6 @@ export interface FamilyCardProps<Person> extends HTMLAttributes<HTMLElement> {
 
 export type FamilyTreeSize = TreeCardSize;
 
-export type RenderProfileCard<Person> = (profile: Person, props: FamilyCardProps<Person>) => JSX.Element;
-
 export type FamilyTreePersonHandler<Person> = TreePersonHandler<Person>;
 
 export type FamilyTreeCardProps<Person, CardExtraProps extends object> =
@@ -125,15 +121,12 @@ export type FamilyTreeCardProps<Person, CardExtraProps extends object> =
   | ((person: Person, props: FamilyCardProps<Person>) => CardExtraProps);
 
 export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<string, never>> {
-  subject?: PersonId;
-  rootProfileId?: PersonId;
-  people?: PeopleById<Person>;
-  profiles?: PeopleById<Person>;
+  subject: PersonId;
+  people: PeopleById<Person>;
   relationships: FamilyRelationship[];
   ariaLabel?: string;
   card?: ComponentType<FamilyCardProps<Person> & CardExtraProps>;
   cardProps?: FamilyTreeCardProps<Person, CardExtraProps>;
-  renderProfileCard?: RenderProfileCard<Person>;
   className?: string;
   style?: CSSProperties;
   cardClassName?: string;
@@ -152,7 +145,6 @@ export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<
   collapsed?: PersonId[];
   readOnly?: boolean;
   onPersonClick?: FamilyTreePersonHandler<Person>;
-  onSelectProfile?: FamilyTreePersonHandler<Person>;
   onAddRelationship?: FamilyTreePersonHandler<Person>;
 }
 

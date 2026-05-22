@@ -33,20 +33,28 @@ You can omit `card` to use `DefaultOrgCard`.
 ## Custom Card
 
 ```tsx
-<OrgChart
-  people={people}
-  root="ceo"
-  relationships={relationships}
-  renderCard={({ person, depth, rootProps }) => (
+import type { OrgCardProps } from "@memoir/tree";
+
+type Person = (typeof people)[string];
+
+function TeamCard({ depth, person, ...rootProps }: OrgCardProps<Person>) {
+  return (
     <article {...rootProps}>
       <strong>{person.name}</strong>
       <small>{person.title ?? `level ${depth}`}</small>
     </article>
-  )}
+  );
+}
+
+<OrgChart
+  people={people}
+  root="ceo"
+  relationships={relationships}
+  card={TeamCard}
 />
 ```
 
-`rootProps` includes the accessibility props, keyboard handlers, stable `data-*` attributes, and click handlers that belong on the card root.
+The card receives accessibility props, keyboard handlers, stable `data-*` attributes, depth metadata, selection state, and the original person record. Spread the remaining props onto the card root.
 
 ## Relationship Helper
 

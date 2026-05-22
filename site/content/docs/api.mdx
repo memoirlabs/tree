@@ -1,237 +1,119 @@
 ---
 title: API
-description: Exports from @memoir/tree.
+description: Public exports from @memoir/tree.
 ---
 
-All public exports come from `@memoir/tree`. Import styles separately from `@memoir/tree/styles.css`.
+All public package exports come from `@memoir/tree`. Import the stylesheet separately from `@memoir/tree/styles.css`.
 
 ```tsx
 import { FamilyTree, OrgChart, org, rel } from "@memoir/tree";
-import type { FamilyTreeProps, FamilyRelationship, FamilyTreeSpacing, OrgChartProps, TreeApi, TreeViewport } from "@memoir/tree";
+import type { FamilyCardProps, OrgCardProps, TreeApi, TreeViewport } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 ```
 
-## Family Tree
+## Components
 
-- `FamilyTree`
-- `DefaultFamilyCard`
-- `StyledFamilyCard`
-- `rel`
-- `createFamilyIndex(people, relationships)`
-- `collectFamilyNeighborhood(index, subject, limits?)`
-- `defaultFamilyNeighborhoodLimits`
-- `buildFamilyTreeLayout(input)`
+- `FamilyTree`: subject-centered family neighborhood renderer.
+- `OrgChart`: rooted manager/report hierarchy renderer.
+- `DefaultFamilyCard`: small built-in family card.
+- `StyledFamilyCard`: configurable family card for quick demos and simple apps.
+- `DefaultOrgCard`: small built-in org card.
 
-Use `FamilyTree` for normal app rendering. Use the pure helpers when you need to test relationship logic, precompute a layout, or build a custom renderer with the lower-level primitives.
+## Family Props
 
-```ts
-type FamilyTreeProps<Person, CardExtraProps extends object = Record<string, never>> = {
-  people?: Record<string, Person>;
-  subject?: string;
-  relationships: FamilyRelationship[];
-  profiles?: Record<string, Person>;
-  rootProfileId?: string;
-  ariaLabel?: string;
-  card?: React.ComponentType<FamilyCardProps<Person> & CardExtraProps>;
-  cardProps?: CardExtraProps | ((person: Person, props: FamilyCardProps<Person>) => CardExtraProps);
-  renderProfileCard?: (profile: Person, props: FamilyCardProps<Person>) => React.JSX.Element;
-  className?: string;
-  style?: React.CSSProperties;
-  cardClassName?: string;
-  edgeClassName?: string;
-  interactionMode?: "pan" | "scroll" | "none";
-  lineShape?: "orthogonal" | "curved";
-  viewport?: TreeViewport;
-  defaultViewport?: Partial<TreeViewport>;
-  onViewportChange?: (viewport: TreeViewport) => void;
-  treeApiRef?: React.Ref<TreeApi>;
-  limits?: Partial<FamilyNeighborhoodLimits>;
-  spacing?: Partial<FamilyTreeSpacing>;
-  theme?: "memoir" | "system";
-  getPersonLabel?: (person: Person, personId: string) => string;
-  selected?: string;
-  collapsed?: string[];
-  readOnly?: boolean;
-  onPersonClick?: (person: Person, personId: string) => void;
-  onSelectProfile?: (person: Person, personId: string) => void;
-  onAddRelationship?: (person: Person, personId: string) => void;
-};
-```
+Required:
 
-Prefer `people`, `subject`, `card`, and `onPersonClick` in new code. Compatibility aliases remain supported: `profiles`, `rootProfileId`, `renderProfileCard`, and `onSelectProfile`.
+- `people`: person records keyed by ID.
+- `subject`: person ID at the center of the family neighborhood.
+- `relationships`: flat parentage, partnership, and guardianship facts.
 
-## FamilyTree Actions
+Common optional props:
 
-These are the user-facing callbacks and imperative actions:
+- `card`: custom React card component.
+- `cardProps`: extra typed props for every custom card, or a function per person.
+- `selected`: app-owned selected person ID.
+- `collapsed`: person IDs whose deeper ancestor or descendant rows should be hidden.
+- `limits`: visible-relative caps; use `null` to disable a cap.
+- `onPersonClick`: card click and Enter/Space activation handler.
+- `onAddRelationship`: passed to cards for app-owned add-relative flows.
+- `getPersonLabel`: accessible card label builder.
+- `viewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
+- `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
-| Name | Purpose |
-| --- | --- |
-| `onPersonClick(person, personId)` | Fires when an interactive card is clicked or activated with Enter/Space. Prefer this in new code. |
-| `onSelectProfile(person, personId)` | Memoir-shaped alias for `onPersonClick`. |
-| `onAddRelationship(person, personId)` | Passed into cards so apps can open an “add relative” flow. The library does not mutate data. |
-| `onViewportChange(viewport)` | Fires when pan position changes. Use it with controlled `viewport`. |
-| `treeApiRef.current.centerPerson(personId)` | Scrolls a rendered person card toward the center of the viewport. |
-| `treeApiRef.current.fitToSubject()` | Centers the current `subject`. |
-| `treeApiRef.current.resetViewport()` | Returns to `defaultViewport`. |
+## Org Props
 
-## FamilyTree Props
+Required:
 
-| Name | Purpose |
-| --- | --- |
-| `people` | App-owned person records keyed by ID. Preferred name. |
-| `subject` | Person ID at the center of the family neighborhood. Preferred name. |
-| `relationships` | Flat parentage, partnership, and guardianship facts. |
-| `profiles` | Compatibility alias for `people`. |
-| `rootProfileId` | Compatibility alias for `subject`. |
-| `card` | Custom React card component. Preferred path for app-owned card UI. |
-| `cardProps` | Extra typed props passed into `card`; can be an object or function. |
-| `renderProfileCard` | Compatibility/render-function path for custom cards. |
-| `ariaLabel` | Accessible label for the tree surface. |
-| `getPersonLabel` | Builds readable card labels for assistive technology. |
-| `selected` | App-owned selected person ID. |
-| `collapsed` | Person IDs whose deeper ancestor/descendant rows should be hidden. |
-| `readOnly` | Disables add-relationship handlers passed to cards. |
-| `viewport` | Controlled pan state: `{ x, y }`. |
-| `defaultViewport` | Initial uncontrolled pan state. |
-| `interactionMode` | `"pan"`, `"scroll"`, or `"none"`. |
-| `limits` | Explicit visible-relative caps; use `null` to disable a cap. |
-| `spacing` | Row, column, and padding spacing overrides. |
-| `lineShape` | `"orthogonal"` or `"curved"` SVG edge routing. |
-| `theme` | `"memoir"` or `"system"`. Use CSS variables/classes for custom colors. |
-| `className` / `style` | Applied to the tree surface. |
-| `cardClassName` / `edgeClassName` | Applied to cards and edge paths. |
+- `people`: person records keyed by ID.
+- `root`: root person ID for the hierarchy.
+- `relationships`: flat reporting facts.
+
+Common optional props:
+
+- `card`: custom React card component.
+- `renderCard`: render-function shortcut that receives `rootProps`.
+- `cardProps`: extra typed props for every custom card, or a function per person.
+- `selected`: app-owned selected person ID.
+- `collapsed`: person IDs whose reports should be hidden.
+- `maxDepth`: deepest report level to render.
+- `onPersonClick`: card click and Enter/Space activation handler.
+- `getPersonLabel`: accessible card label builder.
+- `viewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
+- `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
 ## Relationship Helpers
 
-- `rel.parents(child, parents, options?)`
-- `rel.children(parents, children, options?)`
-- `rel.partner(a, b, options?)`
-- `rel.guardians(child, guardians, options?)`
-
 ```ts
-rel.parents("alex", ["morgan", "casey"], {
-  relation: "biological",
-  status: "current",
-  order: 0,
-});
+rel.parents("alex", ["morgan", "casey"]);
+rel.children(["alex", "jordan"], ["riley"]);
+rel.partner("alex", "jordan", { relation: "spouse" });
+rel.guardians("riley", ["morgan"]);
 
-rel.partner("alex", "jordan", {
-  relation: "spouse",
-  status: "current",
-});
+org.reports("ceo", ["vp-eng", "vp-sales"]);
 ```
 
-Relationship option types:
+Family relations:
 
-- `ParentageRelation`: `biological`, `adoptive`, `step`, `foster`, `unknown`.
-- `PartnershipRelation`: `spouse`, `partner`, `coparent`, `unknown`.
-- `GuardianshipRelation`: `guardian`, `foster`, `unknown`.
-- `FamilyRelationshipStatus`: `current`, `former`, `divorced`, `separated`, `unknown`.
+- Parentage: `biological`, `adoptive`, `step`, `foster`, `unknown`.
+- Partnership: `spouse`, `partner`, `coparent`, `unknown`.
+- Guardianship: `guardian`, `foster`, `unknown`.
+- Status: `current`, `former`, `divorced`, `separated`, `unknown`.
 
-## Org Chart
+Org reporting:
 
-- `OrgChart`
-- `DefaultOrgCard`
-- `org`
+- Relation: `manager`, `direct`, `unknown`.
+- Status: `current`, `former`, `unknown`.
+
+## Viewport API
+
+Pass `treeApiRef` to call:
+
+- `centerPerson(personId)`: center a rendered card.
+- `fitToSubject()`: center the current family subject or org root.
+- `resetViewport()`: return to `defaultViewport`.
+
+## Pure Helpers
+
+Use these in tests, previews, or custom renderers:
+
+- `createFamilyIndex(people, relationships)`
+- `collectFamilyNeighborhood(index, subject, limits?)`
+- `buildFamilyTreeLayout(input)`
 - `createOrgChartIndex(people, relationships)`
 - `collectOrgChartSubtree(index, root, options?)`
 - `buildOrgChartLayout(input)`
 
-Use `OrgChart` for people-based manager/report hierarchies:
+## Family Primitives
 
-```tsx
-const relationships = [
-  org.reports("ceo", ["vp-eng", "vp-sales"]),
-];
+`TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, and `useTreeLayout()` expose the family renderer layers for custom composition. They are family primitives, not generic graph primitives.
 
-<OrgChart
-  people={people}
-  root="ceo"
-  relationships={relationships}
-  renderCard={({ person, rootProps }) => (
-    <article {...rootProps}>{person.name}</article>
-  )}
-/>;
-```
+Use `FamilyTree` and `OrgChart` unless you need to own the family render layers directly.
 
-`org.reports(managerId, reportIds, options?)` creates flat reporting facts. Org charts do not use family labels like `parent` or `sibling`; cards receive `depth` and `parentId`.
+## Types
 
-## Shared Surface
+Common exports include:
 
-- `TreeSurface`
-- `TreeProvider`
-- `TreeCanvas`
-- `TreeEdges`
-- `TreeNodeLayer`
-- `useTreeLayout()`
-- `TreeInteractionMode`
-- `TreeViewport`
-- `TreeApi`
-- `TreeLineShape`
-- `TreeViewportProps`
-- stylesheet from `@memoir/tree/styles.css`
-
-Use primitives when the default wrapper is not enough but you still want package-owned layout, measurement, edges, and panning:
-
-```tsx
-<TreeProvider type="family" people={people} relationships={relationships} subject="alex">
-  <TreeCanvas ariaLabel="Alex's family tree">
-    <TreeEdges />
-    <TreeNodeLayer card={ProfileCard} />
-  </TreeCanvas>
-</TreeProvider>
-```
-
-Primitive responsibilities:
-
-| Primitive | Purpose |
-| --- | --- |
-| `TreeProvider` | Creates family layout context from people, relationships, selection, collapse state, labels, limits, and spacing. |
-| `TreeCanvas` | Renders the viewport surface, pan behavior, and canvas container. |
-| `TreeEdges` | Renders SVG relationship edges from the computed layout. |
-| `TreeNodeLayer` | Renders measured card nodes with accessibility and data attributes. |
-| `TreeSurface` | Lower-level pan surface used by `TreeCanvas`. |
-| `useTreeLayout()` | Reads computed cards, edges, bounds, and tree context for custom renderers. |
-
-## Style Helpers
-
-| Export | Purpose |
-| --- | --- |
-| `treeStylePresets` | Preset names: `memoir` and `system`. |
-| `getTreeStyleName(theme)` | Returns the `data-tree-style` name used by the surface. |
-
-## Family Types
-
-- `PersonId`
-- `PeopleById<Person>`
-- `RenderProfileCard<Person>`
-- `FamilyTreePersonHandler<Person>`
-- `FamilyTreeCardProps<Person, CardExtraProps>`
-- `FamilyNeighborhoodLimits`
-- `FamilyRelationship`
-- `FamilyParentageRelationship`
-- `FamilyPartnershipRelationship`
-- `FamilyGuardianshipRelationship`
-- `ComputedRelation`
-- `FamilyCardProps<Person>`
-- `FamilyTreeProps<Person>`
-- `FamilyTreeLayoutResult<Person>`
-- `FamilyTreeLayoutCard<Person>`
-- `FamilyTreeLayoutEdge`
-- `FamilyTreeBounds`
-- `BuildFamilyTreeLayoutInput<Person>`
-
-## Org Types
-
-- `OrgChartProps<Person>`
-- `OrgCardProps<Person>`
-- `OrgReportingRelationship`
-- `OrgReportingRelation`
-- `OrgReportingStatus`
-- `OrgChartSpacing`
-- `OrgChartLayoutResult<Person>`
-- `OrgChartLayoutCard<Person>`
-- `OrgChartLayoutEdge`
-- `BuildOrgChartLayoutInput<Person>`
-
-The API is intentionally scoped to family and org tree renderers. Pass app-owned relationship rows directly instead of going through a generic graph DSL or package-owned database.
+- `PersonId`, `PeopleById`
+- `FamilyTreeProps`, `FamilyCardProps`, `FamilyRelationship`, `ComputedRelation`, `FamilyNeighborhoodLimits`
+- `OrgChartProps`, `OrgCardProps`, `OrgReportingRelationship`
+- `TreeApi`, `TreeViewport`, `TreeInteractionMode`, `TreeLineShape`

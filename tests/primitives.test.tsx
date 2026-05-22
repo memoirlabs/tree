@@ -105,32 +105,15 @@ describe("tree primitives", () => {
     expect(markup).toContain("stroke-width:var(--tree-edge-width, 2)");
   });
 
-  test("renders a family tree through Memoir-shaped aliases", () => {
+  test("renders a family tree with the primary public props", () => {
     const markup = renderToStaticMarkup(
       <FamilyTree
         ariaLabel="Henry family map"
-        profiles={people}
+        people={people}
         relationships={relationships}
-        renderProfileCard={(
-          profile,
-          {
-            collapsed: _collapsed,
-            focused: _focused,
-            onAddRelationship: _onAddRelationship,
-            person: _person,
-            personId: _personId,
-            readOnly: _readOnly,
-            relation: _relation,
-            selected: _selected,
-            ...props
-          },
-        ) => (
-          <article {...props}>
-            <strong>{profile.name}</strong>
-          </article>
-        )}
-        rootProfileId="henry"
-        onSelectProfile={() => undefined}
+        card={FamilyCard}
+        subject="henry"
+        onPersonClick={() => undefined}
       />,
     );
 

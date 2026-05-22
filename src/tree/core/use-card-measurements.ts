@@ -28,6 +28,7 @@ export function useCardMeasurements(
 
     let frameId: number | null = null;
     const selector = "[data-tree-measure-id], [data-family-measure-id]";
+    const observedElements = new Set<HTMLElement>();
 
     const readMeasurements = () => {
       const nextMeasurements: Record<PersonId, TreeCardSize> = {};
@@ -49,18 +50,29 @@ export function useCardMeasurements(
       frameId = requestAnimationFrame(readMeasurements);
     };
 
-    const observer = new ResizeObserver(scheduleRead);
-    const elements = container.querySelectorAll<HTMLElement>(selector);
-    for (const element of elements) {
-      observer.observe(element);
-    }
+    const resizeObserver = new ResizeObserver(scheduleRead);
+    const observeCurrentElements = () => {
+      const elements = container.querySelectorAll<HTMLElement>(selector);
+      for (const element of elements) {
+        if (observedElements.has(element)) continue;
+        observedElements.add(element);
+        resizeObserver.observe(element);
+      }
+    };
+    const mutationObserver = new MutationObserver(() => {
+      observeCurrentElements();
+      scheduleRead();
+    });
 
+    observeCurrentElements();
     readMeasurements();
+    mutationObserver.observe(container, { childList: true, subtree: true });
     window.addEventListener("resize", scheduleRead);
 
     return () => {
       if (frameId) cancelAnimationFrame(frameId);
-      observer.disconnect();
+      mutationObserver.disconnect();
+      resizeObserver.disconnect();
       window.removeEventListener("resize", scheduleRead);
     };
   }, [containerRef, measureKey]);

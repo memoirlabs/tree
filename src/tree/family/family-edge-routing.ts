@@ -27,6 +27,7 @@ export function routeFamilyEdges<Person>(
   const edges: FamilyTreeLayoutEdge[] = [];
   const lineShape = options.lineShape ?? "orthogonal";
   const drawnParentBars = new Set<string>();
+  const drawnPersonEdges = new Set<string>();
 
   const drawParentBar = (
     pair: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>],
@@ -56,6 +57,15 @@ export function routeFamilyEdges<Person>(
     const b = cardsById.get(bId);
     if (!a || !b) return null;
     return a.x <= b.x ? [a, b] : [b, a];
+  };
+  const addPersonEdge = (edge: FamilyTreeLayoutEdge, additionalKeys: string[] = []) => {
+    const key = `${edge.sourceId ?? ""}->${edge.targetId ?? ""}`;
+    if (drawnPersonEdges.has(key) || additionalKeys.some((additionalKey) => drawnPersonEdges.has(additionalKey))) return;
+    drawnPersonEdges.add(key);
+    for (const additionalKey of additionalKeys) {
+      drawnPersonEdges.add(additionalKey);
+    }
+    edges.push(edge);
   };
 
   relationships.forEach((relationship, relationshipIndex) => {
@@ -92,14 +102,17 @@ export function routeFamilyEdges<Person>(
             for (const childId of relationship.children) {
               const childCard = cardsById.get(childId);
               if (!childCard) continue;
-              edges.push({
-                id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${parentAId}-${parentBId}-${childId}`,
-                path: createTreeEdgePath(join, topCenterPoint(childCard), lineShape),
-                kind: relationship.relation ?? "biological",
-                status: relationship.status,
-                sourceId: parentAId,
-                targetId: childId,
-              });
+              addPersonEdge(
+                {
+                  id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${parentAId}-${parentBId}-${childId}`,
+                  path: createTreeEdgePath(join, topCenterPoint(childCard), lineShape),
+                  kind: relationship.relation ?? "biological",
+                  status: relationship.status,
+                  sourceId: parentAId,
+                  targetId: childId,
+                },
+                [`${parentBId}->${childId}`],
+              );
             }
             return;
           }
@@ -112,7 +125,7 @@ export function routeFamilyEdges<Person>(
         for (const childId of relationship.children) {
           const childCard = cardsById.get(childId);
           if (!childCard) continue;
-          edges.push({
+          addPersonEdge({
             id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${parentId}-${childId}`,
             path: createTreeEdgePath(bottomCenterPoint(parentCard), topCenterPoint(childCard), lineShape),
             kind: relationship.relation ?? "biological",
@@ -131,7 +144,7 @@ export function routeFamilyEdges<Person>(
       for (const childId of relationship.children) {
         const childCard = cardsById.get(childId);
         if (!childCard) continue;
-        edges.push({
+        addPersonEdge({
           id: `${relationship.id ?? `guardianship-${relationshipIndex}`}-${guardianId}-${childId}`,
           path: createTreeEdgePath(bottomCenterPoint(guardianCard), topCenterPoint(childCard), lineShape),
           kind: relationship.relation ?? "guardian",

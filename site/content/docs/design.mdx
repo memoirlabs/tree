@@ -1,23 +1,69 @@
 ---
 title: Design
-description: Design @memoir/tree with CSS variables, stable selectors, and custom card components.
+description: Style @memoir/tree with CSS variables, stable selectors, and custom cards.
 ---
 
-`@memoir/tree` ships a small framework-free stylesheet for the intended Memoir skin: warm canvas, light cards, sharp corners, black outlines, and root-node focus styling.
+`@memoir/tree` ships one small stylesheet. It sets the Memoir look: warm canvas, light cards, sharp corners, black outlines, black shadows, and root-node focus styling.
 
 ## Import Styles
-
-Import the stylesheet once for the default selectors and Memoir theme variables:
 
 ```tsx
 import "@memoir/tree/styles.css";
 ```
 
-You can override the variables or replace the card markup.
+The package never auto-imports CSS. Consumers opt in explicitly.
 
-## Styled Card
+## Theme
 
-Use `StyledFamilyCard` when you want a ready-made card with simple box controls instead of writing a custom component:
+Use `theme` only to pick a built-in preset:
+
+```tsx
+<FamilyTree people={people} subject="alex" relationships={relationships} theme="system" />
+```
+
+- `memoir`: the default cream canvas and outlined cards.
+- `system`: neutral system colors.
+
+For custom colors, use CSS variables through `className` or `style`.
+
+## CSS Variables
+
+```tsx
+<FamilyTree
+  className="my-tree"
+  people={people}
+  subject="alex"
+  relationships={relationships}
+/>
+```
+
+```css
+.my-tree {
+  --tree-canvas-bg: #fff7df;
+  --tree-card-bg: #ffffff;
+  --tree-card-border: #17120f;
+  --tree-card-shadow: 5px 5px 0 #17120f;
+  --tree-edge: #17120f;
+  --tree-edge-width: 2;
+}
+```
+
+Useful variables:
+
+- `--tree-surface-bg`
+- `--tree-canvas-bg`
+- `--tree-card-bg`
+- `--tree-card-fg`
+- `--tree-card-border`
+- `--tree-card-shadow`
+- `--tree-card-radius`
+- `--tree-edge`
+- `--tree-edge-width`
+- `--tree-muted-fg`
+
+## Styled Family Card
+
+Use `StyledFamilyCard` when you want a quick configurable card without writing custom markup:
 
 ```tsx
 import { FamilyTree, StyledFamilyCard } from "@memoir/tree";
@@ -31,99 +77,46 @@ import { FamilyTree, StyledFamilyCard } from "@memoir/tree";
     avatar: "round",
   }}
   people={people}
+  subject="alex"
   relationships={relationships}
-  subject={personId}
 />
 ```
 
-`radius` accepts `"square"`, `"soft"`, `"round"`, `"pill"`, or any CSS radius value. `shadow` accepts `"none"`, `"flat"`, `"soft"`, or any CSS shadow value. `avatar` accepts `"auto"`, `"hidden"`, `"square"`, `"soft"`, or `"round"`.
+`radius` accepts `square`, `soft`, `round`, `pill`, or any CSS radius value. `shadow` accepts `none`, `flat`, `soft`, or any CSS shadow value. `avatar` accepts `auto`, `hidden`, `square`, `soft`, or `round`.
 
-## Memoir Look
+## Stable Selectors
 
-Use this as the starting point for flat product UIs:
+Shared selectors:
 
-```css
-.memoir-tree {
-  --tree-surface-bg: #fafafa;
-  --tree-canvas-bg: #F4EFDC;
-  --tree-card-bg: #fafafa;
-  --tree-card-fg: #030201;
-  --tree-card-border: #030201;
-  --tree-card-shadow: 4px 4px 0 #030201;
-  --tree-edge: #030201;
-  --tree-edge-width: 1;
-  --tree-card-radius: 0;
-  --tree-profile-radius: 0;
-}
-```
+- `[data-tree-surface]`
+- `[data-tree-canvas]`
+- `[data-tree-card]`
+- `[data-tree-edge]`
+- `[data-person-id]`
+- `[data-selected]`
+- `[data-focused]`
 
-Then pass the surface class and a card component:
+Family selectors:
 
-```tsx
-function ProfileCard({
-  collapsed: _collapsed,
-  focused: _focused,
-  onAddRelationship: _onAddRelationship,
-  person,
-  personId: _personId,
-  readOnly: _readOnly,
-  relation,
-  selected: _selected,
-  ...props
-}: FamilyCardProps<Profile>) {
-  return (
-    <article {...props} className="memoir-profile-card">
-      <strong>{person.name}</strong>
-      <small>{relation.label}</small>
-    </article>
-  );
-}
+- `[data-family-tree]`
+- `[data-family-canvas]`
+- `[data-family-card]`
+- `[data-family-edge]`
+- `[data-relation]`
+- `[data-generation]`
+- `[data-side]`
 
-<FamilyTree
-  className="memoir-tree"
-  people={people}
-  relationships={relationships}
-  subject={personId}
-  card={ProfileCard}
-/>
-```
+Org selectors:
 
-## Theme Prop
-
-Use `theme` only to pick a built-in preset:
-
-```tsx
-<FamilyTree people={people} relationships={relationships} subject="alex" theme="system" />
-```
-
-Use `theme="memoir"` for the package default or `theme="system"` for neutral system colors. For custom colors, pass `className` or `style` and set CSS variables yourself. The package does not take color tokens through React props.
-
-## Selectors
-
-The family renderer emits these selectors:
-
-- `data-tree-surface`: outer scroll/pan surface.
-- `data-tree-canvas`: positioned canvas used by the viewport.
-- `data-family-canvas`: measured family canvas that contains edges and cards.
-- `data-family-tree`: family tree canvas marker.
-- `data-family-card-positioner`: absolute-positioned wrapper for a card.
-- `data-family-measure`: measurement wrapper around a rendered card.
-- `data-family-card`: card props forwarded to your custom card.
-- `data-person-id`: current person ID.
-- `data-relation`: computed relation label like `self`, `parent`, or `half-sibling`.
-- `data-generation`: generation relative to the subject.
-- `data-side`: `ancestor`, `descendant`, `sibling`, `partner`, or `self`.
-- `data-selected`: present only when the host app passes a matching `selected` person ID.
-- `data-focused`: present on the root node by default, or on the app-selected card when `selected` is controlled.
-- `data-family-edge`: SVG edge path.
-- `data-source-id`: source person ID for an edge.
-- `data-target-id`: target person ID for an edge.
-- `data-edge-kind`: relationship kind like `biological`, `adoptive`, `spouse`, or `guardian`.
-- `data-edge-status`: relationship status like `current`, `former`, or `divorced`.
+- `[data-org-chart]`
+- `[data-org-card]`
+- `[data-org-edge]`
+- `[data-depth]`
+- `[data-parent-id]`
 
 ```css
-[data-family-card][data-relation="half-sibling"] {
-  background: #ffea00;
+[data-family-card][data-relation="self"] {
+  background: var(--tree-accent);
 }
 
 [data-family-edge][data-edge-kind="adoptive"],
@@ -134,41 +127,17 @@ The family renderer emits these selectors:
 
 ## Card Root
 
-Your card receives normal HTML props plus tree metadata. Always spread the props onto the root element so data attributes, click handlers, and accessibility metadata reach the DOM:
+Custom cards should spread the provided props onto the card root:
 
 ```tsx
-function ProfileCard({
-  collapsed,
-  person,
-  personId,
-  readOnly,
-  relation,
-  focused,
-  onAddRelationship,
-  ...props
-}: FamilyCardProps<Profile>) {
+function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProps<Person>) {
   return (
-    <article {...props} className="memoir-profile-card">
+    <article {...rootProps}>
       <strong>{person.name}</strong>
       <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
-      {!readOnly ? (
-        <button type="button" onClick={() => onAddRelationship?.(person, personId)}>
-          Add relative
-        </button>
-      ) : null}
-      {collapsed ? <span>Collapsed</span> : null}
     </article>
   );
 }
 ```
 
-For extra typed props, use `cardProps` on `FamilyTree`. See [FamilyTree](./family-tree) for the full card contract.
-
-```tsx
-<FamilyTree
-  people={people}
-  relationships={relationships}
-  subject={personId}
-  card={ProfileCard}
-/>
-```
+Those props carry accessibility metadata, click handlers, keyboard handlers, and styling hooks.

@@ -1,34 +1,21 @@
 ---
 title: App Structure
-description: What to add to your app when using @memoir/tree.
+description: A simple way to organize app code that uses @memoir/tree.
 ---
 
-You do not need to copy this library's source tree into your app. Install the package, keep your existing app structure, and add the tree wherever you render family context.
+You do not need to copy this library's internals into your app. Install the package, keep your existing data model, and add the tree where you show family or org context.
 
-## What Your App Owns
-
-`@memoir/tree` is a renderer. Your app should continue to own:
-
-- Where people are stored.
-- How relationships are created or edited.
-- Permissions, auth, routing, drawers, and forms.
-- The visual markup inside each person card.
-
-The library only needs stable person IDs, a `people` map, relationship facts, and a subject ID.
-
-## Recommended Shape
-
-Put your data and relationship helpers wherever they already belong in your app. A simple setup can look like this:
+## Simple Family Setup
 
 ```text
 app/
   family/
     page.tsx
-    profile-card.tsx
     family-data.ts
+    profile-card.tsx
 ```
 
-`family-data.ts` can export your people and relationship facts:
+`family-data.ts` owns app data:
 
 ```ts
 import { rel } from "@memoir/tree";
@@ -44,7 +31,7 @@ export const relationships = [
 ];
 ```
 
-`profile-card.tsx` can render your app's card UI:
+`profile-card.tsx` owns card markup:
 
 ```tsx
 import type { FamilyCardProps } from "@memoir/tree";
@@ -54,9 +41,9 @@ type Person = {
   name: string;
 };
 
-export function ProfileCard({ person, relation, ...props }: FamilyCardProps<Person>) {
+export function ProfileCard({ person, relation, ...rootProps }: FamilyCardProps<Person>) {
   return (
-    <article {...props}>
+    <article {...rootProps}>
       <strong>{person.name}</strong>
       <small>{relation.label}</small>
     </article>
@@ -64,7 +51,7 @@ export function ProfileCard({ person, relation, ...props }: FamilyCardProps<Pers
 }
 ```
 
-Then render the tree on any page:
+`page.tsx` renders the tree:
 
 ```tsx
 import { FamilyTree } from "@memoir/tree";
@@ -76,18 +63,30 @@ export default function FamilyPage() {
   return (
     <FamilyTree
       people={people}
-      relationships={relationships}
       subject="alex"
+      relationships={relationships}
       card={ProfileCard}
     />
   );
 }
 ```
 
-## Integration Checklist
+## Simple Org Setup
 
-- Import `@memoir/tree/styles.css` once if you want the default Memoir skin.
-- Pass `people`, `relationships`, and `subject` into `FamilyTree`.
-- Use `card` when you want custom app-owned person cards.
-- Use `selected` and `onPersonClick` when your app owns selection state.
-- Use `onAddRelationship` to open your own add-relative flow.
+```text
+app/
+  team/
+    page.tsx
+    org-data.ts
+    org-card.tsx
+```
+
+Use `org.reports` in the data module and render `OrgChart` from the page. Keep titles, teams, permissions, and actions on your person records or card props.
+
+## Checklist
+
+- Import `@memoir/tree/styles.css` once if you want the default skin.
+- Pass `people`, relationship facts, and a root ID (`subject` or `root`).
+- Use `card` or `renderCard` when default cards are too simple.
+- Keep selection and editing state in your app.
+- Keep relationship persistence and validation in your app.
