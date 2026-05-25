@@ -37,7 +37,16 @@ const secretPatterns = [
 ];
 
 const textFilePattern = /\.(?:css|d\.ts|js|json|md|ts|tsx)$/;
-const requiredPackagePaths = ["dist/index.js", "dist/index.d.ts", "dist/styles.css", "README.md", "LICENSE"];
+const requiredPackagePaths = [
+  "dist/index.js",
+  "dist/index.d.ts",
+  "dist/styles.css",
+  "dist/tree/core.js",
+  "dist/tree/family.js",
+  "dist/tree/org-chart.js",
+  "README.md",
+  "LICENSE",
+];
 
 function fail(message: string): never {
   console.error(message);
