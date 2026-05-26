@@ -1,4 +1,4 @@
-<h1 align="center">Memoir Tree</h1>
+<h1 align="center">Tree</h1>
 
 <p align="center">
   Lightweight React family trees and org charts.
