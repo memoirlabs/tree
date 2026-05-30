@@ -2,7 +2,7 @@ export { TreeSurface, getTreeStyleName, treeStylePresets } from "./tree/core";
 export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./tree/family";
 export { DefaultOrgCard, OrgChart } from "./tree/org-chart";
 export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./tree/family";
-export { rel } from "./tree/family";
+export { graphToFamilyRelationships, rel } from "./tree/family";
 export { org } from "./tree/org-chart";
 export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./tree/family";
 export { collectOrgChartSubtree, createOrgChartIndex } from "./tree/org-chart";
@@ -46,12 +46,18 @@ export type {
   ComputedRelationLabel,
   ComputedRelationSide,
   FamilyCardProps,
+  FamilyGraph,
+  FamilyGraphPerson,
+  FamilyGuardianshipLink,
   FamilyGuardianshipRelationship,
   FamilyIndex,
   FamilyNeighborhood,
   FamilyNeighborhoodLimits,
   FamilyParentageRelationship,
+  FamilyParentChildLink,
+  FamilyPartnershipGroup,
   FamilyPartnershipRelationship,
+  FamilyPlacementMetadata,
   FamilyRelationship,
   FamilyRelationshipStatus,
   FamilyRelative,

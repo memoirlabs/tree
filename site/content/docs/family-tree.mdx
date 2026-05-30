@@ -1,13 +1,15 @@
 ---
 title: FamilyTree
-description: Render a subject-centered family neighborhood from flat relationship facts.
+description: Render a subject-centered family neighborhood from graph or simple relationship facts.
 ---
 
-`FamilyTree` renders one person's readable family neighborhood from app-owned people and flat relationship facts.
+`FamilyTree` renders one person's readable family neighborhood from app-owned people and family graph facts. Simple relationship helpers are still available for small trees and examples.
 
 It handles measured cards, SVG relationship edges, panning, accessible card props, custom React cards, and the tiny stylesheet.
 
-## Minimal Family Tree
+## Simple Mode
+
+Simple mode uses `rel` helpers. It is compact, but graph mode is preferred for real family apps because parentage is per link and children can belong to explicit partnership groups.
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
@@ -33,6 +35,34 @@ export function FamilyPanel() {
 ```
 
 You can omit `card` to use `DefaultFamilyCard`.
+
+## Graph Mode
+
+```tsx
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
+
+const graph: FamilyGraph<Person> = {
+  people,
+  subject: "riley",
+  partnershipGroups: [
+    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse" },
+    { id: "alex-morgan", partners: ["alex", "morgan"], relation: "coparent", status: "former" },
+  ],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley", relation: "biological" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley", relation: "step" },
+    { id: "alex-casey", groupId: "alex-morgan", parentId: "alex", childId: "casey" },
+    { id: "morgan-casey", groupId: "alex-morgan", parentId: "morgan", childId: "casey" },
+  ],
+  guardianshipLinks: [
+    { id: "morgan-riley-guardian", guardianId: "morgan", childId: "riley", relation: "guardian" },
+  ],
+};
+
+<FamilyTree graph={graph} />;
+```
+
+Tree renders and lays out the graph. Your app still owns persistence, permissions, editing, routing, invites, and data validation.
 
 ## Custom Card
 
@@ -71,7 +101,7 @@ rel.partner("alex", "jordan", {
 rel.guardians("riley", ["morgan"]);
 ```
 
-`FamilyTree` models parentage, partnership, and guardianship. App-specific data like permissions, profile drawers, images, and actions belongs on your person records or typed `cardProps`.
+These helpers are simple-mode helpers. `FamilyTree` also accepts graph mode for partnership groups, per-parent lineage, multiple unions, and guardianship. App-specific data like permissions, profile drawers, images, and actions belongs on your person records or typed `cardProps`.
 
 ## Common Options
 

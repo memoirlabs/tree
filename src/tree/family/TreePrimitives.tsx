@@ -161,7 +161,7 @@ function FamilyTreeProvider<Person>({
         lineShape,
         spacing: layoutSpacing,
       }),
-    [collapsed, layoutSpacing, limits, lineShape, measurements, normalized, subject],
+    [collapsed, layoutSpacing, limits, lineShape, measurements, normalized],
   );
   const value = useMemo<FamilyTreePrimitiveContext<Person>>(
     () => ({

@@ -7,9 +7,9 @@
 [![npm](https://img.shields.io/npm/v/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 [![npm downloads](https://img.shields.io/npm/dw/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
 
-`@memoir/tree` renders relationship-aware trees from your app-owned data. You provide people, flat relationship facts, and optional custom cards. The package handles measured layout, SVG edges, panning, accessibility props, and a small CSS-variable skin.
+`@memoir/tree` renders relationship-aware trees from your app-owned data. You provide people, family graph facts or simple relationship helpers, and optional custom cards. The package handles measured layout, SVG edges, panning, accessibility props, and a small CSS-variable skin.
 
-It is not a graph editor, database, or form system. Your app keeps ownership of persistence, permissions, routing, editing flows, and card markup.
+It is not a graph editor, database, permission system, invite flow, router, or form system. Your app keeps ownership of persistence, permissions, routing, editing flows, data validation, and card markup.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/memoirlabs/tree/main/public/logo.png" alt="Memoir Labs Tree" width="720" />
@@ -28,6 +28,10 @@ import "@memoir/tree/styles.css";
 ```
 
 ## Family Tree
+
+### Simple mode
+
+Simple mode uses the `rel` helpers. It is good for small examples and simple trees, but it flattens parentage into relationship rows.
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
@@ -50,6 +54,97 @@ const relationships = [
 export function FamilyPanel() {
   return <FamilyTree people={people} subject="alex" relationships={relationships} />;
 }
+```
+
+### Graph mode
+
+Graph mode is recommended for production family-tree apps. It models partnership groups, per-parent child lineage, guardianship, and people who participate in multiple unions.
+
+```tsx
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+
+const graph: FamilyGraph<Person> = {
+  people,
+  subject: "riley",
+  partnershipGroups: [
+    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse" },
+  ],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley", relation: "biological" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley", relation: "biological" },
+  ],
+};
+
+export function FamilyPanel() {
+  return <FamilyTree graph={graph} />;
+}
+```
+
+### Multiple unions / blended family
+
+Children are attached to the group that produced or raised that child, so multiple spouse or co-parent groups do not collapse into one mixed union.
+
+```ts
+const graph: FamilyGraph<Person> = {
+  people,
+  subject: "alex",
+  partnershipGroups: [
+    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse", order: 1 },
+    { id: "alex-morgan", partners: ["alex", "morgan"], relation: "coparent", status: "former", order: 2 },
+  ],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
+    { id: "alex-casey", groupId: "alex-morgan", parentId: "alex", childId: "casey" },
+    { id: "morgan-casey", groupId: "alex-morgan", parentId: "morgan", childId: "casey" },
+  ],
+};
+```
+
+### Per-parent lineage
+
+Lineage belongs to each parent-child link, not to the whole union.
+
+```ts
+const graph: FamilyGraph<Person> = {
+  people,
+  subject: "riley",
+  partnershipGroups: [{ id: "alex-jordan", partners: ["alex", "jordan"] }],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley", relation: "biological" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley", relation: "step" },
+  ],
+};
+```
+
+### Guardianship
+
+Guardianship is separate from parentage, so a guardian is not rendered as a biological parent unless you model that link too.
+
+```ts
+const graph: FamilyGraph<Person> = {
+  people,
+  subject: "riley",
+  partnershipGroups: [],
+  parentChildLinks: [
+    { id: "alex-riley", parentId: "alex", childId: "riley", relation: "biological" },
+  ],
+  guardianshipLinks: [
+    { id: "morgan-riley-guardian", guardianId: "morgan", childId: "riley", relation: "guardian" },
+  ],
+};
+```
+
+Custom family cards receive placement metadata when graph mode is used:
+
+```ts
+placement?: {
+  partnershipGroupIds: string[];
+  parentChildLinkIds: string[];
+  guardianshipLinkIds: string[];
+  visibleRelationshipIds: string[];
+};
 ```
 
 ## Org Chart
@@ -120,12 +215,19 @@ The stylesheet is framework-free CSS using stable data attributes and CSS variab
 ## Public Surface
 
 - Components: `FamilyTree`, `OrgChart`, `DefaultFamilyCard`, `StyledFamilyCard`, `DefaultOrgCard`
-- Relationship helpers: `rel`, `org`
+- Relationship helpers: `rel`, `org`; `rel.children()` and `rel.parents()` are simple-mode helpers
+- Family graph helpers: `graphToFamilyRelationships`
 - Family helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`, `buildFamilyTreeLayout`
 - Org helpers: `createOrgChartIndex`, `collectOrgChartSubtree`, `buildOrgChartLayout`
 - Family primitives: `TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, `useTreeLayout`
 - Shared viewport/types: `TreeSurface`, `TreeApi`, `TreeViewport`, card prop and relationship types
 - Stylesheet: `@memoir/tree/styles.css`
+
+## Migrating from 0.3 to 0.4
+
+The old `people` + `subject` + `relationships` API still works as simple mode. For real family apps, move to `graph` so partnership groups and individual parent-child or guardianship links are explicit.
+
+Use `partnershipGroups` for spouse, partner, and co-parent clusters. Use `parentChildLinks` for each parent-to-child lineage, including biological, adoptive, step, foster, or unknown links. Use `guardianshipLinks` for guardians and foster guardians. Keep persistence IDs, permissions, invites, editing state, and validation in your app model; Tree only renders and lays out the graph you pass in.
 
 ## Local Development
 

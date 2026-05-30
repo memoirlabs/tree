@@ -1,6 +1,7 @@
 export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./FamilyTree";
 export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./TreePrimitives";
 export { rel } from "./family-rel";
+export { graphToFamilyRelationships } from "./family-graph";
 export { buildFamilyTreeLayout } from "./family-layout";
 export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./family-indexing";
 
@@ -16,10 +17,16 @@ export type {
   ComputedRelationLabel,
   ComputedRelationSide,
   FamilyCardProps,
+  FamilyGraph,
+  FamilyGraphPerson,
+  FamilyGuardianshipLink,
   FamilyGuardianshipRelationship,
   FamilyNeighborhoodLimits,
   FamilyParentageRelationship,
+  FamilyParentChildLink,
+  FamilyPartnershipGroup,
   FamilyPartnershipRelationship,
+  FamilyPlacementMetadata,
   FamilyRelationship,
   FamilyRelationshipStatus,
   FamilyTreeCardProps,

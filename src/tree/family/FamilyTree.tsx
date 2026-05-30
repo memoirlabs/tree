@@ -157,6 +157,7 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
   subject,
   people,
   relationships,
+  graph,
   ariaLabel,
   card,
   cardProps,
@@ -195,6 +196,7 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
       people={people}
       readOnly={readOnly}
       relationships={relationships}
+      graph={graph}
       selected={selected}
       spacing={spacing}
       subject={subject}

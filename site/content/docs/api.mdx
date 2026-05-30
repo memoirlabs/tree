@@ -6,8 +6,8 @@ description: Public exports from @memoir/tree.
 All public package exports come from `@memoir/tree`. Import the stylesheet separately from `@memoir/tree/styles.css`.
 
 ```tsx
-import { FamilyTree, OrgChart, org, rel } from "@memoir/tree";
-import type { FamilyCardProps, OrgCardProps, TreeApi, TreeViewport } from "@memoir/tree";
+import { FamilyTree, OrgChart, graphToFamilyRelationships, org, rel } from "@memoir/tree";
+import type { FamilyCardProps, FamilyGraph, OrgCardProps, TreeApi, TreeViewport } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 ```
 
@@ -21,11 +21,57 @@ import "@memoir/tree/styles.css";
 
 ## Family Props
 
-Required:
+Recommended graph-mode props:
+
+- `graph`: graph-shaped family facts with `people`, `subject`, `partnershipGroups`, `parentChildLinks`, and optional `guardianshipLinks`.
+
+Simple-mode alternative:
 
 - `people`: person records keyed by ID.
 - `subject`: person ID at the center of the family neighborhood.
-- `relationships`: flat parentage, partnership, and guardianship facts.
+- `relationships`: flat parentage, partnership, and guardianship facts from helpers like `rel.parents()`.
+
+Graph shape:
+
+```ts
+type PersonId = string;
+
+interface FamilyGraph<Person = unknown> {
+  people: Record<PersonId, Person>;
+  subject: PersonId;
+  partnershipGroups: FamilyPartnershipGroup[];
+  parentChildLinks: FamilyParentChildLink[];
+  guardianshipLinks?: FamilyGuardianshipLink[];
+}
+
+interface FamilyPartnershipGroup {
+  id: string;
+  partners: PersonId[];
+  relation?: "spouse" | "partner" | "coparent" | "unknown";
+  status?: "current" | "former" | "divorced" | "separated" | "unknown";
+  order?: number;
+}
+
+interface FamilyParentChildLink {
+  id?: string;
+  groupId?: string;
+  parentId: PersonId;
+  childId: PersonId;
+  relation?: "biological" | "adoptive" | "step" | "foster" | "unknown";
+  status?: "current" | "former" | "divorced" | "separated" | "unknown";
+  order?: number;
+}
+
+interface FamilyGuardianshipLink {
+  id?: string;
+  groupId?: string;
+  guardianId: PersonId;
+  childId: PersonId;
+  relation?: "guardian" | "foster" | "unknown";
+  status?: "current" | "former" | "unknown";
+  order?: number;
+}
+```
 
 Common optional props:
 
@@ -39,6 +85,17 @@ Common optional props:
 - `getPersonLabel`: accessible card label builder.
 - `viewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
+
+Family cards also receive graph placement metadata when available:
+
+```ts
+placement?: {
+  partnershipGroupIds: string[];
+  parentChildLinkIds: string[];
+  guardianshipLinkIds: string[];
+  visibleRelationshipIds: string[];
+};
+```
 
 ## Org Props
 
@@ -72,6 +129,8 @@ rel.guardians("riley", ["morgan"]);
 org.reports("ceo", ["vp-eng", "vp-sales"]);
 ```
 
+`rel.parents()` and `rel.children()` are simple-mode helpers. Prefer graph mode for production family-tree apps that need parent groups, multiple unions, per-parent lineage, or guardianship.
+
 Family relations:
 
 - Parentage: `biological`, `adoptive`, `step`, `foster`, `unknown`.
@@ -96,6 +155,7 @@ Pass `treeApiRef` to call:
 
 Use these in tests, previews, or custom renderers:
 
+- `graphToFamilyRelationships(graph)`
 - `createFamilyIndex(people, relationships)`
 - `collectFamilyNeighborhood(index, subject, limits?)`
 - `buildFamilyTreeLayout(input)`
@@ -114,6 +174,6 @@ Use `FamilyTree` and `OrgChart` unless you need to own the family render layers 
 Common exports include:
 
 - `PersonId`, `PeopleById`
-- `FamilyTreeProps`, `FamilyCardProps`, `FamilyRelationship`, `ComputedRelation`, `FamilyNeighborhoodLimits`
+- `FamilyTreeProps`, `FamilyCardProps`, `FamilyGraph`, `FamilyPartnershipGroup`, `FamilyParentChildLink`, `FamilyGuardianshipLink`, `FamilyRelationship`, `ComputedRelation`, `FamilyNeighborhoodLimits`
 - `OrgChartProps`, `OrgCardProps`, `OrgReportingRelationship`
 - `TreeApi`, `TreeViewport`, `TreeInteractionMode`, `TreeLineShape`
