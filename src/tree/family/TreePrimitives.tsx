@@ -9,8 +9,10 @@ import {
   TreeNodeLayer as CoreTreeNodeLayer,
   useCardMeasurements,
 } from "../core";
+import { normalizeFamilyInput } from "./family-graph";
 import { buildFamilyTreeLayout } from "./family-layout";
 import type {
+  FamilyGraph,
   FamilyCardProps,
   FamilyRelationship,
   FamilyTreeCardProps,
@@ -31,9 +33,10 @@ export type TreePrimitiveType = "family";
 
 export interface FamilyTreeProviderProps<Person> {
   type: "family";
-  subject: PersonId;
-  people: PeopleById<Person>;
-  relationships: FamilyRelationship[];
+  subject?: PersonId;
+  people?: PeopleById<Person>;
+  relationships?: FamilyRelationship[];
+  graph?: FamilyGraph<Person>;
   children: ReactNode;
   collapsed?: PersonId[];
   lineShape?: TreeLineShape;
@@ -125,6 +128,7 @@ function FamilyTreeProvider<Person>({
   subject,
   people,
   relationships,
+  graph,
   children,
   collapsed,
   lineShape = "orthogonal",
@@ -136,24 +140,28 @@ function FamilyTreeProvider<Person>({
   selected,
   spacing,
 }: FamilyTreeProviderProps<Person>): JSX.Element {
+  const normalized = useMemo(
+    () => normalizeFamilyInput({ graph, people, relationships, subject }),
+    [graph, people, relationships, subject],
+  );
   const containerRef = useRef<HTMLDivElement | null>(null);
   const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
   const layoutSpacing = useMemo(() => createLayoutSpacing(spacing), [spacing]);
-  const measureKey = createMeasurementKey(subject, relationships, collapsed);
+  const measureKey = createMeasurementKey(normalized.subject, normalized.relationships, collapsed);
   const measurements = useCardMeasurements(containerRef, measureKey);
   const layout = useMemo(
     () =>
       buildFamilyTreeLayout({
-        subject,
-        people,
-        relationships,
+        subject: normalized.subject,
+        people: normalized.people,
+        relationships: normalized.relationships,
         collapsed,
         measurements,
         limits,
         lineShape,
         spacing: layoutSpacing,
       }),
-    [collapsed, layoutSpacing, limits, lineShape, measurements, people, relationships, subject],
+    [collapsed, layoutSpacing, limits, lineShape, measurements, normalized, subject],
   );
   const value = useMemo<FamilyTreePrimitiveContext<Person>>(
     () => ({
@@ -167,9 +175,9 @@ function FamilyTreeProvider<Person>({
       onPersonClick,
       readOnly,
       selected,
-      subject,
+      subject: normalized.subject,
     }),
-    [collapsedIds, layout, lineShape, getPersonLabel, onAddRelationship, onPersonClick, readOnly, selected, subject],
+    [collapsedIds, layout, lineShape, getPersonLabel, onAddRelationship, onPersonClick, readOnly, selected, normalized.subject],
   );
 
   return <TreePrimitiveContextObject.Provider value={value as TreePrimitiveContext<unknown>}>{children}</TreePrimitiveContextObject.Provider>;
@@ -275,6 +283,7 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
         person: layoutCard.person,
         personId: layoutCard.personId,
         relation: layoutCard.relation,
+        placement: layoutCard.placement,
         selected: isSelected,
         focused: isFocused,
         collapsed: context.collapsedIds.has(layoutCard.personId),

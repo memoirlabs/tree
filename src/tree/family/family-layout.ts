@@ -1,9 +1,11 @@
 import { roundTreeCoordinate } from "../core";
 import { routeFamilyEdges } from "./family-edge-routing";
+import { normalizeFamilyInput } from "./family-graph";
 import { collectFamilyNeighborhood, createFamilyIndex } from "./family-indexing";
 import type { FamilyRelative } from "./family-indexing";
 import type { BuildFamilyTreeLayoutInput, FamilyTreeLayoutCard, FamilyTreeLayoutResult } from "./layout-types";
 import type { ComputedRelation, FamilyTreeSize, FamilyTreeSpacing, PersonId } from "./types";
+import type { FamilyPlacementMetadata, FamilyRelationship } from "./types";
 
 const defaultFallbackCardSize: FamilyTreeSize = {
   width: 220,
@@ -32,6 +34,63 @@ const getSize = (
   fallbackCardSize: FamilyTreeSize,
   personId: PersonId,
 ): FamilyTreeSize => measurements[personId] ?? fallbackCardSize;
+
+const emptyPlacement = (): FamilyPlacementMetadata => ({
+  partnershipGroupIds: [],
+  parentChildLinkIds: [],
+  guardianshipLinkIds: [],
+  visibleRelationshipIds: [],
+});
+
+const addUnique = (values: string[], value: string | undefined) => {
+  if (value && !values.includes(value)) values.push(value);
+};
+
+const createPlacementByPerson = (relationships: FamilyRelationship[]) => {
+  const placement = new Map<PersonId, FamilyPlacementMetadata>();
+  const get = (personId: PersonId) => {
+    const existing = placement.get(personId);
+    if (existing) return existing;
+    const next = emptyPlacement();
+    placement.set(personId, next);
+    return next;
+  };
+
+  for (const relationship of relationships) {
+    const relationshipId = relationship.id;
+    if (relationship.type === "partnership") {
+      for (const personId of relationship.partners) {
+        const personPlacement = get(personId);
+        addUnique(personPlacement.partnershipGroupIds, relationship.groupId ?? relationship.id);
+        addUnique(personPlacement.visibleRelationshipIds, relationshipId);
+      }
+      continue;
+    }
+
+    if (relationship.type === "parentage") {
+      for (const personId of [...relationship.parents, ...relationship.children]) {
+        const personPlacement = get(personId);
+        addUnique(personPlacement.partnershipGroupIds, relationship.groupId);
+        for (const linkId of relationship.parentChildLinkIds ?? []) {
+          addUnique(personPlacement.parentChildLinkIds, linkId);
+        }
+        addUnique(personPlacement.visibleRelationshipIds, relationshipId);
+      }
+      continue;
+    }
+
+    for (const personId of [...relationship.guardians, ...relationship.children]) {
+      const personPlacement = get(personId);
+      addUnique(personPlacement.partnershipGroupIds, relationship.groupId);
+      for (const linkId of relationship.guardianshipLinkIds ?? []) {
+        addUnique(personPlacement.guardianshipLinkIds, linkId);
+      }
+      addUnique(personPlacement.visibleRelationshipIds, relationshipId);
+    }
+  }
+
+  return placement;
+};
 
 const shouldHideCollapsedRelative = <Person>(
   relative: FamilyRelative<Person>,
@@ -97,12 +156,17 @@ export function buildFamilyTreeLayout<Person>({
   subject,
   people,
   relationships,
+  graph,
   collapsed = [],
   measurements = {},
   spacing: spacingOverrides,
   limits,
   lineShape = "orthogonal",
 }: BuildFamilyTreeLayoutInput<Person>): FamilyTreeLayoutResult<Person> {
+  const normalized = normalizeFamilyInput({ graph, people, relationships, subject });
+  subject = normalized.subject;
+  people = normalized.people;
+  relationships = normalized.relationships;
   const fallbackCardSize = defaultFallbackCardSize;
   const spacing = { ...defaultSpacing, ...spacingOverrides };
   const index = createFamilyIndex(people, relationships);
@@ -145,6 +209,7 @@ export function buildFamilyTreeLayout<Person>({
 
   let y = 0;
   const cards: FamilyTreeLayoutCard<Person>[] = [];
+  const placementByPerson = createPlacementByPerson(neighborhood.relationships);
 
   for (const row of visibleRows) {
     const rowCards = placeRow(row, y, measurements, fallbackCardSize, spacing.column);
@@ -177,6 +242,7 @@ export function buildFamilyTreeLayout<Person>({
   for (const card of cards) {
     card.x = roundTreeCoordinate(card.x + offsetX);
     card.y = roundTreeCoordinate(card.y + offsetY);
+    card.placement = placementByPerson.get(card.personId) ?? emptyPlacement();
   }
 
   return {
