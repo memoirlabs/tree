@@ -2,7 +2,9 @@ import type { TreeBounds, TreeCardSize, TreeLayoutCardBase, TreeLayoutEdge } fro
 import type {
   ComputedRelation,
   FamilyNeighborhoodLimits,
+  FamilyPlacementMetadata,
   FamilyRelationship,
+  FamilyGraph,
   FamilyTreeSpacing,
   PeopleById,
   PersonId,
@@ -11,6 +13,7 @@ import type {
 
 export interface FamilyTreeLayoutCard<Person> extends TreeLayoutCardBase<Person> {
   relation: ComputedRelation;
+  placement?: FamilyPlacementMetadata;
 }
 
 export type FamilyTreeLayoutEdge = TreeLayoutEdge;
@@ -26,7 +29,8 @@ export interface FamilyTreeLayoutResult<Person> {
 export interface BuildFamilyTreeLayoutInput<Person> {
   subject: PersonId;
   people: PeopleById<Person>;
-  relationships: FamilyRelationship[];
+  relationships?: FamilyRelationship[];
+  graph?: FamilyGraph<Person>;
   collapsed?: PersonId[];
   measurements?: Record<PersonId, TreeCardSize>;
   spacing?: Partial<FamilyTreeSpacing>;
