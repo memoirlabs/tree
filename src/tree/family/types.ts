@@ -26,11 +26,61 @@ export type PartnershipRelation = "spouse" | "partner" | "coparent" | "unknown";
 export type GuardianshipRelation = "guardian" | "foster" | "unknown";
 export type FamilyRelationshipStatus = "current" | "former" | "divorced" | "separated" | "unknown";
 
+export interface FamilyGraphPerson<Person = unknown> {
+  id: PersonId;
+  person: Person;
+}
+
+export interface FamilyPartnershipGroup {
+  id: string;
+  partners: PersonId[];
+  relation?: PartnershipRelation;
+  status?: FamilyRelationshipStatus;
+  order?: number;
+}
+
+export interface FamilyParentChildLink {
+  id?: string;
+  groupId?: string;
+  parentId: PersonId;
+  childId: PersonId;
+  relation?: ParentageRelation;
+  status?: FamilyRelationshipStatus;
+  order?: number;
+}
+
+export interface FamilyGuardianshipLink {
+  id?: string;
+  groupId?: string;
+  guardianId: PersonId;
+  childId: PersonId;
+  relation?: GuardianshipRelation;
+  status?: Extract<FamilyRelationshipStatus, "current" | "former" | "unknown">;
+  order?: number;
+}
+
+export interface FamilyGraph<Person = unknown> {
+  people: PeopleById<Person>;
+  subject: PersonId;
+  partnershipGroups: FamilyPartnershipGroup[];
+  parentChildLinks: FamilyParentChildLink[];
+  guardianshipLinks?: FamilyGuardianshipLink[];
+}
+
+export interface FamilyPlacementMetadata {
+  partnershipGroupIds: string[];
+  parentChildLinkIds: string[];
+  guardianshipLinkIds: string[];
+  visibleRelationshipIds: string[];
+}
+
 export interface FamilyParentageRelationship {
   id?: string;
   type: "parentage";
   parents: PersonId[];
   children: PersonId[];
+  groupId?: string;
+  parentChildLinkIds?: string[];
   relation?: ParentageRelation;
   status?: FamilyRelationshipStatus;
   order?: number;
@@ -40,6 +90,7 @@ export interface FamilyPartnershipRelationship {
   id?: string;
   type: "partnership";
   partners: PersonId[];
+  groupId?: string;
   relation?: PartnershipRelation;
   status?: FamilyRelationshipStatus;
   order?: number;
@@ -50,6 +101,8 @@ export interface FamilyGuardianshipRelationship {
   type: "guardianship";
   guardians: PersonId[];
   children: PersonId[];
+  groupId?: string;
+  guardianshipLinkIds?: string[];
   relation?: GuardianshipRelation;
   status?: FamilyRelationshipStatus;
   order?: number;
@@ -99,6 +152,7 @@ export interface FamilyCardProps<Person> extends HTMLAttributes<HTMLElement> {
   focused: boolean;
   collapsed: boolean;
   readOnly: boolean;
+  placement?: FamilyPlacementMetadata;
   onAddRelationship?: FamilyTreePersonHandler<Person>;
   className?: string;
   style?: CSSProperties;
@@ -121,9 +175,10 @@ export type FamilyTreeCardProps<Person, CardExtraProps extends object> =
   | ((person: Person, props: FamilyCardProps<Person>) => CardExtraProps);
 
 export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<string, never>> {
-  subject: PersonId;
-  people: PeopleById<Person>;
-  relationships: FamilyRelationship[];
+  subject?: PersonId;
+  people?: PeopleById<Person>;
+  relationships?: FamilyRelationship[];
+  graph?: FamilyGraph<Person>;
   ariaLabel?: string;
   card?: ComponentType<FamilyCardProps<Person> & CardExtraProps>;
   cardProps?: FamilyTreeCardProps<Person, CardExtraProps>;
