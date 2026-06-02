@@ -1,4 +1,4 @@
-# Memoir Tree 0.4: Families Are Not Flat
+# Memoir Tree 0.4: A Better Map for Modern Families
 
 Today we are releasing `@memoir/tree@0.4.0`, a new version of our lightweight family-tree renderer with graph mode: a better model for real family structure, multiple parents, guardianship, blended families, and the relationships that surround memory. At Memoir Labs, we are building the family memory layer: a place where stories, people, relationships, and context can live together over time.
 
