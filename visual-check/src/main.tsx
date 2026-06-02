@@ -28,7 +28,7 @@ const relationships = [
   rel.children(["subject", "spouse"], ["childA", "childB"], { id: "children" }),
 ];
 
-function CheckCard({ person, personId, relation, ...props }: FamilyCardProps<Person>) {
+function CheckCard({ person, relation, ...props }: FamilyCardProps<Person>) {
   const cardProps = props as HTMLAttributes<HTMLElement>;
   const relationshipLabel = relation.label === "self" ? "you" : relation.label;
 
