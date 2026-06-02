@@ -47,7 +47,7 @@ function getDefaultViewport(
   initialViewport: TreeInitialViewport | undefined,
   defaultViewport: Partial<TreeViewport> | undefined,
 ): TreeViewport {
-  if (initialViewport && typeof initialViewport === "object" && !("mode" in initialViewport)) {
+  if (typeof initialViewport === "object" && initialViewport !== null && !("mode" in initialViewport)) {
     return {
       x: initialViewport.x ?? 0,
       y: initialViewport.y ?? 0,

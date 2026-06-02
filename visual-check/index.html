@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@memoir/tree visual check</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <pre id="error-log" style="white-space: pre-wrap"></pre>
+    <script>
+      const errorLog = document.getElementById("error-log");
+      window.addEventListener("error", (event) => {
+        errorLog.textContent += `${event.message}\n${event.filename}:${event.lineno}:${event.colno}\n`;
+      });
+      window.addEventListener("unhandledrejection", (event) => {
+        errorLog.textContent += `${event.reason}\n`;
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
