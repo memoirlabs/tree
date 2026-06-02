@@ -13,6 +13,10 @@ const cardById = <Person>(cards: FamilyTreeLayoutCard<Person>[]) =>
   new Map<PersonId, FamilyTreeLayoutCard<Person>>(cards.map((card) => [card.personId, card]));
 
 const partnershipKey = (a: PersonId, b: PersonId) => [a, b].toSorted().join("|");
+const parentageGroupKey = (parents: PersonId[], children: PersonId[], relation: string | undefined) =>
+  `${parents.toSorted().join("|")}->${children.toSorted().join("|")}:${relation ?? "biological"}`;
+const slashMarkerPath = (x: number, y: number) =>
+  `M ${roundTreeCoordinate(x - 5)} ${roundTreeCoordinate(y + 10)} L ${roundTreeCoordinate(x + 5)} ${roundTreeCoordinate(y - 10)}`;
 
 export interface RouteFamilyEdgesOptions {
   lineShape?: TreeLineShape;
@@ -27,6 +31,7 @@ export function routeFamilyEdges<Person>(
   const edges: FamilyTreeLayoutEdge[] = [];
   const lineShape = options.lineShape ?? "orthogonal";
   const drawnParentBars = new Set<string>();
+  const drawnParentageGroups = new Set<string>();
   const drawnPersonEdges = new Set<string>();
 
   const drawParentBar = (
@@ -45,6 +50,22 @@ export function routeFamilyEdges<Person>(
       sourceId: first.personId,
       targetId: second.personId,
     });
+    if (status === "separated" || status === "divorced") {
+      const markerCount = status === "divorced" ? 2 : 1;
+      const markerCenter = (first.x + first.width + second.x) / 2;
+      const markerOffset = markerCount === 2 ? 5 : 0;
+      for (let markerIndex = 0; markerIndex < markerCount; markerIndex += 1) {
+        const markerX = markerCenter + (markerIndex === 0 ? -markerOffset : markerOffset);
+        edges.push({
+          id: `${id}-${status}-marker-${markerIndex + 1}`,
+          path: slashMarkerPath(markerX, y),
+          kind: `${status}-marker`,
+          status,
+          sourceId: first.personId,
+          targetId: second.personId,
+        });
+      }
+    }
     drawnParentBars.add(partnershipKey(first.personId, second.personId));
     return { x: (first.x + first.width + second.x) / 2, y };
   };
@@ -66,6 +87,63 @@ export function routeFamilyEdges<Person>(
       drawnPersonEdges.add(additionalKey);
     }
     edges.push(edge);
+  };
+  const addParentageGroupEdge = ({
+    children,
+    id,
+    kind,
+    parents,
+    start,
+    status,
+  }: {
+    children: FamilyTreeLayoutCard<Person>[];
+    id: string;
+    kind: string;
+    parents: PersonId[];
+    start: { x: number; y: number };
+    status: FamilyRelationship["status"];
+  }) => {
+    if (children.length === 0) return;
+    const key = parentageGroupKey(parents, children.map((child) => child.personId), kind);
+    if (drawnParentageGroups.has(key)) return;
+    drawnParentageGroups.add(key);
+
+    if (children.length === 1) {
+      const child = children[0];
+      if (!child) return;
+      addPersonEdge({
+        id,
+        path: createTreeEdgePath(start, topCenterPoint(child), lineShape),
+        kind,
+        status,
+        sourceId: parents[0],
+        targetId: child.personId,
+      });
+      return;
+    }
+
+    const childTopPoints = children.map(topCenterPoint);
+    const minChildX = Math.min(...childTopPoints.map((point) => point.x));
+    const maxChildX = Math.max(...childTopPoints.map((point) => point.x));
+    const minChildY = Math.min(...childTopPoints.map((point) => point.y));
+    const busY = roundTreeCoordinate((start.y + minChildY) / 2);
+    const path = [
+      `M ${roundTreeCoordinate(start.x)} ${roundTreeCoordinate(start.y)} L ${roundTreeCoordinate(start.x)} ${busY}`,
+      `L ${roundTreeCoordinate(minChildX)} ${busY} L ${roundTreeCoordinate(maxChildX)} ${busY}`,
+      ...childTopPoints.map(
+        (point) =>
+          `M ${roundTreeCoordinate(point.x)} ${busY} L ${roundTreeCoordinate(point.x)} ${roundTreeCoordinate(point.y)}`,
+      ),
+    ].join(" ");
+
+    edges.push({
+      id,
+      path,
+      kind,
+      status,
+      sourceId: parents[0],
+      targetId: children[0]?.personId,
+    });
   };
 
   relationships.forEach((relationship, relationshipIndex) => {
@@ -99,20 +177,16 @@ export function routeFamilyEdges<Person>(
                   relationship.relation ?? "biological",
                   relationship.status,
                 );
-            for (const childId of relationship.children) {
-              const childCard = cardsById.get(childId);
-              if (!childCard) continue;
-              addPersonEdge(
-                {
-                  id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${parentAId}-${parentBId}-${childId}-${relationship.relation ?? "biological"}`,
-                  path: createTreeEdgePath(join, topCenterPoint(childCard), lineShape),
-                  kind: relationship.relation ?? "biological",
-                  status: relationship.status,
-                  sourceId: parentAId,
-                  targetId: childId,
-                },
-              );
-            }
+            addParentageGroupEdge({
+              children: relationship.children
+                .map((childId) => cardsById.get(childId))
+                .filter((childCard): childCard is FamilyTreeLayoutCard<Person> => Boolean(childCard)),
+              id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${parentAId}-${parentBId}-${relationship.relation ?? "biological"}`,
+              kind: relationship.relation ?? "biological",
+              parents: [parentAId, parentBId],
+              start: join,
+              status: relationship.status,
+            });
             return;
           }
         }
@@ -121,18 +195,16 @@ export function routeFamilyEdges<Person>(
       for (const parentId of relationship.parents) {
         const parentCard = cardsById.get(parentId);
         if (!parentCard) continue;
-        for (const childId of relationship.children) {
-          const childCard = cardsById.get(childId);
-          if (!childCard) continue;
-          addPersonEdge({
-            id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${parentId}-${childId}-${relationship.relation ?? "biological"}`,
-            path: createTreeEdgePath(bottomCenterPoint(parentCard), topCenterPoint(childCard), lineShape),
-            kind: relationship.relation ?? "biological",
-            status: relationship.status,
-            sourceId: parentId,
-            targetId: childId,
-          });
-        }
+        addParentageGroupEdge({
+          children: relationship.children
+            .map((childId) => cardsById.get(childId))
+            .filter((childCard): childCard is FamilyTreeLayoutCard<Person> => Boolean(childCard)),
+          id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${parentId}-${relationship.relation ?? "biological"}`,
+          kind: relationship.relation ?? "biological",
+          parents: [parentId],
+          start: bottomCenterPoint(parentCard),
+          status: relationship.status,
+        });
       }
       return;
     }

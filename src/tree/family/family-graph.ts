@@ -20,6 +20,13 @@ const parentChildLinkId = (parentId: PersonId, childId: PersonId, index: number)
 const guardianshipLinkId = (guardianId: PersonId, childId: PersonId, index: number) =>
   `guardian-${guardianId}-${childId}-${index}`;
 
+const groupedParentageId = (
+  groupId: string | undefined,
+  childId: PersonId,
+  relation: string,
+  index: number,
+) => `parentage-${groupId ?? "ungrouped"}-${childId}-${relation}-${index}`;
+
 export function graphToFamilyRelationships<Person>(graph: FamilyGraph<Person>): FamilyRelationship[] {
   const partnerships: FamilyPartnershipRelationship[] = graph.partnershipGroups.map((group) => ({
     id: group.id,
@@ -31,19 +38,38 @@ export function graphToFamilyRelationships<Person>(graph: FamilyGraph<Person>): 
     order: group.order,
   }));
 
-  const parentage: FamilyParentageRelationship[] = graph.parentChildLinks.map((link, index) => {
+  const parentageGroups = new Map<string, FamilyParentageRelationship>();
+  const parentage: FamilyParentageRelationship[] = [];
+
+  graph.parentChildLinks.forEach((link, index) => {
     const id = link.id ?? parentChildLinkId(link.parentId, link.childId, index);
-    return {
+    const relation = link.relation ?? "biological";
+    const key = link.groupId
+      ? `${link.groupId}:${relation}:${link.status ?? ""}:${link.order ?? ""}`
+      : id;
+    const existing = parentageGroups.get(key);
+    if (existing) {
+      if (!existing.parents.includes(link.parentId)) existing.parents.push(link.parentId);
+      if (!existing.children.includes(link.childId)) existing.children.push(link.childId);
+      existing.parentChildLinkIds = [...(existing.parentChildLinkIds ?? []), id];
+      return;
+    }
+    const relationship = {
       id,
       type: "parentage",
       parents: [link.parentId],
       children: [link.childId],
       groupId: link.groupId,
       parentChildLinkIds: [id],
-      relation: link.relation ?? "biological",
+      relation,
       status: link.status,
       order: link.order,
-    };
+    } satisfies FamilyParentageRelationship;
+    if (link.groupId) {
+      relationship.id = groupedParentageId(link.groupId, "children", relation, parentageGroups.size);
+    }
+    parentageGroups.set(key, relationship);
+    parentage.push(relationship);
   });
 
   const guardianship: FamilyGuardianshipRelationship[] = (graph.guardianshipLinks ?? []).map((link, index) => {

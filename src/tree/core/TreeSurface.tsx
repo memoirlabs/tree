@@ -6,6 +6,7 @@ import { useCallback, useImperativeHandle, useLayoutEffect, useRef } from "react
 import type {
   PersonId,
   TreeApi,
+  TreeInitialViewport,
   TreeInteractionMode,
   TreeLayoutCardBase,
   TreeStylePreset,
@@ -33,6 +34,98 @@ const defaultTreeSurfaceStyle: CSSProperties = {
   width: "100%",
 };
 
+function clampViewport(container: HTMLDivElement, viewport: TreeViewport): TreeViewport {
+  const maxLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+  const maxTop = Math.max(0, container.scrollHeight - container.clientHeight);
+  return {
+    x: Math.min(Math.max(0, viewport.x), maxLeft),
+    y: Math.min(Math.max(0, viewport.y), maxTop),
+  };
+}
+
+function getDefaultViewport(
+  initialViewport: TreeInitialViewport | undefined,
+  defaultViewport: Partial<TreeViewport> | undefined,
+): TreeViewport {
+  if (initialViewport && typeof initialViewport === "object" && !("mode" in initialViewport)) {
+    return {
+      x: initialViewport.x ?? 0,
+      y: initialViewport.y ?? 0,
+    };
+  }
+  return {
+    x: defaultViewport?.x ?? 0,
+    y: defaultViewport?.y ?? 0,
+  };
+}
+
+function getCenteredCanvasViewport(container: HTMLDivElement): TreeViewport {
+  return clampViewport(container, {
+    x: (container.scrollWidth - container.clientWidth) / 2,
+    y: (container.scrollHeight - container.clientHeight) / 2,
+  });
+}
+
+function getCenteredCardViewport(
+  container: HTMLDivElement,
+  card: TreeLayoutCardBase<unknown>,
+): TreeViewport {
+  return clampViewport(container, {
+    x: card.x + card.width / 2 - container.clientWidth / 2,
+    y: card.y + card.height / 2 - container.clientHeight / 2,
+  });
+}
+
+function getInitialViewportKey(
+  initialViewport: TreeInitialViewport | undefined,
+  defaultViewport: Partial<TreeViewport> | undefined,
+  subject: PersonId | undefined,
+): string {
+  if (!initialViewport) {
+    return `center-canvas:${subject ?? ""}:${defaultViewport?.x ?? ""}:${defaultViewport?.y ?? ""}`;
+  }
+  if (initialViewport === "canvas") return "center-canvas";
+  if (initialViewport === "subject") return `center-root:${subject ?? ""}`;
+  if (!("mode" in initialViewport)) {
+    return `position:${initialViewport.x ?? 0}:${initialViewport.y ?? 0}`;
+  }
+  if (initialViewport.mode === "center-person") {
+    return `center-person:${initialViewport.personId}`;
+  }
+  return initialViewport.mode === "center-root"
+    ? `center-root:${subject ?? ""}`
+    : initialViewport.mode;
+}
+
+function resolveInitialViewport({
+  cards,
+  container,
+  defaultViewport,
+  initialViewport,
+  subject,
+}: {
+  cards: TreeLayoutCardBase<unknown>[];
+  container: HTMLDivElement;
+  defaultViewport: Partial<TreeViewport> | undefined;
+  initialViewport: TreeInitialViewport | undefined;
+  subject: PersonId | undefined;
+}): TreeViewport {
+  if (!initialViewport) return getCenteredCanvasViewport(container);
+  if (initialViewport === "canvas") return getCenteredCanvasViewport(container);
+  if (initialViewport === "subject") {
+    const card = subject ? cards.find((candidate) => candidate.personId === subject) : undefined;
+    return card ? getCenteredCardViewport(container, card) : getCenteredCanvasViewport(container);
+  }
+  if (!("mode" in initialViewport)) {
+    return clampViewport(container, getDefaultViewport(initialViewport, defaultViewport));
+  }
+  if (initialViewport.mode === "center-canvas") return getCenteredCanvasViewport(container);
+
+  const personId = initialViewport.mode === "center-root" ? subject : initialViewport.personId;
+  const card = personId ? cards.find((candidate) => candidate.personId === personId) : undefined;
+  return card ? getCenteredCardViewport(container, card) : getCenteredCanvasViewport(container);
+}
+
 export interface TreeSurfaceProps {
   bounds: {
     width: number;
@@ -43,6 +136,7 @@ export interface TreeSurfaceProps {
   className?: string;
   ariaLabel?: string;
   defaultViewport?: Partial<TreeViewport>;
+  initialViewport?: TreeInitialViewport;
   interactionMode?: TreeInteractionMode;
   onViewportChange?: (viewport: TreeViewport) => void;
   treeApiRef?: Ref<TreeApi>;
@@ -60,6 +154,7 @@ export function TreeSurface({
   className,
   ariaLabel = "Tree",
   defaultViewport,
+  initialViewport,
   interactionMode = "pan",
   onViewportChange,
   style,
@@ -72,10 +167,14 @@ export function TreeSurface({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastCenteredKeyRef = useRef<string | null>(null);
   const lastViewportRef = useRef<TreeViewport>({
-    x: defaultViewport?.x ?? 0,
-    y: defaultViewport?.y ?? 0,
+    x: getDefaultViewport(initialViewport, defaultViewport).x,
+    y: getDefaultViewport(initialViewport, defaultViewport).y,
   });
-  const centerKey = `${interactionMode}:${subject ?? ""}:${bounds.width}:${bounds.height}`;
+  const initialViewportKey = getInitialViewportKey(initialViewport, defaultViewport, subject);
+  const measurementKey = cards
+    .map((card) => `${card.personId}:${card.x}:${card.y}:${card.width}:${card.height}`)
+    .join("|");
+  const centerKey = `${interactionMode}:${initialViewportKey}:${bounds.width}:${bounds.height}:${measurementKey}`;
   const dragRef = useRef<{
     pointerId: number;
     scrollLeft: number;
@@ -106,41 +205,52 @@ export function TreeSurface({
     }
     if (lastCenteredKeyRef.current === centerKey) return;
 
-    const maxLeft = container.scrollWidth - container.clientWidth;
-    const maxTop = container.scrollHeight - container.clientHeight;
-    if (maxLeft > 0) container.scrollLeft = maxLeft / 2;
-    if (maxTop > 0) container.scrollTop = maxTop / 2;
+    const nextViewport = resolveInitialViewport({
+      cards,
+      container,
+      defaultViewport,
+      initialViewport,
+      subject,
+    });
+    container.scrollLeft = nextViewport.x;
+    container.scrollTop = nextViewport.y;
     lastCenteredKeyRef.current = centerKey;
     updateViewport({ x: container.scrollLeft, y: container.scrollTop });
-  }, [centerKey, interactionMode, updateViewport, viewport]);
+  }, [cards, centerKey, defaultViewport, initialViewport, interactionMode, subject, updateViewport, viewport]);
 
   const centerPerson = useCallback(
     (personId: PersonId) => {
       const container = containerRef.current;
       const card = cards.find((candidate) => candidate.personId === personId);
       if (!container || !card) return;
-      const nextX = card.x + card.width / 2 - container.clientWidth / 2;
-      const nextY = card.y + card.height / 2 - container.clientHeight / 2;
-      container.scrollLeft = Math.max(0, nextX);
-      container.scrollTop = Math.max(0, nextY);
+      const nextViewport = getCenteredCardViewport(container, card);
+      container.scrollLeft = nextViewport.x;
+      container.scrollTop = nextViewport.y;
       updateViewport({ x: container.scrollLeft, y: container.scrollTop });
     },
     [cards, updateViewport],
   );
 
   const resetViewport = useCallback(() => {
-    const nextViewport = {
-      x: defaultViewport?.x ?? 0,
-      y: defaultViewport?.y ?? 0,
-    };
     const container = containerRef.current;
+    const nextViewport = container
+      ? initialViewport
+        ? resolveInitialViewport({
+            cards,
+            container,
+            defaultViewport,
+            initialViewport,
+            subject,
+          })
+        : clampViewport(container, getDefaultViewport(initialViewport, defaultViewport))
+      : getDefaultViewport(initialViewport, defaultViewport);
     if (container) {
       container.scrollLeft = nextViewport.x;
       container.scrollTop = nextViewport.y;
     }
     lastCenteredKeyRef.current = null;
     updateViewport(nextViewport);
-  }, [defaultViewport?.x, defaultViewport?.y, updateViewport]);
+  }, [cards, defaultViewport, initialViewport, subject, updateViewport]);
 
   useImperativeHandle(
     treeApiRef,

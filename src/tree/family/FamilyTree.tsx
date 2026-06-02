@@ -110,7 +110,7 @@ export function StyledFamilyCard<Person>({
   relation,
   selected: _selected,
   shadow,
-  focused,
+  focused: _focused,
   collapsed: _collapsed,
   readOnly: _readOnly,
   onAddRelationship: _onAddRelationship,
@@ -144,7 +144,7 @@ export function StyledFamilyCard<Person>({
         />
       ) : null}
       <strong style={defaultNameStyle}>{getDefaultPersonLabel(person, personId)}</strong>
-      <small style={defaultRelationStyle}>{focused && relation.label === "self" ? "root node" : relation.label}</small>
+      <small style={defaultRelationStyle}>{relation.label}</small>
     </article>
   );
 }
@@ -169,6 +169,7 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
   lineShape = "orthogonal",
   viewport,
   defaultViewport,
+  initialViewport,
   onViewportChange,
   spacing,
   limits,
@@ -205,6 +206,7 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
         ariaLabel={ariaLabel}
         className={className}
         defaultViewport={defaultViewport}
+        initialViewport={initialViewport}
         interactionMode={interactionMode}
         onViewportChange={onViewportChange}
         style={style}

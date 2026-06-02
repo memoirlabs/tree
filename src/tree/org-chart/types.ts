@@ -3,6 +3,7 @@ import type {
   PeopleById,
   PersonId,
   TreeApi,
+  TreeInitialViewport,
   TreeCardProps,
   TreeCardSize,
   TreeInteractionMode,
@@ -19,6 +20,7 @@ export type {
   PeopleById,
   PersonId,
   TreeApi,
+  TreeInitialViewport,
   TreeInteractionMode,
   TreeLineShape,
   TreeStylePreset,
@@ -107,6 +109,7 @@ export interface OrgChartProps<Person, CardExtraProps extends object = Record<st
   lineShape?: TreeLineShape;
   viewport?: TreeViewport;
   defaultViewport?: Partial<TreeViewport>;
+  initialViewport?: TreeInitialViewport;
   onViewportChange?: (viewport: TreeViewport) => void;
   spacing?: Partial<OrgChartSpacing>;
   maxDepth?: number | null;

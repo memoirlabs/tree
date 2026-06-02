@@ -134,7 +134,7 @@ function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProp
   return (
     <article {...rootProps}>
       <strong>{person.name}</strong>
-      <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
+      <small>{relation.label}</small>
     </article>
   );
 }

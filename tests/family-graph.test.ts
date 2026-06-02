@@ -27,13 +27,40 @@ test("graph mode renders a simple two-parent family", () => {
   };
 
   const layout = buildFamilyTreeLayout({ graph, subject: graph.subject, people: graph.people });
+  const childEdges = layout.edges.filter((edge) => edge.targetId === "casey");
 
   expect(layout.cards.map((card) => card.personId)).toEqual(["alex", "blair", "casey"]);
-  expect(layout.edges.map((edge) => edge.id)).toEqual(expect.arrayContaining(["alex-blair", "alex-casey-alex-blair-alex-casey-biological", "blair-casey-alex-blair-blair-casey-biological"]));
+  expect(layout.edges.map((edge) => edge.id)).toEqual(expect.arrayContaining(["alex-blair"]));
+  expect(childEdges).toHaveLength(1);
+  expect(childEdges[0]?.id).toContain("parentage-alex-blair-children-biological");
   expect(layout.cards.find((card) => card.personId === "casey")?.placement).toMatchObject({
     partnershipGroupIds: ["alex-blair"],
     parentChildLinkIds: ["alex-casey", "blair-casey"],
   });
+});
+
+test("graph mode routes siblings through a shared top bus", () => {
+  const layout = buildFamilyTreeLayout({
+    graph: {
+      people,
+      subject: "casey",
+      partnershipGroups: [{ id: "alex-blair", partners: ["alex", "blair"] }],
+      parentChildLinks: [
+        { id: "alex-casey", groupId: "alex-blair", parentId: "alex", childId: "casey" },
+        { id: "blair-casey", groupId: "alex-blair", parentId: "blair", childId: "casey" },
+        { id: "alex-finn", groupId: "alex-blair", parentId: "alex", childId: "finn" },
+        { id: "blair-finn", groupId: "alex-blair", parentId: "blair", childId: "finn" },
+      ],
+    },
+    subject: "casey",
+    people,
+  });
+
+  const parentageEdge = layout.edges.find((edge) => edge.id.includes("parentage-alex-blair"));
+
+  expect(parentageEdge?.path).toContain(" M ");
+  expect(parentageEdge?.targetId).toBe("casey");
+  expect(layout.edges.filter((edge) => edge.targetId === "casey")).toHaveLength(1);
 });
 
 test("graph mode renders a single-parent family", () => {
@@ -75,6 +102,34 @@ test("graph mode keeps two spouses and two child groups distinct", () => {
   expect(edgeIds).toContain("alex-drew");
   expect(layout.cards.find((card) => card.personId === "casey")?.placement?.partnershipGroupIds).toEqual(["alex-blair"]);
   expect(layout.cards.find((card) => card.personId === "ellis")?.placement?.partnershipGroupIds).toEqual(["alex-drew"]);
+});
+
+test("graph mode places multiple partners around the subject to avoid crossing cards", () => {
+  const layout = buildFamilyTreeLayout({
+    graph: {
+      people,
+      subject: "alex",
+      partnershipGroups: [
+        { id: "alex-blair", partners: ["alex", "blair"], order: 1 },
+        { id: "alex-drew", partners: ["alex", "drew"], order: 2 },
+      ],
+      parentChildLinks: [
+        { id: "alex-casey", groupId: "alex-blair", parentId: "alex", childId: "casey", order: 1 },
+        { id: "blair-casey", groupId: "alex-blair", parentId: "blair", childId: "casey", order: 1 },
+        { id: "alex-ellis", groupId: "alex-drew", parentId: "alex", childId: "ellis", order: 2 },
+        { id: "drew-ellis", groupId: "alex-drew", parentId: "drew", childId: "ellis", order: 2 },
+      ],
+    },
+    subject: "alex",
+    people,
+  });
+
+  const alex = layout.cards.find((card) => card.personId === "alex");
+  const blair = layout.cards.find((card) => card.personId === "blair");
+  const drew = layout.cards.find((card) => card.personId === "drew");
+
+  expect(blair?.x).toBeLessThan(alex?.x ?? 0);
+  expect(drew?.x).toBeGreaterThan(alex?.x ?? 0);
 });
 
 test("graph mode keeps biological and step lineage per parent", () => {

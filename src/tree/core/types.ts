@@ -49,6 +49,21 @@ export interface TreeViewport {
   y: number;
 }
 
+export type TreeInitialViewport =
+  | "canvas"
+  | "subject"
+  | Partial<TreeViewport>
+  | {
+      mode: "center-canvas";
+    }
+  | {
+      mode: "center-person";
+      personId: PersonId;
+    }
+  | {
+      mode: "center-root";
+    };
+
 export interface TreeApi {
   centerPerson: (personId: PersonId) => void;
   fitToSubject: () => void;
@@ -71,6 +86,7 @@ export interface TreeViewportProps {
   ariaLabel?: string;
   className?: string;
   defaultViewport?: Partial<TreeViewport>;
+  initialViewport?: TreeInitialViewport;
   interactionMode?: TreeInteractionMode;
   onViewportChange?: (viewport: TreeViewport) => void;
   style?: CSSProperties;

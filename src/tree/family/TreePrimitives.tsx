@@ -22,6 +22,7 @@ import type {
   PeopleById,
   PersonId,
   TreeApi,
+  TreeInitialViewport,
   TreeInteractionMode,
   TreeLineShape,
   TreeStylePreset,
@@ -72,6 +73,7 @@ export interface TreeCanvasProps {
   ariaLabel?: string;
   className?: string;
   defaultViewport?: Partial<TreeViewport>;
+  initialViewport?: TreeInitialViewport;
   interactionMode?: TreeInteractionMode;
   onViewportChange?: (viewport: TreeViewport) => void;
   style?: CSSProperties;
@@ -196,6 +198,7 @@ export function TreeCanvas({
   ariaLabel,
   className,
   defaultViewport,
+  initialViewport,
   interactionMode = "pan",
   onViewportChange,
   style,
@@ -214,6 +217,7 @@ export function TreeCanvas({
       ariaLabel={ariaLabel}
       containerRef={context.containerRef}
       defaultViewport={defaultViewport}
+      initialViewport={initialViewport}
       interactionMode={interactionMode}
       onViewportChange={onViewportChange}
       style={style}
@@ -278,7 +282,7 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
       const isSelected = context.selected === layoutCard.personId;
       const isFocused = context.selected ? isSelected : layoutCard.personId === context.subject;
       const personLabel = context.getPersonLabel?.(layoutCard.person, layoutCard.personId) ?? layoutCard.personId;
-      const relationLabel = isFocused && layoutCard.personId === context.subject ? "root node" : layoutCard.relation.label;
+      const relationLabel = isFocused && layoutCard.personId === context.subject ? "subject" : layoutCard.relation.label;
       const treeCardProps: FamilyCardProps<Person> = {
         person: layoutCard.person,
         personId: layoutCard.personId,

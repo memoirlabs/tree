@@ -40,7 +40,7 @@ function DemoProfileCard({
     <article {...props} className={`memoir-demo-card memoir-demo-card--${person.tone ?? "cream"}`}>
       <strong>{person.name}</strong>
       <small>{person.role}</small>
-      <span>{relation.label === "self" ? "root node" : relation.label}</span>
+      <span>{relation.label}</span>
     </article>
   );
 }

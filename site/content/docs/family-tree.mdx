@@ -75,7 +75,7 @@ function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProp
   return (
     <article {...rootProps}>
       <strong>{person.name}</strong>
-      <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
+      <small>{relation.label}</small>
     </article>
   );
 }
@@ -119,4 +119,4 @@ These helpers are simple-mode helpers. `FamilyTree` also accepts graph mode for 
 
 Use `selected` for app-owned selection, `collapsed` to hide deeper ancestor or descendant rows, and `limits` to control visible-relative caps.
 
-For viewport controls, pass `treeApiRef`. Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
+Use `initialViewport="subject"` to center the subject after cards are measured. For viewport controls, pass `treeApiRef`. Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.

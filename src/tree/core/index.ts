@@ -19,6 +19,7 @@ export type {
   TreeCardProps,
   TreeCardRootProps,
   TreeCardSize,
+  TreeInitialViewport,
   TreeInteractionMode,
   TreeLayoutCardBase,
   TreeLayoutEdge,

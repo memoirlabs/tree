@@ -53,6 +53,20 @@ test("emits visible relationship edges", () => {
   expect(layout.edges.every((edge) => edge.path.startsWith("M "))).toBe(true);
 });
 
+test("marks separated and divorced partnership lines", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships: [
+      rel.partner("henry", "emma", { status: "separated" }),
+      rel.partner("henry", "carol", { status: "divorced" }),
+    ],
+  });
+
+  expect(layout.edges.filter((edge) => edge.kind === "separated-marker")).toHaveLength(1);
+  expect(layout.edges.filter((edge) => edge.kind === "divorced-marker")).toHaveLength(2);
+});
+
 test("accepts custom family spacing and curved edge routing", () => {
   const compact = buildFamilyTreeLayout({
     subject: "henry",

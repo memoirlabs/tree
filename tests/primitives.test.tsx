@@ -113,13 +113,14 @@ describe("tree primitives", () => {
         relationships={relationships}
         card={FamilyCard}
         subject="henry"
+        initialViewport="subject"
         onPersonClick={() => undefined}
       />,
     );
 
     expect(markup).toContain("Henry");
     expect(markup).toContain("aria-label=\"Henry family map\"");
-    expect(markup).toContain("aria-label=\"Henry, root node\"");
+    expect(markup).toContain("aria-label=\"Henry, subject\"");
     expect(markup).toContain("data-focused");
     expect(markup).not.toContain("data-selected");
     expect(markup).toContain("data-tree-subject=\"henry\"");
@@ -181,7 +182,7 @@ describe("tree primitives", () => {
     );
 
     expect(markup).toContain("Henry");
-    expect(markup).toContain("root node");
+    expect(markup).toContain("self");
     expect(markup).not.toContain("selected</span>");
     expect(markup).toContain("border-radius:16px");
     expect(markup).toContain("box-shadow:var(--tree-card-shadow, 4px 4px 0 #030201)");

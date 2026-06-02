@@ -46,6 +46,23 @@ const addUnique = (values: string[], value: string | undefined) => {
   if (value && !values.includes(value)) values.push(value);
 };
 
+const createSubjectRow = <Person>(neighborhood: {
+  siblings: FamilyRelative<Person>[];
+  halfSiblings: FamilyRelative<Person>[];
+  self: FamilyRelative<Person>;
+  partners: FamilyRelative<Person>[];
+}) => {
+  const partners = uniqueRelatives(neighborhood.partners);
+  const splitIndex = Math.floor(partners.length / 2);
+  return uniqueRelatives([
+    ...neighborhood.siblings,
+    ...neighborhood.halfSiblings,
+    ...partners.slice(0, splitIndex),
+    neighborhood.self,
+    ...partners.slice(splitIndex),
+  ]);
+};
+
 const createPlacementByPerson = (relationships: FamilyRelationship[]) => {
   const placement = new Map<PersonId, FamilyPlacementMetadata>();
   const get = (personId: PersonId) => {
@@ -182,12 +199,7 @@ export function buildFamilyTreeLayout<Person>({
   const rows = [
     uniqueRelatives(neighborhood.grandparents),
     uniqueRelatives(neighborhood.parents),
-    uniqueRelatives([
-      ...neighborhood.siblings,
-      ...neighborhood.halfSiblings,
-      neighborhood.self,
-      ...neighborhood.partners,
-    ]),
+    createSubjectRow(neighborhood),
     uniqueRelatives(neighborhood.children),
     uniqueRelatives(neighborhood.grandchildren),
   ].filter((row) => row.length > 0);

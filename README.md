@@ -179,7 +179,7 @@ function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProp
   return (
     <article {...rootProps}>
       <strong>{person.name}</strong>
-      <small>{focused && relation.label === "self" ? "root node" : relation.label}</small>
+      <small>{relation.label}</small>
     </article>
   );
 }
@@ -220,7 +220,7 @@ The stylesheet is framework-free CSS using stable data attributes and CSS variab
 - Family helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`, `buildFamilyTreeLayout`
 - Org helpers: `createOrgChartIndex`, `collectOrgChartSubtree`, `buildOrgChartLayout`
 - Family primitives: `TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, `useTreeLayout`
-- Shared viewport/types: `TreeSurface`, `TreeApi`, `TreeViewport`, card prop and relationship types
+- Shared viewport/types: `TreeSurface`, `TreeApi`, `TreeInitialViewport`, `TreeViewport`, card prop and relationship types
 - Stylesheet: `@memoir/tree/styles.css`
 
 ## Migrating from 0.3 to 0.4

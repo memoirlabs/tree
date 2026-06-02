@@ -3,6 +3,7 @@ import type {
   PeopleById,
   PersonId,
   TreeApi,
+  TreeInitialViewport,
   TreeCardSize,
   TreeInteractionMode,
   TreeLineShape,
@@ -15,6 +16,7 @@ export type {
   PeopleById,
   PersonId,
   TreeApi,
+  TreeInitialViewport,
   TreeInteractionMode,
   TreeLineShape,
   TreeStylePreset,
@@ -190,6 +192,7 @@ export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<
   lineShape?: TreeLineShape;
   viewport?: TreeViewport;
   defaultViewport?: Partial<TreeViewport>;
+  initialViewport?: TreeInitialViewport;
   onViewportChange?: (viewport: TreeViewport) => void;
   spacing?: Partial<FamilyTreeSpacing>;
   limits?: Partial<FamilyNeighborhoodLimits>;

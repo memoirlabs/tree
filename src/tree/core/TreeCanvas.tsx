@@ -26,6 +26,7 @@ export function TreeCanvas<Person>({
   ariaLabel,
   className,
   defaultViewport,
+  initialViewport,
   interactionMode = "pan",
   onViewportChange,
   style,
@@ -40,6 +41,7 @@ export function TreeCanvas<Person>({
       className={className}
       ariaLabel={ariaLabel}
       defaultViewport={defaultViewport}
+      initialViewport={initialViewport}
       interactionMode={interactionMode}
       onViewportChange={onViewportChange}
       style={style}

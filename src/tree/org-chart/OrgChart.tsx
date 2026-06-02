@@ -54,7 +54,7 @@ function getDefaultPersonMeta<Person>(person: Person, depth: number): string {
     const profile = person.profile;
     if (isRecord(profile) && typeof profile.title === "string") return profile.title;
   }
-  return depth === 0 ? "root node" : `level ${depth}`;
+  return `level ${depth}`;
 }
 
 export function DefaultOrgCard<Person>({
@@ -99,6 +99,7 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
   lineShape = "orthogonal",
   viewport,
   defaultViewport,
+  initialViewport,
   onViewportChange,
   spacing,
   maxDepth,
@@ -197,6 +198,7 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
       ariaLabel={ariaLabel}
       containerRef={containerRef}
       defaultViewport={defaultViewport}
+      initialViewport={initialViewport}
       interactionMode={interactionMode}
       onViewportChange={onViewportChange}
       style={style}

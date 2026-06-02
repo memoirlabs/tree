@@ -109,6 +109,7 @@ Accessibility should be built into the API layer:
 The viewport API should remain small:
 
 - `viewport`
+- `initialViewport`
 - `defaultViewport`
 - `onViewportChange`
 - `treeApiRef`

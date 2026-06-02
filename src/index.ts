@@ -16,6 +16,7 @@ export type {
   TreeBounds,
   TreeCardRootProps,
   TreeCardSize,
+  TreeInitialViewport,
   TreeInteractionMode,
   TreeLayoutCardBase,
   TreeLayoutEdge,

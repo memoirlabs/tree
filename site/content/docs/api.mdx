@@ -83,7 +83,7 @@ Common optional props:
 - `onPersonClick`: card click and Enter/Space activation handler.
 - `onAddRelationship`: passed to cards for app-owned add-relative flows.
 - `getPersonLabel`: accessible card label builder.
-- `viewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
+- `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
 Family cards also receive graph placement metadata when available:
@@ -115,7 +115,7 @@ Common optional props:
 - `maxDepth`: deepest report level to render.
 - `onPersonClick`: card click and Enter/Space activation handler.
 - `getPersonLabel`: accessible card label builder.
-- `viewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
+- `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
 ## Relationship Helpers
@@ -145,11 +145,20 @@ Org reporting:
 
 ## Viewport API
 
+Use `initialViewport` to center after card measurement:
+
+```tsx
+<FamilyTree initialViewport="subject" />
+<OrgChart initialViewport="subject" />
+<FamilyTree initialViewport="canvas" />
+<FamilyTree initialViewport={{ mode: "center-person", personId: "alex" }} />
+```
+
 Pass `treeApiRef` to call:
 
 - `centerPerson(personId)`: center a rendered card.
 - `fitToSubject()`: center the current family subject or org root.
-- `resetViewport()`: return to `defaultViewport`.
+- `resetViewport()`: return to `initialViewport`, or `defaultViewport` when no initial mode is provided.
 
 ## Pure Helpers
 
