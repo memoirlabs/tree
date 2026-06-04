@@ -1,6 +1,6 @@
 {
   "name": "@memoir/tree",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Ergonomic React family trees and org charts with relationship-aware layout.",
   "homepage": "https://github.com/memoirlabs/tree#readme",
   "repository": {
