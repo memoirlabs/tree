@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, JSX, PointerEvent, ReactNode, Ref, UIEvent } from "react";
+import type { CSSProperties, JSX, MouseEvent, PointerEvent, ReactNode, Ref, UIEvent } from "react";
 import { useCallback, useImperativeHandle, useLayoutEffect, useRef } from "react";
 
 import type {
@@ -41,6 +41,13 @@ function clampViewport(container: HTMLDivElement, viewport: TreeViewport): TreeV
     x: Math.min(Math.max(0, viewport.x), maxLeft),
     y: Math.min(Math.max(0, viewport.y), maxTop),
   };
+}
+
+function isInteractiveDragTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    Boolean(target.closest("a, button, input, select, textarea, [contenteditable='true'], [data-tree-drag-ignore]"))
+  );
 }
 
 function getDefaultViewport(
@@ -176,12 +183,14 @@ export function TreeSurface({
     .join("|");
   const centerKey = `${interactionMode}:${initialViewportKey}:${bounds.width}:${bounds.height}:${measurementKey}`;
   const dragRef = useRef<{
+    moved: boolean;
     pointerId: number;
     scrollLeft: number;
     scrollTop: number;
     x: number;
     y: number;
   } | null>(null);
+  const suppressClickRef = useRef(false);
 
   const updateViewport = useCallback(
     (nextViewport: TreeViewport) => {
@@ -267,11 +276,11 @@ export function TreeSurface({
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       if (interactionMode !== "pan" || event.button !== 0) return;
-      const target = event.target;
-      if (target instanceof Element && target.closest("[data-tree-card]")) return;
+      if (isInteractiveDragTarget(event.target)) return;
 
       const container = event.currentTarget;
       dragRef.current = {
+        moved: false,
         pointerId: event.pointerId,
         scrollLeft: container.scrollLeft,
         scrollTop: container.scrollTop,
@@ -289,8 +298,13 @@ export function TreeSurface({
       if (!drag || drag.pointerId !== event.pointerId) return;
 
       const container = event.currentTarget;
-      container.scrollLeft = drag.scrollLeft - (event.clientX - drag.x);
-      container.scrollTop = drag.scrollTop - (event.clientY - drag.y);
+      const deltaX = event.clientX - drag.x;
+      const deltaY = event.clientY - drag.y;
+      if (!drag.moved && Math.hypot(deltaX, deltaY) > 3) {
+        drag.moved = true;
+      }
+      container.scrollLeft = drag.scrollLeft - deltaX;
+      container.scrollTop = drag.scrollTop - deltaY;
       updateViewport({ x: container.scrollLeft, y: container.scrollTop });
     },
     [updateViewport],
@@ -305,10 +319,18 @@ export function TreeSurface({
       return;
     }
 
+    suppressClickRef.current = drag.moved;
     dragRef.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+  }, []);
+
+  const handleClickCapture = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return;
+    suppressClickRef.current = false;
+    event.preventDefault();
+    event.stopPropagation();
   }, []);
 
   const handleScroll = useCallback(
@@ -335,6 +357,7 @@ export function TreeSurface({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onClickCapture={handleClickCapture}
       onScroll={handleScroll}
       style={{
         ...defaultTreeSurfaceStyle,

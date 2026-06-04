@@ -1,4 +1,5 @@
 export { TreeSurface, getTreeStyleName, treeStylePresets } from "./tree/core";
+export { buildLayeredTreeLayout } from "./tree/core";
 export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./tree/family";
 export { DefaultOrgCard, OrgChart } from "./tree/org-chart";
 export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./tree/family";
@@ -18,6 +19,9 @@ export type {
   TreeCardSize,
   TreeInitialViewport,
   TreeInteractionMode,
+  TreeLayeredAnchorPointInput,
+  TreeLayeredBox,
+  TreeLayeredBoxInput,
   TreeLayoutCardBase,
   TreeLayoutEdge,
   TreeLayoutResult,
@@ -31,6 +35,8 @@ export type {
   TreeViewport,
   TreeViewportProps,
 } from "./tree/core";
+
+export type { BuildLayeredTreeLayoutInput, BuildLayeredTreeLayoutResult } from "./tree/core";
 
 export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./tree/family";
 export type { OrgRelationshipHelpers, OrgReportsOptions } from "./tree/org-chart";

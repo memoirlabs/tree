@@ -15,11 +15,11 @@ Keep these in your app:
 - Selection state, side panels, forms, routes, and analytics.
 - Card markup and app-specific actions.
 
-The package handles layout, measured cards, SVG edges, panning, subject-relative family labels, org hierarchy, and accessibility props.
+The package handles layout, measured cards, SVG edges, pan/scroll viewport state, subject-relative family labels, spouse-aware family grouping, org hierarchy, and accessibility props.
 
 ## Data Flow
 
-Fetch or compute data before rendering the tree:
+Fetch or compute data before rendering the tree. Simple relationship helpers are fine for small trees:
 
 ```tsx
 import { FamilyTree } from "@memoir/tree";
@@ -35,6 +35,16 @@ export function FamilyPanel({ family }: { family: FamilyData }) {
       onPersonClick={family.openProfile}
     />
   );
+}
+```
+
+For production family apps, prefer graph mode so partnerships, parent-child links, and guardianship links have stable IDs:
+
+```tsx
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
+
+export function FamilyPanel({ graph }: { graph: FamilyGraph<Person> }) {
+  return <FamilyTree graph={graph} initialViewport="subject" />;
 }
 ```
 
@@ -82,6 +92,16 @@ export function ProfileCard({ focused, person, relation, ...rootProps }: FamilyC
 
 Spread `rootProps` so the tree can attach accessibility props, handlers, and stable data attributes.
 
+## Viewport Interaction
+
+`interactionMode` defaults to `"pan"`. Users can drag the canvas and non-interactive card areas. Buttons, links, inputs, selects, textareas, contenteditable elements, and anything marked with `data-tree-drag-ignore` keep their own pointer behavior.
+
+Use `"scroll"` for normal browser scrollbars or `"none"` for a static viewport:
+
+```tsx
+<FamilyTree graph={graph} interactionMode="scroll" />
+```
+
 ## Checks
 
 When integrating:
@@ -89,7 +109,20 @@ When integrating:
 - Confirm cards render the expected names and labels.
 - Confirm click and keyboard activation work when `onPersonClick` is provided.
 - Confirm nested buttons inside cards behave the way your app expects.
-- Use `limits` for large families.
+- Confirm dragging works from both the canvas and non-interactive card areas when `interactionMode="pan"`.
+- Use `limits` for large or blended families.
+- Check multiple-union examples visually when your data has several partners or child groups.
 - Keep the stylesheet import near your app root if many pages use the tree.
+
+## Relationship Troubleshooting
+
+When family lines do not connect where you expect:
+
+- Prefer graph mode for blended families. Simple mode cannot give every partnership group and parent-child link a stable app-owned ID.
+- Check that both parents in a two-parent child group use the same `groupId` when the child belongs to that visible pair.
+- Check relation kinds. Biological plus step/adoptive links in the same group intentionally render as distinct edge kinds instead of one merged biological edge.
+- Use `order` on partnership groups and parent-child links when several unions should render in a specific left-to-right order.
+- Confirm every referenced person ID exists in `people`; missing cards are skipped by layout and routing.
+- Keep custom card roots spreading the provided props. Missing root props remove the stable data attributes and accessibility handlers the tree expects.
 
 For the exact prop surface, see [API](./api).

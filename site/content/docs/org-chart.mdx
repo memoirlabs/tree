@@ -5,7 +5,7 @@ description: Render a people-based organization chart from flat reporting relati
 
 `OrgChart` renders a rooted reporting hierarchy from app-owned people and flat manager-to-report facts.
 
-It uses the same tree core as `FamilyTree`: measured cards, SVG edges, panning, accessible card props, custom React cards, and the tiny stylesheet.
+It uses the same tree core as `FamilyTree`: measured cards, SVG edges, pan/scroll viewport state, accessible card props, custom React cards, and the tiny stylesheet.
 
 ## Minimal Org Chart
 
@@ -56,6 +56,22 @@ function TeamCard({ depth, person, ...rootProps }: OrgCardProps<Person>) {
 
 The card receives accessibility props, keyboard handlers, stable `data-*` attributes, depth metadata, selection state, and the original person record. Spread the remaining props onto the card root.
 
+`renderCard` is also available when you prefer a render function. Spread `rootProps` onto the root element:
+
+```tsx
+<OrgChart
+  people={people}
+  root="ceo"
+  relationships={relationships}
+  renderCard={({ person, rootProps }) => (
+    <article {...rootProps}>
+      <strong>{person.name}</strong>
+      <small>{person.title}</small>
+    </article>
+  )}
+/>
+```
+
 ## Relationship Helper
 
 ```ts
@@ -83,3 +99,13 @@ org.reports("ceo", ["vp-eng", "vp-sales"], {
 ```
 
 Use `selected` for app-owned selection, `collapsed` to hide deeper reports under a person, and `maxDepth` to cap the rendered hierarchy.
+
+Default spacing is compact:
+
+```ts
+{ row: 80, column: 24, padding: 24 }
+```
+
+Override `spacing` when your custom org cards need more or less room. The default `interactionMode` is `"pan"`; users can drag the canvas and non-interactive card areas. Native controls inside custom cards keep their own pointer behavior.
+
+Use `initialViewport="subject"` to center the root after cards are measured. `treeApiRef` exposes `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.

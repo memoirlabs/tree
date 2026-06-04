@@ -6,7 +6,7 @@ description: Install @memoir/tree and render your first family tree or org chart
 import Image from "next/image";
 import logo from "../../../public/logo-transparent.png";
 
-`@memoir/tree` is a lightweight React renderer for family trees and org charts. Your app owns the data model, permissions, routes, editing flows, and card markup. The package handles measured layout, SVG edges, panning, accessibility props, and a small CSS-variable skin.
+`@memoir/tree` is a lightweight React renderer for family trees and org charts. Your app owns the data model, permissions, routes, editing flows, and card markup. The package handles measured layout, spouse-aware family grouping, SVG edges, pan/scroll viewport state, accessibility props, and a small CSS-variable skin.
 
 <Image className="docs-intro-logo" src={logo} alt="Memoir Tree" />
 
@@ -23,6 +23,8 @@ import "@memoir/tree/styles.css";
 ```
 
 ## Family Tree
+
+This quick start uses simple relationship helpers. Use graph mode for production family trees that need partnership groups, multiple unions, per-parent lineage, guardianship, or stable persistence IDs.
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
@@ -67,6 +69,16 @@ export function Page() {
   return <OrgChart people={people} root="ceo" relationships={relationships} />;
 }
 ```
+
+## Defaults
+
+Family trees and org charts use compact default spacing:
+
+```ts
+{ row: 80, column: 24, padding: 24 }
+```
+
+Pass `spacing` when your custom cards need a different density. The default `interactionMode` is `"pan"`; users can drag the canvas or non-interactive parts of cards. Buttons, links, inputs, selects, textareas, contenteditable elements, and elements marked with `data-tree-drag-ignore` keep their own pointer behavior.
 
 ## Next
 

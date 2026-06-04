@@ -1,9 +1,15 @@
-import { roundTreeCoordinate } from "../core";
+import { buildLayeredTreeLayout, roundTreeCoordinate } from "../core";
 import { routeFamilyEdges } from "./family-edge-routing";
 import { normalizeFamilyInput } from "./family-graph";
 import { collectFamilyNeighborhood, createFamilyIndex } from "./family-indexing";
+import {
+  createFamilyLayerBoxes,
+  createFamilyLayoutCards,
+  createFamilyLayoutLayers,
+  createFamilyRelativeRows,
+} from "./family-layered-layout";
 import type { FamilyRelative } from "./family-indexing";
-import type { BuildFamilyTreeLayoutInput, FamilyTreeLayoutCard, FamilyTreeLayoutResult } from "./layout-types";
+import type { BuildFamilyTreeLayoutInput, FamilyTreeLayoutResult } from "./layout-types";
 import type { ComputedRelation, FamilyTreeSize, FamilyTreeSpacing, PersonId } from "./types";
 import type { FamilyPlacementMetadata, FamilyRelationship } from "./types";
 
@@ -13,27 +19,10 @@ const defaultFallbackCardSize: FamilyTreeSize = {
 };
 
 const defaultSpacing: FamilyTreeSpacing = {
-  row: 120,
-  column: 32,
-  padding: 32,
+  row: 80,
+  column: 24,
+  padding: 24,
 };
-
-const uniqueRelatives = <Person>(relatives: FamilyRelative<Person>[]) => {
-  const seen = new Set<PersonId>();
-  const compacted: FamilyRelative<Person>[] = [];
-  for (const relative of relatives) {
-    if (seen.has(relative.personId)) continue;
-    seen.add(relative.personId);
-    compacted.push(relative);
-  }
-  return compacted;
-};
-
-const getSize = (
-  measurements: Record<PersonId, FamilyTreeSize>,
-  fallbackCardSize: FamilyTreeSize,
-  personId: PersonId,
-): FamilyTreeSize => measurements[personId] ?? fallbackCardSize;
 
 const emptyPlacement = (): FamilyPlacementMetadata => ({
   partnershipGroupIds: [],
@@ -44,23 +33,6 @@ const emptyPlacement = (): FamilyPlacementMetadata => ({
 
 const addUnique = (values: string[], value: string | undefined) => {
   if (value && !values.includes(value)) values.push(value);
-};
-
-const createSubjectRow = <Person>(neighborhood: {
-  siblings: FamilyRelative<Person>[];
-  halfSiblings: FamilyRelative<Person>[];
-  self: FamilyRelative<Person>;
-  partners: FamilyRelative<Person>[];
-}) => {
-  const partners = uniqueRelatives(neighborhood.partners);
-  const splitIndex = Math.floor(partners.length / 2);
-  return uniqueRelatives([
-    ...neighborhood.siblings,
-    ...neighborhood.halfSiblings,
-    ...partners.slice(0, splitIndex),
-    neighborhood.self,
-    ...partners.slice(splitIndex),
-  ]);
 };
 
 const createPlacementByPerson = (relationships: FamilyRelationship[]) => {
@@ -139,36 +111,6 @@ const shouldHideCollapsedRelative = <Person>(
   return false;
 };
 
-const placeRow = <Person>(
-  relatives: FamilyRelative<Person>[],
-  y: number,
-  measurements: Record<PersonId, FamilyTreeSize>,
-  fallbackCardSize: FamilyTreeSize,
-  columnGap: number,
-): FamilyTreeLayoutCard<Person>[] => {
-  if (relatives.length === 0) return [];
-
-  const sizes = relatives.map((relative) => getSize(measurements, fallbackCardSize, relative.personId));
-  const totalWidth =
-    sizes.reduce((sum, size) => sum + size.width, 0) + Math.max(0, relatives.length - 1) * columnGap;
-  let x = -totalWidth / 2;
-
-  return relatives.map((relative, index) => {
-    const size = sizes[index] ?? fallbackCardSize;
-    const card: FamilyTreeLayoutCard<Person> = {
-      personId: relative.personId,
-      person: relative.person,
-      relation: relative.relation,
-      x,
-      y,
-      width: size.width,
-      height: size.height,
-    };
-    x += size.width + columnGap;
-    return card;
-  });
-};
-
 export function buildFamilyTreeLayout<Person>({
   subject,
   people,
@@ -196,13 +138,7 @@ export function buildFamilyTreeLayout<Person>({
     };
   }
 
-  const rows = [
-    uniqueRelatives(neighborhood.grandparents),
-    uniqueRelatives(neighborhood.parents),
-    createSubjectRow(neighborhood),
-    uniqueRelatives(neighborhood.children),
-    uniqueRelatives(neighborhood.grandchildren),
-  ].filter((row) => row.length > 0);
+  const rows = createFamilyRelativeRows(neighborhood);
 
   const relativesById = new Map<PersonId, ComputedRelation>();
   for (const row of rows) {
@@ -219,16 +155,14 @@ export function buildFamilyTreeLayout<Person>({
     .map((row) => row.filter((relative) => !shouldHideCollapsedRelative(relative, subject, collapsedRelatives)))
     .filter((row) => row.length > 0);
 
-  let y = 0;
-  const cards: FamilyTreeLayoutCard<Person>[] = [];
   const placementByPerson = createPlacementByPerson(neighborhood.relationships);
-
-  for (const row of visibleRows) {
-    const rowCards = placeRow(row, y, measurements, fallbackCardSize, spacing.column);
-    cards.push(...rowCards);
-    const maxHeight = rowCards.reduce((height, card) => Math.max(height, card.height), 0);
-    y += maxHeight + spacing.row;
-  }
+  const personGap = Math.min(spacing.column, 24);
+  const layers = createFamilyLayoutLayers(neighborhood, visibleRows);
+  const layeredLayout = buildLayeredTreeLayout({
+    layers: createFamilyLayerBoxes(layers, measurements, fallbackCardSize, personGap),
+    spacing,
+  });
+  const cards = createFamilyLayoutCards(layeredLayout.boxes, measurements, fallbackCardSize, personGap);
 
   const subjectCard = cards.find((card) => card.personId === subject);
   const subjectShift = subjectCard ? -(subjectCard.x + subjectCard.width / 2) : 0;
@@ -246,8 +180,6 @@ export function buildFamilyTreeLayout<Person>({
 
   const minX = Math.min(...cards.map((card) => card.x));
   const minY = Math.min(...cards.map((card) => card.y));
-  const maxX = Math.max(...cards.map((card) => card.x + card.width));
-  const maxY = Math.max(...cards.map((card) => card.y + card.height));
   const offsetX = spacing.padding - minX;
   const offsetY = spacing.padding - minY;
 
@@ -260,9 +192,6 @@ export function buildFamilyTreeLayout<Person>({
   return {
     cards,
     edges: routeFamilyEdges(cards, relationships, { lineShape }),
-    bounds: {
-      width: roundTreeCoordinate(maxX - minX + spacing.padding * 2),
-      height: roundTreeCoordinate(maxY - minY + spacing.padding * 2),
-    },
+    bounds: layeredLayout.bounds,
   };
 }

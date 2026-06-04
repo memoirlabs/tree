@@ -18,6 +18,8 @@ const people: Record<string, Person> = {
   sibling: { name: "Rin" },
   childA: { name: "June" },
   childB: { name: "Kai" },
+  childC: { name: "Sol" },
+  grandchild: { name: "Ira" },
 };
 
 const relationships = [
@@ -26,6 +28,8 @@ const relationships = [
   rel.partner("subject", "spouse", { id: "current-spouse", relation: "spouse", status: "current" }),
   rel.partner("subject", "exSpouse", { id: "former-spouse", relation: "spouse", status: "divorced" }),
   rel.children(["subject", "spouse"], ["childA", "childB"], { id: "children" }),
+  rel.children(["subject", "exSpouse"], ["childC"], { id: "former-children" }),
+  rel.children(["childA"], ["grandchild"], { id: "grandchild" }),
 ];
 
 function CheckCard({ person, relation, ...props }: FamilyCardProps<Person>) {
@@ -69,7 +73,7 @@ function App() {
         people={people}
         relationships={relationships}
         subject="subject"
-        style={{ height: 680, width: 560 }}
+        style={{ height: 760, width: 860 }}
         theme="memoir"
       />
     </main>

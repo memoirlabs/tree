@@ -26,6 +26,8 @@ Use `theme` only to pick a built-in preset:
 
 For custom colors, use CSS variables through `className` or `style`.
 
+The package also exports `treeStylePresets` and `getTreeStyleName(theme)` for wrappers that need to inspect or normalize preset names.
+
 ## CSS Variables
 
 ```tsx
@@ -120,10 +122,13 @@ Org selectors:
 }
 
 [data-family-edge][data-edge-kind="adoptive"],
+[data-family-edge][data-edge-kind="guardian"],
 [data-family-edge][data-edge-status="former"] {
   stroke-dasharray: 4 4;
 }
 ```
+
+Family edge kinds come from the modeled relationship. The default family renderer passes a dashed stroke for `adoptive`, `guardian`, and `former` edges. Other kinds and statuses are still exposed through edge data attributes for custom CSS.
 
 ## Card Root
 
@@ -141,3 +146,7 @@ function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProp
 ```
 
 Those props carry accessibility metadata, click handlers, keyboard handlers, and styling hooks.
+
+## Interaction Hooks
+
+The default `interactionMode` is `"pan"`, so users can drag the canvas and non-interactive card areas. Native controls inside cards keep their own pointer behavior. Add `data-tree-drag-ignore` to any custom card element that should not start panning.

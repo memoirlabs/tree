@@ -6,8 +6,24 @@ description: Public exports from @memoir/tree.
 All public package exports come from `@memoir/tree`. Import the stylesheet separately from `@memoir/tree/styles.css`.
 
 ```tsx
-import { FamilyTree, OrgChart, graphToFamilyRelationships, org, rel } from "@memoir/tree";
-import type { FamilyCardProps, FamilyGraph, OrgCardProps, TreeApi, TreeViewport } from "@memoir/tree";
+import {
+  FamilyTree,
+  OrgChart,
+  buildLayeredTreeLayout,
+  getTreeStyleName,
+  graphToFamilyRelationships,
+  org,
+  rel,
+  treeStylePresets,
+} from "@memoir/tree";
+import type {
+  FamilyCardProps,
+  FamilyGraph,
+  OrgCardProps,
+  TreeApi,
+  TreeLayeredBoxInput,
+  TreeViewport,
+} from "@memoir/tree";
 import "@memoir/tree/styles.css";
 ```
 
@@ -19,11 +35,20 @@ import "@memoir/tree/styles.css";
 - `StyledFamilyCard`: configurable family card for quick demos and simple apps.
 - `DefaultOrgCard`: small built-in org card.
 
+## Styling Exports
+
+- `treeStylePresets`: readonly list of built-in theme names, currently `memoir` and `system`.
+- `getTreeStyleName(theme)`: resolves an optional theme to a concrete preset name, defaulting to `memoir`.
+
+Most apps only need the `theme` prop and CSS variables. These helpers are useful for wrappers that need to mirror the package's preset names.
+
 ## Family Props
 
 Recommended graph-mode props:
 
 - `graph`: graph-shaped family facts with `people`, `subject`, `partnershipGroups`, `parentChildLinks`, and optional `guardianshipLinks`.
+
+When `graph` is provided, `FamilyTree` uses the graph's `people`, `subject`, and relationships derived from graph links.
 
 Simple-mode alternative:
 
@@ -73,6 +98,8 @@ interface FamilyGuardianshipLink {
 }
 ```
 
+Graph normalization groups `parentChildLinks` by `groupId`, `relation`, `status`, and `order`. Links that share those values become one rendered parentage relationship. Links with different relation kinds, such as biological plus step within one partnership group, remain separate so each edge can keep its own kind.
+
 Common optional props:
 
 - `card`: custom React card component.
@@ -85,6 +112,30 @@ Common optional props:
 - `getPersonLabel`: accessible card label builder.
 - `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
+
+Family layout is subject-centered and renders a bounded neighborhood: grandparents, parents or guardians, the subject row with siblings and partners, children, and grandchildren. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair.
+
+Two-parent child groups join at the visible midpoint between parent cards. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row.
+
+Default family spacing:
+
+```ts
+{ row: 80, column: 24, padding: 24 }
+```
+
+Default family limits are:
+
+```ts
+{
+  grandparents: 4,
+  parents: 4,
+  siblings: 8,
+  halfSiblings: 8,
+  partners: 3,
+  children: 8,
+  grandchildren: 8,
+}
+```
 
 Family cards also receive graph placement metadata when available:
 
@@ -118,6 +169,12 @@ Common optional props:
 - `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
+Default org chart spacing:
+
+```ts
+{ row: 80, column: 24, padding: 24 }
+```
+
 ## Relationship Helpers
 
 ```ts
@@ -129,7 +186,9 @@ rel.guardians("riley", ["morgan"]);
 org.reports("ceo", ["vp-eng", "vp-sales"]);
 ```
 
-`rel.parents()` and `rel.children()` are simple-mode helpers. Prefer graph mode for production family-tree apps that need parent groups, multiple unions, per-parent lineage, or guardianship.
+`rel.parents()` and `rel.children()` default to biological parentage. `rel.partner()` defaults to `relation: "partner"` and `status: "current"`. `rel.guardians()` defaults to `relation: "guardian"`. These are simple-mode helpers; prefer graph mode for production family-tree apps that need parent groups, multiple unions, per-parent lineage, or guardianship.
+
+`org.reports()` defaults to `relation: "manager"` and `status: "current"`.
 
 Family relations:
 
@@ -152,6 +211,8 @@ Use `initialViewport` to center after card measurement:
 <OrgChart initialViewport="subject" />
 <FamilyTree initialViewport="canvas" />
 <FamilyTree initialViewport={{ mode: "center-person", personId: "alex" }} />
+<OrgChart initialViewport={{ mode: "center-root" }} />
+<FamilyTree initialViewport={{ x: 120, y: 40 }} />
 ```
 
 Pass `treeApiRef` to call:
@@ -159,6 +220,14 @@ Pass `treeApiRef` to call:
 - `centerPerson(personId)`: center a rendered card.
 - `fitToSubject()`: center the current family subject or org root.
 - `resetViewport()`: return to `initialViewport`, or `defaultViewport` when no initial mode is provided.
+
+`interactionMode` controls pointer behavior:
+
+- `"pan"`: default. Drag the canvas or non-interactive card areas to move the viewport.
+- `"scroll"`: use normal browser scrollbars.
+- `"none"`: disable viewport interaction.
+
+Buttons, links, inputs, selects, textareas, contenteditable elements, and elements marked with `data-tree-drag-ignore` do not start pan drags.
 
 ## Pure Helpers
 
@@ -168,11 +237,38 @@ Use these in tests, previews, or custom renderers:
 - `createFamilyIndex(people, relationships)`
 - `collectFamilyNeighborhood(index, subject, limits?)`
 - `buildFamilyTreeLayout(input)`
+- `buildLayeredTreeLayout(input)`
 - `createOrgChartIndex(people, relationships)`
 - `collectOrgChartSubtree(index, root, options?)`
 - `buildOrgChartLayout(input)`
 
-## Family Primitives
+`buildLayeredTreeLayout()` is a small measured-box helper for custom renderers. It places boxes in ordered layers, supports internal anchor points, prevents row overlap, and returns positioned boxes plus bounds. It is intentionally not a graph editor or a bundled Dagre/ELK dependency.
+
+```ts
+const layers: TreeLayeredBoxInput[][] = [
+  [
+    {
+      id: "parents",
+      width: 240,
+      height: 80,
+      anchorPoints: [
+        { id: "parent-a", offsetX: 60 },
+        { id: "parent-b", offsetX: 180 },
+      ],
+    },
+  ],
+  [{ id: "child", width: 120, height: 64, anchorIds: ["parent-a", "parent-b"] }],
+];
+
+const layout = buildLayeredTreeLayout({
+  layers,
+  spacing: { row: 96, column: 32, padding: 24 },
+});
+```
+
+`anchorIds` target box IDs or `anchorPoints` from earlier layers. When multiple anchors are provided, the box targets their average center. Rows are balanced to avoid overlap while staying near their targets.
+
+## Lower-Level Primitives
 
 `TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, and `useTreeLayout()` expose the family renderer layers for custom composition. They are family primitives, not generic graph primitives.
 
@@ -186,3 +282,5 @@ Common exports include:
 - `FamilyTreeProps`, `FamilyCardProps`, `FamilyGraph`, `FamilyPartnershipGroup`, `FamilyParentChildLink`, `FamilyGuardianshipLink`, `FamilyRelationship`, `ComputedRelation`, `FamilyNeighborhoodLimits`
 - `OrgChartProps`, `OrgCardProps`, `OrgReportingRelationship`
 - `TreeApi`, `TreeViewport`, `TreeInteractionMode`, `TreeLineShape`
+- `TreeStylePreset`, `TreeThemeStyle`
+- `TreeLayeredBoxInput`, `TreeLayeredBox`, `TreeLayeredAnchorPointInput`

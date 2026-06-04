@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { buildFamilyTreeLayout, rel } from "../src/index";
+import { buildFamilyTreeLayout, buildLayeredTreeLayout, rel } from "../src/index";
 
 const people = {
   henry: { id: "henry", name: "Henry" },
@@ -121,4 +121,82 @@ test("keeps guardian edges distinct when the guardian is already a parent", () =
   const henryToAvaEdges = layout.edges.filter((edge) => edge.sourceId === "henry" && edge.targetId === "ava");
   expect(henryToAvaEdges).toHaveLength(2);
   expect(henryToAvaEdges.map((edge) => edge.kind)).toEqual(expect.arrayContaining(["biological", "guardian"]));
+});
+
+test("anchors child groups to the correct partner pair when the subject has multiple partners", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      liam: { id: "liam", name: "Liam" },
+    },
+    relationships: [
+      rel.partner("henry", "emma", { order: 1 }),
+      rel.partner("henry", "carol", { order: 2 }),
+      rel.children(["henry", "emma"], ["ava"], { order: 1 }),
+      rel.children(["henry", "carol"], ["liam"], { order: 2 }),
+    ],
+    measurements: {
+      ava: { width: 24, height: 60 },
+      carol: { width: 100, height: 60 },
+      emma: { width: 100, height: 60 },
+      henry: { width: 100, height: 60 },
+      liam: { width: 24, height: 60 },
+    },
+  });
+
+  const centerX = (personId: string) => {
+    const card = layout.cards.find((layoutCard) => layoutCard.personId === personId);
+    expect(card).toBeDefined();
+    return (card?.x ?? 0) + (card?.width ?? 0) / 2;
+  };
+
+  expect(centerX("ava")).toBe((centerX("henry") + centerX("emma")) / 2);
+  expect(centerX("liam")).toBe((centerX("henry") + centerX("carol")) / 2);
+});
+
+test("orders multiple child groups by their visible parent anchors", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      liam: { id: "liam", name: "Liam" },
+    },
+    relationships: [
+      rel.partner("henry", "emma", { order: 1 }),
+      rel.partner("henry", "carol", { order: 2 }),
+      rel.children(["henry", "emma"], ["ava"], { order: 1 }),
+      rel.children(["henry", "carol"], ["liam"], { order: 2 }),
+    ],
+  });
+
+  const cardX = (personId: string) => layout.cards.find((card) => card.personId === personId)?.x ?? 0;
+
+  expect(cardX("ava")).toBeLessThan(cardX("liam"));
+});
+
+test("builds lower-level layered layouts with internal anchor points", () => {
+  const layout = buildLayeredTreeLayout({
+    spacing: { row: 80, column: 24, padding: 16 },
+    layers: [
+      [
+        {
+          id: "parents",
+          width: 224,
+          height: 80,
+          anchorPoints: [
+            { id: "parent-a", offsetX: 50 },
+            { id: "parent-b", offsetX: 174 },
+          ],
+        },
+      ],
+      [{ id: "child", width: 100, height: 60, anchorIds: ["parent-a", "parent-b"] }],
+    ],
+  });
+
+  const parents = layout.boxes.find((box) => box.id === "parents");
+  const child = layout.boxes.find((box) => box.id === "child");
+
+  expect(child?.x).toBe(parents ? parents.x + 62 : undefined);
+  expect(layout.bounds.width).toBeGreaterThan(0);
 });

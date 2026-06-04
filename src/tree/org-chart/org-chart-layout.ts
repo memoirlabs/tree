@@ -17,9 +17,9 @@ const defaultFallbackCardSize: OrgChartSize = {
 };
 
 const defaultSpacing: OrgChartSpacing = {
-  row: 120,
-  column: 32,
-  padding: 32,
+  row: 80,
+  column: 24,
+  padding: 24,
 };
 
 interface Subtree {

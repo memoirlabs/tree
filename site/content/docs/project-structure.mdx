@@ -5,7 +5,7 @@ description: A simple way to organize app code that uses @memoir/tree.
 
 You do not need to copy this library's internals into your app. Install the package, keep your existing data model, and add the tree where you show family or org context.
 
-## Simple Family Setup
+## Family Setup
 
 ```text
 app/
@@ -15,7 +15,7 @@ app/
     profile-card.tsx
 ```
 
-`family-data.ts` owns app data:
+For small examples, `family-data.ts` can use simple relationship helpers:
 
 ```ts
 import { rel } from "@memoir/tree";
@@ -29,6 +29,31 @@ export const people = {
 export const relationships = [
   rel.parents("alex", ["morgan", "casey"]),
 ];
+```
+
+For production family apps, keep graph-shaped facts in the data module instead:
+
+```ts
+import type { FamilyGraph } from "@memoir/tree";
+
+type Person = {
+  id: string;
+  name: string;
+};
+
+export const graph: FamilyGraph<Person> = {
+  people: {
+    alex: { id: "alex", name: "Alex" },
+    morgan: { id: "morgan", name: "Morgan" },
+    riley: { id: "riley", name: "Riley" },
+  },
+  subject: "riley",
+  partnershipGroups: [{ id: "alex-morgan", partners: ["alex", "morgan"], relation: "spouse" }],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-morgan", parentId: "alex", childId: "riley" },
+    { id: "morgan-riley", groupId: "alex-morgan", parentId: "morgan", childId: "riley" },
+  ],
+};
 ```
 
 `profile-card.tsx` owns card markup:
@@ -71,6 +96,21 @@ export default function FamilyPage() {
 }
 ```
 
+When you use graph mode, render `<FamilyTree graph={graph} card={ProfileCard} />` instead.
+
+Keep layout options close to the route or panel that owns the experience:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  card={ProfileCard}
+  initialViewport="subject"
+  spacing={{ row: 80, column: 24, padding: 24 }}
+/>
+```
+
+Use `interactionMode="scroll"` only when you want native scrollbars instead of drag panning.
+
 ## Simple Org Setup
 
 ```text
@@ -83,10 +123,37 @@ app/
 
 Use `org.reports` in the data module and render `OrgChart` from the page. Keep titles, teams, permissions, and actions on your person records or card props.
 
+```ts
+import { org } from "@memoir/tree";
+
+export const people = {
+  ceo: { id: "ceo", name: "Casey", title: "CEO" },
+  design: { id: "design", name: "Riley", title: "Design Lead" },
+};
+
+export const relationships = [
+  org.reports("ceo", ["design"]),
+];
+```
+
+```tsx
+import { OrgChart } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+import { people, relationships } from "./org-data";
+import { OrgCard } from "./org-card";
+
+export default function TeamPage() {
+  return <OrgChart people={people} root="ceo" relationships={relationships} card={OrgCard} />;
+}
+```
+
 ## Checklist
 
 - Import `@memoir/tree/styles.css` once if you want the default skin.
 - Pass `people`, relationship facts, and a root ID (`subject` or `root`).
+- Prefer `graph` for production family data with multiple unions, guardianship, or per-parent lineage.
 - Use `card` or `renderCard` when default cards are too simple.
+- Keep custom card roots spreading the supplied props.
 - Keep selection and editing state in your app.
 - Keep relationship persistence and validation in your app.
+- Use `data-tree-drag-ignore` on custom card elements that should not start pan dragging.

@@ -5,7 +5,7 @@ description: Render a subject-centered family neighborhood from graph or simple 
 
 `FamilyTree` renders one person's readable family neighborhood from app-owned people and family graph facts. Simple relationship helpers are still available for small trees and examples.
 
-It handles measured cards, SVG relationship edges, panning, accessible card props, custom React cards, and the tiny stylesheet.
+It handles measured cards, spouse-aware grouping, SVG relationship edges, pan/scroll viewport state, accessible card props, custom React cards, and the tiny stylesheet.
 
 ## Simple Mode
 
@@ -38,6 +38,8 @@ You can omit `card` to use `DefaultFamilyCard`.
 
 ## Graph Mode
 
+Graph mode is the recommended shape for production family-tree apps. It gives every partnership group and parent-child or guardianship link an app-owned identity, so persistence, editing flows, and card metadata stay stable.
+
 ```tsx
 import { FamilyTree, type FamilyGraph } from "@memoir/tree";
 
@@ -64,6 +66,73 @@ const graph: FamilyGraph<Person> = {
 
 Tree renders and lays out the graph. Your app still owns persistence, permissions, editing, routing, invites, and data validation.
 
+## Multiple Unions
+
+Children are anchored to the parent group that produced or raised them. If the subject has a current spouse and a former spouse, each child group stays attached to the correct pair.
+
+```ts
+const graph: FamilyGraph<Person> = {
+  people,
+  subject: "alex",
+  partnershipGroups: [
+    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse", order: 1 },
+    { id: "alex-morgan", partners: ["alex", "morgan"], relation: "coparent", status: "former", order: 2 },
+  ],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
+    { id: "alex-casey", groupId: "alex-morgan", parentId: "alex", childId: "casey" },
+    { id: "morgan-casey", groupId: "alex-morgan", parentId: "morgan", childId: "casey" },
+  ],
+};
+```
+
+## Per-Parent Lineage
+
+`parentChildLinks` are per parent. Links with the same `groupId`, `relation`, `status`, and `order` are grouped into one rendered parentage relationship. If the relation differs per parent, Tree keeps those links distinct so the edge kind remains truthful.
+
+```ts
+const graph: FamilyGraph<Person> = {
+  people,
+  subject: "riley",
+  partnershipGroups: [{ id: "alex-jordan", partners: ["alex", "jordan"] }],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley", relation: "biological" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley", relation: "step" },
+  ],
+};
+```
+
+That example renders biological and step lineage as distinct parent-child edges. If both links are biological, they group into one two-parent parentage edge from the visible parent pair.
+
+## Layout Behavior
+
+Family layout is subject-centered and neighborhood-based:
+
+- Grandparents
+- Parents and guardians
+- Subject row with siblings, half-siblings, and partners
+- Children
+- Grandchildren
+
+Partnership groups and child groups participate in layout before SVG edges are routed. That means spouse bars, divorce markers, parent-child buses, and guardianship lines are derived from measured card positions.
+
+Two-parent child groups use the visible midpoint between the parent cards as the parentage join. Multi-child groups split through a horizontal bus between the parent row and child row. In compact layouts, the bus is centered in the clear vertical gap below the parent cards so it does not run through the parent row.
+
+The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Very crowded families can become wide; use `limits` when you want to cap the visible neighborhood.
+
+Default spacing is compact:
+
+```ts
+{ row: 80, column: 24, padding: 24 }
+```
+
+Override `spacing` when your custom card dimensions need a different density:
+
+```tsx
+<FamilyTree graph={graph} spacing={{ row: 72, column: 20, padding: 24 }} />
+```
+
 ## Custom Card
 
 ```tsx
@@ -84,6 +153,17 @@ function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProp
 ```
 
 The card receives accessibility props, keyboard handlers, stable `data-*` attributes, relationship metadata, selection state, and the original person record. Spread the remaining props onto the card root.
+
+In graph mode, `placement` identifies the visible relationship facts that placed the person:
+
+```ts
+placement?: {
+  partnershipGroupIds: string[];
+  parentChildLinkIds: string[];
+  guardianshipLinkIds: string[];
+  visibleRelationshipIds: string[];
+};
+```
 
 ## Relationship Helpers
 
@@ -119,4 +199,8 @@ These helpers are simple-mode helpers. `FamilyTree` also accepts graph mode for 
 
 Use `selected` for app-owned selection, `collapsed` to hide deeper ancestor or descendant rows, and `limits` to control visible-relative caps.
 
+Default limits are 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. Set a limit to `null` to disable that cap.
+
 Use `initialViewport="subject"` to center the subject after cards are measured. For viewport controls, pass `treeApiRef`. Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
+
+The default `interactionMode` is `"pan"`. Users can drag the canvas and non-interactive card areas. Native controls inside custom cards keep their own pointer behavior; add `data-tree-drag-ignore` to any custom element that should not start panning.
