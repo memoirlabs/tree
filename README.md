@@ -210,9 +210,9 @@ Use `cardProps` when your card needs app-owned typed props.
 
 ## Viewport and Interaction
 
-The default `interactionMode` is `"pan"`. Users can drag the canvas, including non-interactive card areas, to move the viewport. Native controls inside cards such as buttons, links, inputs, selects, textareas, and `[contenteditable="true"]` keep their own pointer behavior. Add `data-tree-drag-ignore` to any custom element that should not start panning.
+The default `interactionMode` is `"pan"`. Users can drag the canvas or non-interactive card surfaces with mouse, touch, or pen to move the tree viewport. Native controls inside cards such as buttons, links, inputs, selects, textareas, and `[contenteditable="true"]` keep their own pointer behavior. Add `data-tree-drag-ignore` to any custom element that should not start panning.
 
-Use `"pan-page-scroll"` when the tree should still drag-pan but vertical touch gestures should scroll the page. Use `"scroll"` when you want normal browser scrolling instead of drag panning, and `"none"` when the viewport should not be interactive.
+Use `"pan-page-scroll"` when the tree should still drag with mouse or horizontal touch gestures, while vertical touch gestures scroll the page. Use `"scroll"` when you want normal browser scrollbars instead of drag panning, and `"none"` when the viewport should not be interactive.
 
 ```tsx
 <FamilyTree

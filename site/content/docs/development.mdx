@@ -94,9 +94,9 @@ Spread `rootProps` so the tree can attach accessibility props, handlers, and sta
 
 ## Viewport Interaction
 
-`interactionMode` defaults to `"pan"`. Users can drag the canvas and non-interactive card areas. Buttons, links, inputs, selects, textareas, contenteditable elements, and anything marked with `data-tree-drag-ignore` keep their own pointer behavior.
+`interactionMode` defaults to `"pan"`. Users can drag the canvas and non-interactive card surfaces with mouse, touch, or pen. Buttons, links, inputs, selects, textareas, contenteditable elements, and anything marked with `data-tree-drag-ignore` keep their own pointer behavior.
 
-Use `"pan-page-scroll"` when the tree should drag-pan but vertical touch gestures should scroll the page. Use `"scroll"` for normal browser scrollbars or `"none"` for a static viewport:
+Use `"pan-page-scroll"` when the tree should drag with mouse or horizontal touch gestures, while vertical touch gestures scroll the page. Use `"scroll"` for normal browser scrollbars or `"none"` for a static viewport:
 
 ```tsx
 <FamilyTree graph={graph} interactionMode="scroll" />
@@ -109,7 +109,7 @@ When integrating:
 - Confirm cards render the expected names and labels.
 - Confirm click and keyboard activation work when `onPersonClick` is provided.
 - Confirm nested buttons inside cards behave the way your app expects.
-- Confirm dragging works from both the canvas and non-interactive card areas when `interactionMode="pan"`.
+- Confirm dragging works from both the canvas and non-interactive card surfaces when `interactionMode="pan"`.
 - Use `limits` for large or blended families.
 - Check multiple-union examples visually when your data has several partners or child groups.
 - Keep the stylesheet import near your app root if many pages use the tree.
