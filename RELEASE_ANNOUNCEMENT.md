@@ -1,4 +1,4 @@
-# Memoir Tree v0.4.6
+# Memoir Tree v0.4.7
 
 Layout and viewport correctness patch.
 
