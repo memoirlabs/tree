@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, JSX, MouseEvent, PointerEvent, ReactNode, Ref, UIEvent } from "react";
-import { useCallback, useImperativeHandle, useLayoutEffect, useRef } from "react";
+import { useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 
 import type {
   PersonId,
@@ -172,6 +172,7 @@ export function TreeSurface({
   viewport,
 }: TreeSurfaceProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const lastCenteredKeyRef = useRef<string | null>(null);
   const lastViewportRef = useRef<TreeViewport>({
     x: getDefaultViewport(initialViewport, defaultViewport).x,
@@ -183,7 +184,10 @@ export function TreeSurface({
     .join("|");
   const centerKey = `${interactionMode}:${initialViewportKey}:${bounds.width}:${bounds.height}:${measurementKey}`;
   const isPanMode = interactionMode === "pan" || interactionMode === "pan-page-scroll";
+  const surfaceTouchAction =
+    interactionMode === "pan-page-scroll" ? "pan-y" : interactionMode === "scroll" ? "auto" : "none";
   const dragRef = useRef<{
+    axis: "both" | "horizontal" | "pending-horizontal";
     moved: boolean;
     pointerId: number;
     scrollLeft: number;
@@ -276,11 +280,13 @@ export function TreeSurface({
 
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
-      if (!isPanMode || event.button !== 0) return;
+      if (!isPanMode || (event.pointerType === "mouse" && event.button !== 0)) return;
       if (isInteractiveDragTarget(event.target)) return;
 
       const container = event.currentTarget;
+      const isPageScrollTouch = interactionMode === "pan-page-scroll" && event.pointerType === "touch";
       dragRef.current = {
+        axis: isPageScrollTouch ? "pending-horizontal" : "both",
         moved: false,
         pointerId: event.pointerId,
         scrollLeft: container.scrollLeft,
@@ -288,9 +294,12 @@ export function TreeSurface({
         x: event.clientX,
         y: event.clientY,
       };
-      container.setPointerCapture(event.pointerId);
+      if (!isPageScrollTouch) {
+        container.setPointerCapture(event.pointerId);
+        setIsDragging(true);
+      }
     },
-    [isPanMode],
+    [interactionMode, isPanMode],
   );
 
   const handlePointerMove = useCallback(
@@ -301,11 +310,25 @@ export function TreeSurface({
       const container = event.currentTarget;
       const deltaX = event.clientX - drag.x;
       const deltaY = event.clientY - drag.y;
+      if (drag.axis === "pending-horizontal") {
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+        if (Math.max(absX, absY) <= 4) return;
+        if (absY > absX) {
+          dragRef.current = null;
+          return;
+        }
+        drag.axis = "horizontal";
+        container.setPointerCapture(event.pointerId);
+        setIsDragging(true);
+      }
       if (!drag.moved && Math.hypot(deltaX, deltaY) > 3) {
         drag.moved = true;
       }
       container.scrollLeft = drag.scrollLeft - deltaX;
-      container.scrollTop = drag.scrollTop - deltaY;
+      if (drag.axis === "both") {
+        container.scrollTop = drag.scrollTop - deltaY;
+      }
       updateViewport({ x: container.scrollLeft, y: container.scrollTop });
     },
     [updateViewport],
@@ -322,6 +345,7 @@ export function TreeSurface({
 
     suppressClickRef.current = drag.moved;
     dragRef.current = null;
+    setIsDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -362,10 +386,10 @@ export function TreeSurface({
       onScroll={handleScroll}
       style={{
         ...defaultTreeSurfaceStyle,
-        cursor: isPanMode ? "grab" : undefined,
+        cursor: isPanMode ? (isDragging ? "grabbing" : "grab") : undefined,
         overflow: interactionMode === "scroll" ? "auto" : "hidden",
         overscrollBehavior: interactionMode === "pan-page-scroll" ? "auto" : "contain",
-        touchAction: interactionMode === "pan-page-scroll" ? "pan-y" : interactionMode === "scroll" ? "auto" : "none",
+        touchAction: surfaceTouchAction,
         ...style,
       }}
     >
@@ -377,6 +401,7 @@ export function TreeSurface({
           minWidth: "100%",
           position: "relative",
           background: "var(--tree-canvas-bg, transparent)",
+          touchAction: surfaceTouchAction,
           width: bounds.width,
         }}
       >
@@ -384,6 +409,7 @@ export function TreeSurface({
           style={{
             height: bounds.height,
             position: "relative",
+            touchAction: "inherit",
             width: bounds.width,
           }}
         >

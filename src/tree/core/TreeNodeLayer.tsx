@@ -38,16 +38,24 @@ export function TreeNodeLayer<
             key={layoutCard.personId}
             data-person-id={layoutCard.personId}
             data-tree-card-positioner
+            {...positionerProps}
             style={{
               left: 0,
               position: "absolute",
+              touchAction: "inherit",
               top: 0,
               transform: `translate(${layoutCard.x}px, ${layoutCard.y}px)`,
               ...positionerProps?.style,
             }}
-            {...positionerProps}
           >
-            <div data-tree-measure-id={layoutCard.personId} {...measureProps}>
+            <div
+              data-tree-measure-id={layoutCard.personId}
+              {...measureProps}
+              style={{
+                touchAction: "inherit",
+                ...measureProps?.style,
+              }}
+            >
               <Card {...getCardProps(layoutCard)} />
             </div>
           </div>
