@@ -4,7 +4,7 @@ export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./tree/family";
 export { DefaultOrgCard, OrgChart } from "./tree/org-chart";
 export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./tree/family";
 export { graphToFamilyRelationships, rel } from "./tree/family";
-export { org } from "./tree/org-chart";
+export { graphToOrgReportingRelationships, org } from "./tree/org-chart";
 export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./tree/family";
 export { collectOrgChartSubtree, createOrgChartIndex } from "./tree/org-chart";
 export { buildFamilyTreeLayout } from "./tree/family";
@@ -55,6 +55,7 @@ export type {
   FamilyCardProps,
   FamilyGraph,
   FamilyGraphPerson,
+  FamilyGenerationLayer,
   FamilyGuardianshipLink,
   FamilyGuardianshipRelationship,
   FamilyIndex,
@@ -101,6 +102,7 @@ export type {
   BuildOrgChartLayoutInput,
   OrgCardProps,
   OrgChartCardProps,
+  OrgChartGraph,
   OrgChartIndex,
   OrgChartLayoutCard,
   OrgChartLayoutEdge,
@@ -111,6 +113,7 @@ export type {
   OrgChartSize,
   OrgChartSpacing,
   OrgRenderCardProps,
+  OrgReportingLink,
   OrgReportingRelationship,
   OrgReportingRelation,
   OrgReportingStatus,

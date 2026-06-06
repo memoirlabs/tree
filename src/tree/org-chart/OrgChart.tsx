@@ -5,6 +5,7 @@ import { useCallback, useMemo, useRef } from "react";
 
 import { TreeCanvas, TreeEdges, TreeNodeLayer, useCardMeasurements } from "../core";
 import { buildOrgChartLayout } from "./org-chart-layout";
+import { normalizeOrgChartInput } from "./org-chart-graph";
 import type { OrgCardProps, OrgChartLayoutCard, OrgChartProps, OrgRenderCardProps, PersonId } from "./types";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
@@ -76,7 +77,7 @@ export function DefaultOrgCard<Person>({
   );
 }
 
-const createMeasurementKey = (root: PersonId, relationships: OrgChartProps<unknown>["relationships"], collapsed?: PersonId[]) => {
+const createMeasurementKey = (root: PersonId, relationships: NonNullable<OrgChartProps<unknown>["relationships"]>, collapsed?: PersonId[]) => {
   const relationshipKey = relationships
     .map((relationship) => `${relationship.managerId}>${relationship.reportIds.join(",")}`)
     .join("|");
@@ -84,6 +85,7 @@ const createMeasurementKey = (root: PersonId, relationships: OrgChartProps<unkno
 };
 
 export function OrgChart<Person, CardExtraProps extends object = Record<string, never>>({
+  graph,
   root,
   people,
   relationships,
@@ -112,22 +114,26 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
   onPersonClick,
 }: OrgChartProps<Person, CardExtraProps>): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const measureKey = createMeasurementKey(root, relationships, collapsed);
+  const normalized = useMemo(
+    () => normalizeOrgChartInput({ graph, people, relationships, root }),
+    [graph, people, relationships, root],
+  );
+  const measureKey = createMeasurementKey(normalized.root, normalized.relationships, collapsed);
   const measurements = useCardMeasurements(containerRef, measureKey);
   const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
   const layout = useMemo(
     () =>
       buildOrgChartLayout({
-        root,
-        people,
-        relationships,
+        root: normalized.root,
+        people: normalized.people,
+        relationships: normalized.relationships,
         collapsed,
         measurements,
         spacing,
         maxDepth,
         lineShape,
       }),
-    [collapsed, lineShape, maxDepth, measurements, people, relationships, root, spacing],
+    [collapsed, lineShape, maxDepth, measurements, normalized, spacing],
   );
   const ResolvedCard = renderCard
     ? (props: OrgCardProps<Person> & CardExtraProps) => renderCard(toOrgRenderCardProps(props))
@@ -153,7 +159,7 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
   const getCardProps = useCallback(
     (layoutCard: OrgChartLayoutCard<Person>) => {
       const isSelected = selected === layoutCard.personId;
-      const isFocused = selected ? isSelected : layoutCard.personId === root;
+      const isFocused = selected ? isSelected : layoutCard.personId === normalized.root;
       const personLabel = resolvePersonLabel(layoutCard.person, layoutCard.personId);
       const treeCardProps: OrgCardProps<Person> = {
         person: layoutCard.person,
@@ -186,12 +192,12 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
         ...treeCardProps,
       } as OrgCardProps<Person> & CardExtraProps;
     },
-    [cardClassName, cardProps, collapsedIds, handleClick, handleKeyDown, onPersonClick, readOnly, resolvePersonLabel, root, selected],
+    [cardClassName, cardProps, collapsedIds, handleClick, handleKeyDown, onPersonClick, readOnly, resolvePersonLabel, normalized.root, selected],
   );
 
   return (
     <TreeCanvas
-      anchorId={root}
+      anchorId={normalized.root}
       bounds={layout.bounds}
       cards={layout.cards}
       className={className}
@@ -207,7 +213,7 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
       treeType="org-chart"
       viewport={viewport}
     >
-      <div data-org-chart data-org-root={root}>
+      <div data-org-chart data-org-root={normalized.root}>
         <TreeEdges
           bounds={layout.bounds}
           edgeClassName={edgeClassName}

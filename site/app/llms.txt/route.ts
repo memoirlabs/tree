@@ -32,7 +32,7 @@ Use \`FamilyTree\` for a subject-centered family neighborhood. Recommended produ
 
 Simple examples can use \`people\`, \`subject\`, and \`relationships\` with \`rel.parents()\`, \`rel.children()\`, \`rel.partner()\`, and \`rel.guardians()\`.
 
-Family layout renders a bounded neighborhood: grandparents, parents/guardians, subject row with siblings/half-siblings/partners, children, and grandchildren. Default limits are 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. A limit of \`null\` disables that cap.
+Family layout renders a bounded neighborhood: ancestor generations, subject row with siblings/half-siblings/partners, and descendant generations. Default limits are 2 ancestor generations, 2 descendant generations, no lateral family expansion, 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. A limit of \`null\` disables that cap.
 
 Default family spacing is \`{ row: 80, column: 24, padding: 24 }\`.
 
@@ -42,7 +42,9 @@ Two-parent child groups join at the visible midpoint between parent cards. Multi
 
 ## OrgChart
 
-Use \`OrgChart\` for rooted manager/report hierarchies. Required props are \`people\`, \`root\`, and \`relationships\`. Create reporting facts with \`org.reports(managerId, reportIds, options?)\`.
+Use \`OrgChart\` for rooted manager/report hierarchies. Recommended production input is \`graph\` with \`people\`, \`root\`, and \`reportingLinks\`. Simple examples can use \`people\`, \`root\`, and \`relationships\` with \`org.reports(managerId, reportIds, options?)\`.
+
+Org graph normalization groups \`reportingLinks\` by \`managerId\`, \`relation\`, \`status\`, and \`order\`. Links that share those values become one rendered reporting relationship.
 
 Org chart options include \`collapsed\`, \`maxDepth\`, \`selected\`, \`onPersonClick\`, custom \`card\`, \`renderCard\`, \`cardProps\`, viewport props, \`spacing\`, \`lineShape\`, and styling props.
 
@@ -60,7 +62,7 @@ Default \`interactionMode\` is \`"pan"\`: users can drag the canvas and non-inte
 
 Other modes are \`"pan-page-scroll"\` for mouse/horizontal-touch tree dragging while vertical touch gestures scroll the page, \`"scroll"\` for normal browser scrollbars, and \`"none"\` for no viewport interaction.
 
-\`treeApiRef\` exposes only \`centerPerson(personId)\`, \`fitToSubject()\`, and \`resetViewport()\`.
+Trees center the subject or org root by default after card measurement. Use \`defaultViewport\` for a custom uncontrolled starting position or \`initialViewport\` for explicit viewport modes. \`treeApiRef\` exposes only \`centerPerson(personId)\`, \`fitToSubject()\`, and \`resetViewport()\`.
 
 ## Styling
 
@@ -70,7 +72,7 @@ Key selectors include \`[data-tree-surface]\`, \`[data-tree-canvas]\`, \`[data-t
 
 ## Public Helpers
 
-Exports include \`FamilyTree\`, \`OrgChart\`, \`DefaultFamilyCard\`, \`StyledFamilyCard\`, \`DefaultOrgCard\`, \`TreeProvider\`, \`TreeCanvas\`, \`TreeEdges\`, \`TreeNodeLayer\`, \`TreeSurface\`, \`useTreeLayout\`, \`rel\`, \`org\`, \`graphToFamilyRelationships\`, \`buildFamilyTreeLayout\`, \`buildOrgChartLayout\`, \`buildLayeredTreeLayout\`, \`createFamilyIndex\`, \`collectFamilyNeighborhood\`, \`defaultFamilyNeighborhoodLimits\`, \`createOrgChartIndex\`, \`collectOrgChartSubtree\`, \`treeStylePresets\`, and \`getTreeStyleName\`.
+Exports include \`FamilyTree\`, \`OrgChart\`, \`DefaultFamilyCard\`, \`StyledFamilyCard\`, \`DefaultOrgCard\`, \`TreeProvider\`, \`TreeCanvas\`, \`TreeEdges\`, \`TreeNodeLayer\`, \`TreeSurface\`, \`useTreeLayout\`, \`rel\`, \`org\`, \`graphToFamilyRelationships\`, \`graphToOrgReportingRelationships\`, \`buildFamilyTreeLayout\`, \`buildOrgChartLayout\`, \`buildLayeredTreeLayout\`, \`createFamilyIndex\`, \`collectFamilyNeighborhood\`, \`defaultFamilyNeighborhoodLimits\`, \`createOrgChartIndex\`, \`collectOrgChartSubtree\`, \`treeStylePresets\`, and \`getTreeStyleName\`.
 
 ## Docs
 

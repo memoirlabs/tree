@@ -55,7 +55,7 @@ export type {
   TreePrimitiveType,
   TreeProviderProps,
 } from "./TreePrimitives";
-export type { FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./family-indexing";
+export type { FamilyGenerationLayer, FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./family-indexing";
 export type {
   BuildFamilyTreeLayoutInput,
   FamilyTreeBounds,

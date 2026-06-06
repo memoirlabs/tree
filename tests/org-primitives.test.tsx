@@ -90,4 +90,25 @@ describe("org chart", () => {
     expect(markup).toContain(`data-org-card`);
     expect(markup).toContain(`Casey`);
   });
+
+  test("renders from explicit org graph mode", () => {
+    const markup = renderToStaticMarkup(
+      <OrgChart
+        graph={{
+          people,
+          root: "ceo",
+          reportingLinks: [
+            { managerId: "ceo", reportId: "eng", order: 1 },
+            { managerId: "ceo", reportId: "design", order: 2 },
+          ],
+        }}
+        card={OrgCard}
+      />,
+    );
+
+    expect(markup).toContain(`data-org-root="ceo"`);
+    expect(markup).toContain(`Morgan`);
+    expect(markup).toContain(`Riley`);
+    expect(markup).toContain(`data-org-edge`);
+  });
 });

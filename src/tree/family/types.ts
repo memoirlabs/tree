@@ -119,13 +119,16 @@ export type ComputedRelationLabel =
   | "self"
   | "parent"
   | "grandparent"
+  | "ancestor"
   | "child"
   | "grandchild"
+  | "descendant"
   | "sibling"
   | "half-sibling"
   | "partner"
   | "coparent"
   | "guardian"
+  | "relative"
   | "unknown";
 
 export type ComputedRelationSide = "self" | "ancestor" | "descendant" | "sibling" | "partner" | "other";
@@ -137,6 +140,9 @@ export interface ComputedRelation {
 }
 
 export interface FamilyNeighborhoodLimits {
+  ancestorGenerations: number | null;
+  descendantGenerations: number | null;
+  lateralFamilyGenerations: number | null;
   grandparents: number | null;
   parents: number | null;
   siblings: number | null;

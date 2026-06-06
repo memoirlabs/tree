@@ -12,6 +12,7 @@ import {
   buildLayeredTreeLayout,
   getTreeStyleName,
   graphToFamilyRelationships,
+  graphToOrgReportingRelationships,
   org,
   rel,
   treeStylePresets,
@@ -20,6 +21,7 @@ import type {
   FamilyCardProps,
   FamilyGraph,
   OrgCardProps,
+  OrgChartGraph,
   TreeApi,
   TreeLayeredBoxInput,
   TreeViewport,
@@ -106,14 +108,14 @@ Common optional props:
 - `cardProps`: extra typed props for every custom card, or a function per person.
 - `selected`: app-owned selected person ID.
 - `collapsed`: person IDs whose deeper ancestor or descendant rows should be hidden.
-- `limits`: visible-relative caps; use `null` to disable a cap.
+- `limits`: visible-relative caps and generation depth; use `null` to disable a cap.
 - `onPersonClick`: card click and Enter/Space activation handler.
 - `onAddRelationship`: passed to cards for app-owned add-relative flows.
 - `getPersonLabel`: accessible card label builder.
 - `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
-Family layout is subject-centered and renders a bounded neighborhood: grandparents, parents or guardians, the subject row with siblings and partners, children, and grandchildren. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair.
+Family layout is subject-centered and renders a bounded neighborhood: ancestor generations, the subject row with siblings and partners, and descendant generations. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair.
 
 Two-parent child groups join at the visible midpoint between parent cards. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row.
 
@@ -127,6 +129,9 @@ Default family limits are:
 
 ```ts
 {
+  ancestorGenerations: 2,
+  descendantGenerations: 2,
+  lateralFamilyGenerations: 0,
   grandparents: 4,
   parents: 4,
   siblings: 8,
@@ -150,11 +155,38 @@ placement?: {
 
 ## Org Props
 
-Required:
+Recommended graph-mode props:
+
+- `graph`: graph-shaped org facts with `people`, `root`, and `reportingLinks`.
+
+When `graph` is provided, `OrgChart` uses the graph's `people`, `root`, and relationships derived from graph links.
+
+Simple-mode alternative:
 
 - `people`: person records keyed by ID.
 - `root`: root person ID for the hierarchy.
 - `relationships`: flat reporting facts.
+
+Graph shape:
+
+```ts
+interface OrgChartGraph<Person = unknown> {
+  people: Record<PersonId, Person>;
+  root: PersonId;
+  reportingLinks: OrgReportingLink[];
+}
+
+interface OrgReportingLink {
+  id?: string;
+  managerId: PersonId;
+  reportId: PersonId;
+  relation?: "manager" | "direct" | "unknown";
+  status?: "current" | "former" | "unknown";
+  order?: number;
+}
+```
+
+Graph normalization groups `reportingLinks` by `managerId`, `relation`, `status`, and `order`. Links that share those values become one rendered reporting relationship.
 
 Common optional props:
 
@@ -204,12 +236,12 @@ Org reporting:
 
 ## Viewport API
 
-Use `initialViewport` to center after card measurement:
+Trees center the subject or org root by default after card measurement. Use `defaultViewport` for a custom uncontrolled starting position, or `initialViewport` for explicit viewport modes:
 
 ```tsx
-<FamilyTree initialViewport="subject" />
-<OrgChart initialViewport="subject" />
+<FamilyTree defaultViewport={{ x: 120, y: 40 }} />
 <FamilyTree initialViewport="canvas" />
+<FamilyTree initialViewport="subject" />
 <FamilyTree initialViewport={{ mode: "center-person", personId: "alex" }} />
 <OrgChart initialViewport={{ mode: "center-root" }} />
 <FamilyTree initialViewport={{ x: 120, y: 40 }} />
@@ -219,7 +251,7 @@ Pass `treeApiRef` to call:
 
 - `centerPerson(personId)`: center a rendered card.
 - `fitToSubject()`: center the current family subject or org root.
-- `resetViewport()`: return to `initialViewport`, or `defaultViewport` when no initial mode is provided.
+- `resetViewport()`: return to `initialViewport`, `defaultViewport`, or the default subject/root-centered position.
 
 `interactionMode` controls pointer behavior:
 
@@ -235,6 +267,7 @@ Buttons, links, inputs, selects, textareas, contenteditable elements, and elemen
 Use these in tests, previews, or custom renderers:
 
 - `graphToFamilyRelationships(graph)`
+- `graphToOrgReportingRelationships(graph)`
 - `createFamilyIndex(people, relationships)`
 - `collectFamilyNeighborhood(index, subject, limits?)`
 - `buildFamilyTreeLayout(input)`
@@ -281,7 +314,7 @@ Common exports include:
 
 - `PersonId`, `PeopleById`
 - `FamilyTreeProps`, `FamilyCardProps`, `FamilyGraph`, `FamilyPartnershipGroup`, `FamilyParentChildLink`, `FamilyGuardianshipLink`, `FamilyRelationship`, `ComputedRelation`, `FamilyNeighborhoodLimits`
-- `OrgChartProps`, `OrgCardProps`, `OrgReportingRelationship`
+- `OrgChartProps`, `OrgCardProps`, `OrgChartGraph`, `OrgReportingLink`, `OrgReportingRelationship`
 - `TreeApi`, `TreeViewport`, `TreeInteractionMode`, `TreeLineShape`
 - `TreeStylePreset`, `TreeThemeStyle`
 - `TreeLayeredBoxInput`, `TreeLayeredBox`, `TreeLayeredAnchorPointInput`

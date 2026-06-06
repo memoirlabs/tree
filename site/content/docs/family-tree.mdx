@@ -109,17 +109,15 @@ That example renders biological and step lineage as distinct parent-child edges.
 
 Family layout is subject-centered and neighborhood-based:
 
-- Grandparents
-- Parents and guardians
+- Ancestor generations
 - Subject row with siblings, half-siblings, and partners
-- Children
-- Grandchildren
+- Descendant generations
 
 Partnership groups and child groups participate in layout before SVG edges are routed. That means spouse bars, divorce markers, parent-child buses, and guardianship lines are derived from measured card positions.
 
 Two-parent child groups use the visible midpoint between the parent cards as the parentage join. Multi-child groups split through a horizontal bus between the parent row and child row. In compact layouts, the bus is centered in the clear vertical gap below the parent cards so it does not run through the parent row.
 
-The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Very crowded families can become wide; use `limits` when you want to cap the visible neighborhood.
+The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Very crowded families can become wide; use `limits` when you want to cap the visible neighborhood, expand vertical depth, or include nearby sibling and partner branches.
 
 Default spacing is compact:
 
@@ -199,8 +197,8 @@ These helpers are simple-mode helpers. `FamilyTree` also accepts graph mode for 
 
 Use `selected` for app-owned selection, `collapsed` to hide deeper ancestor or descendant rows, and `limits` to control visible-relative caps.
 
-Default limits are 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. Set a limit to `null` to disable that cap.
+Default limits are 2 ancestor generations, 2 descendant generations, no lateral family expansion, 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. Set a cap to `null` to disable that cap.
 
-Use `initialViewport="subject"` to center the subject after cards are measured. For viewport controls, pass `treeApiRef`. Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
+The subject is centered by default after cards are measured. Use `defaultViewport` for a custom uncontrolled starting position or `initialViewport` for explicit modes like `"canvas"`. For viewport controls, pass `treeApiRef`. Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
 
 The default `interactionMode` is `"pan"`. Users can drag the canvas and non-interactive card surfaces with mouse, touch, or pen. Use `"pan-page-scroll"` when the tree should drag with mouse or horizontal touch gestures, while vertical touch gestures scroll the page. Native controls inside custom cards keep their own pointer behavior; add `data-tree-drag-ignore` to any custom element that should not start panning.

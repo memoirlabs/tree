@@ -151,11 +151,11 @@ placement?: {
 
 ### Layout behavior
 
-Family layout is subject-centered and neighborhood-based. It renders grandparents, parents or guardians, the subject row with siblings and partners, children, and grandchildren. Partnership groups and child groups participate in layout before edges are routed, so spouse bars and parent-child buses are based on measured card positions instead of being decorative afterthoughts.
+Family layout is subject-centered and neighborhood-based. By default it renders two ancestor generations, the subject row with siblings and partners, and two descendant generations. `limits.ancestorGenerations` and `limits.descendantGenerations` can expand or shrink that vertical range. Partnership groups and child groups participate in layout before edges are routed, so spouse bars and parent-child buses are based on measured card positions instead of being decorative afterthoughts.
 
 Two-parent child groups use the visible midpoint between the parent cards as the parentage join. Multi-child groups split through a horizontal bus centered in the clear gap below the parent cards and above the child row.
 
-Large or blended families can still become visually wide. Use `limits` to control the visible neighborhood; set a group cap to `null` to disable that cap.
+Large or blended families can still become visually wide. Use `limits` to control the visible neighborhood; set a group cap to `null` to disable that cap. Use `limits.lateralFamilyGenerations` to include nearby sibling and partner family branches without expanding the entire graph.
 
 Default spacing is intentionally compact: `{ row: 80, column: 24, padding: 24 }`. Override it per tree when your card size needs more or less room:
 
@@ -167,6 +167,8 @@ Default spacing is intentionally compact: `{ row: 80, column: 24, padding: 24 }`
 ```
 
 ## Org Chart
+
+### Simple mode
 
 ```tsx
 import { OrgChart, org } from "@memoir/tree";
@@ -184,6 +186,27 @@ const relationships = [
 
 export function TeamChart() {
   return <OrgChart people={people} root="ceo" relationships={relationships} />;
+}
+```
+
+### Graph mode
+
+Use graph mode when reporting edges need stable app-owned IDs or per-report ordering.
+
+```tsx
+import { OrgChart, type OrgChartGraph } from "@memoir/tree";
+
+const graph: OrgChartGraph<Person> = {
+  people,
+  root: "ceo",
+  reportingLinks: [
+    { id: "ceo-eng", managerId: "ceo", reportId: "eng", order: 1 },
+    { id: "ceo-design", managerId: "ceo", reportId: "design", order: 2 },
+  ],
+};
+
+export function TeamChart() {
+  return <OrgChart graph={graph} />;
 }
 ```
 
@@ -215,14 +238,10 @@ The default `interactionMode` is `"pan"`. Users can drag the canvas or non-inter
 Use `"pan-page-scroll"` when the tree should still drag with mouse or horizontal touch gestures, while vertical touch gestures scroll the page. Use `"scroll"` when you want normal browser scrollbars instead of drag panning, and `"none"` when the viewport should not be interactive.
 
 ```tsx
-<FamilyTree
-  graph={graph}
-  initialViewport="subject"
-  onViewportChange={(viewport) => saveViewport(viewport)}
-/>
+<FamilyTree graph={graph} onViewportChange={(viewport) => saveViewport(viewport)} />
 ```
 
-`treeApiRef` exposes only `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
+Trees center the subject or org root by default after cards are measured. Use `defaultViewport` for a custom uncontrolled starting position, or `initialViewport` for explicit modes like `"canvas"` or `{ mode: "center-person", personId }`. `treeApiRef` exposes only `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
 
 ## Styling
 
@@ -274,6 +293,7 @@ It is intentionally not a graph editor or graph engine. `FamilyTree` and `OrgCha
 - Relationship helpers: `rel`, `org`; `rel.children()` and `rel.parents()` are simple-mode helpers
 - Family graph helpers: `graphToFamilyRelationships`
 - Family helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`, `buildFamilyTreeLayout`
+- Org graph helpers: `graphToOrgReportingRelationships`
 - Org helpers: `createOrgChartIndex`, `collectOrgChartSubtree`, `buildOrgChartLayout`
 - Core layout helper: `buildLayeredTreeLayout`
 - Family primitives: `TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, `useTreeLayout`

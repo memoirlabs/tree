@@ -253,6 +253,44 @@ test("orders multiple child groups by their visible parent anchors", () => {
   expect(cardX("ava")).toBeLessThan(cardX("liam"));
 });
 
+test("balances multiple partners around the subject row", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      iris: { id: "iris", name: "Iris" },
+      liam: { id: "liam", name: "Liam" },
+      mia: { id: "mia", name: "Mia" },
+    },
+    relationships: [
+      rel.partner("henry", "carol", { order: 1 }),
+      rel.partner("henry", "emma", { order: 2 }),
+      rel.partner("henry", "iris", { order: 3 }),
+      rel.partner("henry", "liam", { order: 4 }),
+    ],
+    measurements: {
+      carol: { width: 80, height: 60 },
+      emma: { width: 80, height: 60 },
+      henry: { width: 80, height: 60 },
+      iris: { width: 80, height: 60 },
+      liam: { width: 80, height: 60 },
+    },
+    limits: {
+      partners: null,
+    },
+  });
+
+  const centerX = (personId: string) => {
+    const card = layout.cards.find((candidate) => candidate.personId === personId);
+    expect(card).toBeDefined();
+    return (card?.x ?? 0) + (card?.width ?? 0) / 2;
+  };
+  const subjectCenter = centerX("henry");
+
+  expect(["carol", "emma"].map(centerX).every((x) => x < subjectCenter)).toBe(true);
+  expect(["iris", "liam"].map(centerX).every((x) => x > subjectCenter)).toBe(true);
+});
+
 test("builds lower-level layered layouts with internal anchor points", () => {
   const layout = buildLayeredTreeLayout({
     spacing: { row: 80, column: 24, padding: 16 },

@@ -55,6 +55,74 @@ test("accepts explicit neighborhood limits", () => {
   expect(uncapped?.children.map((relative) => relative.personId)).toEqual(["ava", "milo"]);
 });
 
+test("collects configured ancestor and descendant generations", () => {
+  const deepPeople = {
+    self: { id: "self" },
+    p1: { id: "p1" },
+    p2: { id: "p2" },
+    p3: { id: "p3" },
+    p4: { id: "p4" },
+    p5: { id: "p5" },
+    c1: { id: "c1" },
+    c2: { id: "c2" },
+    c3: { id: "c3" },
+    c4: { id: "c4" },
+    c5: { id: "c5" },
+  };
+  const index = createFamilyIndex(deepPeople, [
+    rel.parents("self", ["p1"]),
+    rel.parents("p1", ["p2"]),
+    rel.parents("p2", ["p3"]),
+    rel.parents("p3", ["p4"]),
+    rel.parents("p4", ["p5"]),
+    rel.parents("c1", ["self"]),
+    rel.parents("c2", ["c1"]),
+    rel.parents("c3", ["c2"]),
+    rel.parents("c4", ["c3"]),
+    rel.parents("c5", ["c4"]),
+  ]);
+  const neighborhood = collectFamilyNeighborhood(index, "self", {
+    ancestorGenerations: 5,
+    descendantGenerations: 5,
+  });
+
+  expect(neighborhood?.ancestorGenerations.map((layer) => layer.relatives.map((relative) => relative.personId))).toEqual([
+    ["p1"],
+    ["p2"],
+    ["p3"],
+    ["p4"],
+    ["p5"],
+  ]);
+  expect(neighborhood?.descendantGenerations.map((layer) => layer.relatives.map((relative) => relative.personId))).toEqual([
+    ["c1"],
+    ["c2"],
+    ["c3"],
+    ["c4"],
+    ["c5"],
+  ]);
+  expect(neighborhood?.ancestorGenerations[2]?.relatives[0]?.relation.label).toBe("ancestor");
+  expect(neighborhood?.descendantGenerations[2]?.relatives[0]?.relation.label).toBe("descendant");
+});
+
+test("collects nearby lateral family parents for half-siblings", () => {
+  const index = createFamilyIndex(
+    {
+      self: { id: "self" },
+      sharedParent: { id: "sharedParent" },
+      halfSibling: { id: "halfSibling" },
+      halfSiblingParent: { id: "halfSiblingParent" },
+    },
+    [
+      rel.parents("self", ["sharedParent"]),
+      rel.parents("halfSibling", ["sharedParent", "halfSiblingParent"]),
+    ],
+  );
+  const neighborhood = collectFamilyNeighborhood(index, "self", { lateralFamilyGenerations: 2 });
+
+  expect(neighborhood?.parents.map((relative) => relative.personId)).toEqual(["halfSiblingParent", "sharedParent"]);
+  expect(neighborhood?.parents.find((relative) => relative.personId === "halfSiblingParent")?.relation.side).toBe("other");
+});
+
 test("rejects parentage cycles", () => {
   expect(() =>
     createFamilyIndex(people, [

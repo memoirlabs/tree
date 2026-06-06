@@ -201,6 +201,34 @@ test("graph mode derives siblings from shared parent group and half-siblings fro
   expect(neighborhood?.halfSiblings.map((relative) => relative.personId)).toEqual(["ellis"]);
 });
 
+test("graph mode keeps a half-sibling's other parent in the parent row", () => {
+  const layout = buildFamilyTreeLayout({
+    graph: {
+      people,
+      subject: "casey",
+      partnershipGroups: [{ id: "alex-drew", partners: ["alex", "drew"] }],
+      parentChildLinks: [
+        { id: "alex-casey", parentId: "alex", childId: "casey" },
+        { id: "alex-finn", groupId: "alex-drew", parentId: "alex", childId: "finn" },
+        { id: "drew-finn", groupId: "alex-drew", parentId: "drew", childId: "finn" },
+      ],
+    },
+    subject: "casey",
+    people,
+    limits: { lateralFamilyGenerations: 2 },
+  });
+  const casey = layout.cards.find((card) => card.personId === "casey");
+  const finn = layout.cards.find((card) => card.personId === "finn");
+  const drew = layout.cards.find((card) => card.personId === "drew");
+
+  expect(layout.cards.map((card) => card.personId)).toEqual(["alex", "drew", "casey", "finn"]);
+  expect(drew?.relation).toMatchObject({ label: "parent", side: "other", generation: -1 });
+  expect(finn?.relation.label).toBe("half-sibling");
+  expect(drew?.y).toBeLessThan(finn?.y ?? 0);
+  expect(Math.abs((drew?.x ?? 0) - (finn?.x ?? 0))).toBeLessThan(Math.abs((drew?.x ?? 0) - (casey?.x ?? 0)));
+  expect(layout.edges.some((edge) => edge.id.includes("alex-drew") && edge.targetId === "finn")).toBe(true);
+});
+
 test("child with two parent groups does not create layout cycles", () => {
   const layout = buildFamilyTreeLayout({
     graph: {

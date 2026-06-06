@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { buildOrgChartLayout, org } from "../src/index";
+import { buildOrgChartLayout, graphToOrgReportingRelationships, org } from "../src/index";
 
 const people = {
   ceo: { name: "Casey" },
@@ -59,4 +59,29 @@ test("supports collapse, max depth, and curved edges", () => {
     lineShape: "curved",
   });
   expect(curved.edges.some((edge) => edge.path.includes(" C "))).toBe(true);
+});
+
+test("builds org layout from explicit reporting graph links", () => {
+  const graph = {
+    people,
+    root: "ceo",
+    reportingLinks: [
+      { id: "ceo-eng", managerId: "ceo", reportId: "eng", order: 2 },
+      { id: "ceo-design", managerId: "ceo", reportId: "design", order: 1 },
+      { id: "eng-lead", managerId: "eng", reportId: "lead", order: 1 },
+    ],
+  };
+  const layout = buildOrgChartLayout({ graph });
+
+  expect(graphToOrgReportingRelationships(graph).map((relationship) => relationship.reportIds)).toEqual([
+    ["eng"],
+    ["design"],
+    ["lead"],
+  ]);
+  expect(layout.cards.map((card) => card.personId)).toEqual(["ceo", "design", "eng", "lead"]);
+  expect(layout.edges.map((edge) => edge.id)).toEqual([
+    "reporting-ceo-design",
+    "reporting-ceo-eng",
+    "reporting-eng-lead",
+  ]);
 });

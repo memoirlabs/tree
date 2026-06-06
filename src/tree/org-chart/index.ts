@@ -1,5 +1,6 @@
 export { DefaultOrgCard, OrgChart } from "./OrgChart";
 export { org } from "./org-chart-rel";
+export { graphToOrgReportingRelationships } from "./org-chart-graph";
 export { buildOrgChartLayout } from "./org-chart-layout";
 export { collectOrgChartSubtree, createOrgChartIndex } from "./org-chart-indexing";
 
@@ -8,6 +9,7 @@ export type { OrgChartIndex, OrgChartRelative } from "./org-chart-indexing";
 export type {
   BuildOrgChartLayoutInput,
   OrgCardProps,
+  OrgChartGraph,
   OrgChartCardProps,
   OrgChartLayoutCard,
   OrgChartLayoutEdge,
@@ -17,6 +19,7 @@ export type {
   OrgChartSize,
   OrgChartSpacing,
   OrgRenderCardProps,
+  OrgReportingLink,
   OrgReportingRelationship,
   OrgReportingRelation,
   OrgReportingStatus,

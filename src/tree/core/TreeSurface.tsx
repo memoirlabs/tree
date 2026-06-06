@@ -104,7 +104,7 @@ function getInitialViewportKey(
     : initialViewport.mode;
 }
 
-function resolveInitialViewport({
+export function resolveTreeInitialViewport({
   cards,
   container,
   defaultViewport,
@@ -117,7 +117,13 @@ function resolveInitialViewport({
   initialViewport: TreeInitialViewport | undefined;
   subject: PersonId | undefined;
 }): TreeViewport {
-  if (!initialViewport) return getCenteredCanvasViewport(container);
+  if (!initialViewport) {
+    if (defaultViewport?.x !== undefined || defaultViewport?.y !== undefined) {
+      return clampViewport(container, getDefaultViewport(initialViewport, defaultViewport));
+    }
+    const card = subject ? cards.find((candidate) => candidate.personId === subject) : undefined;
+    return card ? getCenteredCardViewport(container, card) : getCenteredCanvasViewport(container);
+  }
   if (initialViewport === "canvas") return getCenteredCanvasViewport(container);
   if (initialViewport === "subject") {
     const card = subject ? cards.find((candidate) => candidate.personId === subject) : undefined;
@@ -219,7 +225,7 @@ export function TreeSurface({
     }
     if (lastCenteredKeyRef.current === centerKey) return;
 
-    const nextViewport = resolveInitialViewport({
+    const nextViewport = resolveTreeInitialViewport({
       cards,
       container,
       defaultViewport,
@@ -248,15 +254,13 @@ export function TreeSurface({
   const resetViewport = useCallback(() => {
     const container = containerRef.current;
     const nextViewport = container
-      ? initialViewport
-        ? resolveInitialViewport({
-            cards,
-            container,
-            defaultViewport,
-            initialViewport,
-            subject,
-          })
-        : clampViewport(container, getDefaultViewport(initialViewport, defaultViewport))
+      ? resolveTreeInitialViewport({
+          cards,
+          container,
+          defaultViewport,
+          initialViewport,
+          subject,
+        })
       : getDefaultViewport(initialViewport, defaultViewport);
     if (container) {
       container.scrollLeft = nextViewport.x;

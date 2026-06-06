@@ -49,11 +49,9 @@ const createSubjectRow = <Person>(neighborhood: Pick<FamilyNeighborhood<Person>,
 
 export const createFamilyRelativeRows = <Person>(neighborhood: FamilyNeighborhood<Person>) =>
   [
-    uniqueRelatives(neighborhood.grandparents),
-    uniqueRelatives(neighborhood.parents),
+    ...neighborhood.ancestorGenerations.toReversed().map((layer) => uniqueRelatives(layer.relatives)),
     createSubjectRow(neighborhood),
-    uniqueRelatives(neighborhood.children),
-    uniqueRelatives(neighborhood.grandchildren),
+    ...neighborhood.descendantGenerations.map((layer) => uniqueRelatives(layer.relatives)),
   ].filter((row) => row.length > 0);
 
 const createVisiblePersonOrder = <Person>(items: FamilyRowItem<Person>[]) =>
@@ -107,12 +105,12 @@ const createSubjectRowItems = <Person>(
   anchorIds: string[],
 ): FamilyRowItem<Person>[] => {
   const partners = uniqueRelatives(neighborhood.partners);
-  const subjectCluster =
-    partners.length <= 1
-      ? [neighborhood.self, ...partners]
-      : [partners[0], neighborhood.self, ...partners.slice(1)].filter(
-          (relative): relative is FamilyRelative<Person> => Boolean(relative),
-        );
+  const splitIndex = Math.floor(partners.length / 2);
+  const subjectCluster = [
+    ...partners.slice(0, splitIndex),
+    neighborhood.self,
+    ...partners.slice(splitIndex),
+  ];
 
   return [
     ...singleRelativeItems(uniqueRelatives(neighborhood.siblings)),
@@ -169,11 +167,19 @@ export const createFamilyLayoutLayers = <Person>(
     uniqueRelatives(relatives).filter((relative) => visibleIds.has(relative.personId));
   const visibleNeighborhood = {
     ...neighborhood,
+    ancestorGenerations: neighborhood.ancestorGenerations.map((layer) => ({
+      ...layer,
+      relatives: visibleRelatives(layer.relatives),
+    })),
     grandparents: visibleRelatives(neighborhood.grandparents),
     parents: visibleRelatives(neighborhood.parents),
     siblings: visibleRelatives(neighborhood.siblings),
     halfSiblings: visibleRelatives(neighborhood.halfSiblings),
     partners: visibleRelatives(neighborhood.partners),
+    descendantGenerations: neighborhood.descendantGenerations.map((layer) => ({
+      ...layer,
+      relatives: visibleRelatives(layer.relatives),
+    })),
     children: visibleRelatives(neighborhood.children),
     grandchildren: visibleRelatives(neighborhood.grandchildren),
   };
@@ -186,8 +192,9 @@ export const createFamilyLayoutLayers = <Person>(
     previousPersonOrder = createVisiblePersonOrder(items);
   };
 
-  appendLayer(createGroupedRowItems(visibleNeighborhood.grandparents, neighborhood.relationships));
-  appendLayer(createGroupedRowItems(visibleNeighborhood.parents, neighborhood.relationships));
+  for (const layer of visibleNeighborhood.ancestorGenerations.toReversed()) {
+    appendLayer(createGroupedRowItems(layer.relatives, neighborhood.relationships));
+  }
 
   const subjectAnchorIds = Array.from(
     new Set(
@@ -203,8 +210,9 @@ export const createFamilyLayoutLayers = <Person>(
   );
   appendLayer(createSubjectRowItems(visibleNeighborhood, subjectAnchorIds));
 
-  appendLayer(createChildRowItems(visibleNeighborhood.children, neighborhood.relationships, previousPersonOrder));
-  appendLayer(createChildRowItems(visibleNeighborhood.grandchildren, neighborhood.relationships, previousPersonOrder));
+  for (const layer of visibleNeighborhood.descendantGenerations) {
+    appendLayer(createChildRowItems(layer.relatives, neighborhood.relationships, previousPersonOrder));
+  }
 
   return layers;
 };

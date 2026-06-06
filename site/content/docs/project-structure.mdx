@@ -104,7 +104,6 @@ Keep layout options close to the route or panel that owns the experience:
 <FamilyTree
   graph={graph}
   card={ProfileCard}
-  initialViewport="subject"
   spacing={{ row: 80, column: 24, padding: 24 }}
 />
 ```
@@ -147,11 +146,28 @@ export default function TeamPage() {
 }
 ```
 
+For production org data, use graph mode so every reporting edge can keep a stable ID:
+
+```ts
+export const graph = {
+  people,
+  root: "ceo",
+  reportingLinks: [
+    { id: "ceo-design", managerId: "ceo", reportId: "design", order: 1 },
+  ],
+};
+```
+
+```tsx
+<OrgChart graph={graph} card={OrgCard} />
+```
+
 ## Checklist
 
 - Import `@memoir/tree/styles.css` once if you want the default skin.
 - Pass `people`, relationship facts, and a root ID (`subject` or `root`).
 - Prefer `graph` for production family data with multiple unions, guardianship, or per-parent lineage.
+- Prefer `graph` for production org data when reporting edges need stable IDs or per-report ordering.
 - Use `card` or `renderCard` when default cards are too simple.
 - Keep custom card roots spreading the supplied props.
 - Keep selection and editing state in your app.

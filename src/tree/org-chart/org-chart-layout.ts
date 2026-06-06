@@ -1,4 +1,5 @@
 import { bottomCenterPoint, createTreeEdgePath, roundTreeCoordinate, topCenterPoint } from "../core";
+import { normalizeOrgChartInput } from "./org-chart-graph";
 import { collectOrgChartSubtree, createOrgChartIndex } from "./org-chart-indexing";
 import type { OrgChartRelative } from "./org-chart-indexing";
 import type {
@@ -49,6 +50,7 @@ const groupByParent = <Person>(relatives: OrgChartRelative<Person>[]) => {
 };
 
 export function buildOrgChartLayout<Person>({
+  graph,
   root,
   people,
   relationships,
@@ -60,6 +62,10 @@ export function buildOrgChartLayout<Person>({
 }: BuildOrgChartLayoutInput<Person>): OrgChartLayoutResult<Person> {
   const fallbackCardSize = defaultFallbackCardSize;
   const spacing = { ...defaultSpacing, ...spacingOverrides };
+  const normalized = normalizeOrgChartInput({ graph, people, relationships, root });
+  root = normalized.root;
+  people = normalized.people;
+  relationships = normalized.relationships;
   const index = createOrgChartIndex(people, relationships);
   const relatives = collectOrgChartSubtree(index, root, { collapsed, maxDepth });
   if (relatives.length === 0) {

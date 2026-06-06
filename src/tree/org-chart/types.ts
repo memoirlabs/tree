@@ -40,6 +40,21 @@ export interface OrgReportingRelationship {
   order?: number;
 }
 
+export interface OrgReportingLink {
+  id?: string;
+  managerId: PersonId;
+  reportId: PersonId;
+  relation?: OrgReportingRelation;
+  status?: OrgReportingStatus;
+  order?: number;
+}
+
+export interface OrgChartGraph<Person = unknown> {
+  people: PeopleById<Person>;
+  root: PersonId;
+  reportingLinks: OrgReportingLink[];
+}
+
 export interface OrgCardProps<Person> extends HTMLAttributes<HTMLElement> {
   person: Person;
   personId: PersonId;
@@ -94,9 +109,10 @@ export type OrgChartCardProps<Person, CardExtraProps extends object> = TreeCardP
 >;
 
 export interface OrgChartProps<Person, CardExtraProps extends object = Record<string, never>> {
-  root: PersonId;
-  people: PeopleById<Person>;
-  relationships: OrgReportingRelationship[];
+  root?: PersonId;
+  people?: PeopleById<Person>;
+  relationships?: OrgReportingRelationship[];
+  graph?: OrgChartGraph<Person>;
   ariaLabel?: string;
   card?: ComponentType<OrgCardProps<Person> & CardExtraProps>;
   cardProps?: CardExtraProps | ((person: Person, props: OrgCardProps<Person>) => CardExtraProps);
@@ -139,9 +155,10 @@ export interface OrgChartLayoutResult<Person> {
 }
 
 export interface BuildOrgChartLayoutInput<Person> {
-  root: PersonId;
-  people: PeopleById<Person>;
-  relationships: OrgReportingRelationship[];
+  root?: PersonId;
+  people?: PeopleById<Person>;
+  relationships?: OrgReportingRelationship[];
+  graph?: OrgChartGraph<Person>;
   collapsed?: PersonId[];
   measurements?: Record<PersonId, TreeCardSize>;
   spacing?: Partial<OrgChartSpacing>;
