@@ -1,4 +1,4 @@
-# Memoir Tree v0.4.2
+# Memoir Tree v0.4.3
 
 Patch release for family-tree viewport and edge rendering.
 
