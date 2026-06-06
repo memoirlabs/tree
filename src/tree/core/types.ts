@@ -42,7 +42,7 @@ export interface TreeSpacing {
   padding: number;
 }
 
-export type TreeInteractionMode = "pan" | "scroll" | "none";
+export type TreeInteractionMode = "pan" | "scroll" | "pan-page-scroll" | "none";
 
 export interface TreeViewport {
   x: number;

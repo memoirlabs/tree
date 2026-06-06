@@ -106,6 +106,6 @@ Default spacing is compact:
 { row: 80, column: 24, padding: 24 }
 ```
 
-Override `spacing` when your custom org cards need more or less room. The default `interactionMode` is `"pan"`; users can drag the canvas and non-interactive card areas. Native controls inside custom cards keep their own pointer behavior.
+Override `spacing` when your custom org cards need more or less room. The default `interactionMode` is `"pan"`; users can drag the canvas and non-interactive card areas. Use `"pan-page-scroll"` when vertical touch gestures should scroll the page. Native controls inside custom cards keep their own pointer behavior.
 
 Use `initialViewport="subject"` to center the root after cards are measured. `treeApiRef` exposes `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.

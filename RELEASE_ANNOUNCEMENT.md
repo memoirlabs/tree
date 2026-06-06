@@ -1,16 +1,17 @@
-# Memoir Tree Release v0.4.2
-Patch release with denser tree layouts, corrected family edge routing, card-area panning, updated docs, and llms.txt.
+# Memoir Tree v0.4.2
 
-Generated on 2026-06-04.
-Includes commits after `v0.4.1`.
+Patch release for family-tree viewport and edge rendering.
 
-Compare changes: [v0.4.1...HEAD](https://github.com/memoirlabs/tree/compare/v0.4.1...HEAD)
+## Changes
 
-Total commits: 2
-## Fixes
+- Add `interactionMode="pan-page-scroll"` for drag-panning trees while vertical touch gestures scroll the page.
+- Recompute family layout bounds from final shifted card positions so right-side cards and edges are not clipped.
+- Route single-child descendant edges below parent cards, including right-shifted children.
+- Draw adjacent visible bars for multi-partner partnership groups.
+- Update README, docs, and `llms.txt` for the new interaction mode.
 
-- Fix family routing and document tree APIs ([`0b15a62`](https://github.com/memoirlabs/tree/commit/0b15a62007730dfcefc9426631094fe3d54df1e9), Henryoman, 2026-06-04)
+## Verify
 
-## Other Changes
-
-- Prepare release 0.4.2 ([`64b534c`](https://github.com/memoirlabs/tree/commit/64b534c3a1821f16ddadb15b31df872a7a735dda), Henryoman, 2026-06-04)
+- `bun run typecheck`
+- `bun test`
+- `bun run build`

@@ -143,6 +143,24 @@ describe("tree primitives", () => {
     expect(markup).not.toContain("scale(");
   });
 
+  test("renders hybrid pan with page scroll surface behavior", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree
+        card={FamilyCard}
+        interactionMode="pan-page-scroll"
+        people={people}
+        relationships={relationships}
+        subject="henry"
+      />,
+    );
+
+    expect(markup).toContain("data-tree-interaction=\"pan-page-scroll\"");
+    expect(markup).toContain("overflow:hidden");
+    expect(markup).toContain("touch-action:pan-y");
+    expect(markup).toContain("overscroll-behavior:auto");
+    expect(markup).not.toContain("overflow:auto");
+  });
+
   test("passes app-owned props through to custom cards", () => {
     const markup = renderToStaticMarkup(
       <FamilyTree<Person, AppCardProps>

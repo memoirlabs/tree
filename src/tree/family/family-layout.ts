@@ -35,6 +35,16 @@ const addUnique = (values: string[], value: string | undefined) => {
   if (value && !values.includes(value)) values.push(value);
 };
 
+function createBoundsFromCards<Person>(cards: FamilyTreeLayoutResult<Person>["cards"], padding: number) {
+  const maxX = Math.max(...cards.map((card) => card.x + card.width));
+  const maxY = Math.max(...cards.map((card) => card.y + card.height));
+
+  return {
+    width: roundTreeCoordinate(maxX + padding),
+    height: roundTreeCoordinate(maxY + padding),
+  };
+}
+
 const createPlacementByPerson = (relationships: FamilyRelationship[]) => {
   const placement = new Map<PersonId, FamilyPlacementMetadata>();
   const get = (personId: PersonId) => {
@@ -192,6 +202,6 @@ export function buildFamilyTreeLayout<Person>({
   return {
     cards,
     edges: routeFamilyEdges(cards, relationships, { lineShape }),
-    bounds: layeredLayout.bounds,
+    bounds: createBoundsFromCards(cards, spacing.padding),
   };
 }

@@ -203,4 +203,4 @@ Default limits are 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 par
 
 Use `initialViewport="subject"` to center the subject after cards are measured. For viewport controls, pass `treeApiRef`. Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
 
-The default `interactionMode` is `"pan"`. Users can drag the canvas and non-interactive card areas. Native controls inside custom cards keep their own pointer behavior; add `data-tree-drag-ignore` to any custom element that should not start panning.
+The default `interactionMode` is `"pan"`. Users can drag the canvas and non-interactive card areas. Use `"pan-page-scroll"` when the tree should drag-pan but vertical touch gestures should scroll the page. Native controls inside custom cards keep their own pointer behavior; add `data-tree-drag-ignore` to any custom element that should not start panning.

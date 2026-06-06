@@ -18,6 +18,14 @@ const relationships = [
   rel.children(["ava"], ["noah"]),
 ];
 
+function maxCardX(layout: { cards: Array<{ x: number; width: number }> }) {
+  return Math.max(...layout.cards.map((card) => card.x + card.width));
+}
+
+function maxCardY(layout: { cards: Array<{ y: number; height: number }> }) {
+  return Math.max(...layout.cards.map((card) => card.y + card.height));
+}
+
 test("builds measured subject-centered layout cards", () => {
   const layout = buildFamilyTreeLayout({
     subject: "henry",
@@ -51,6 +59,76 @@ test("emits visible relationship edges", () => {
   expect(layout.edges.map((edge) => edge.kind)).toContain("biological");
   expect(layout.edges.map((edge) => edge.kind)).toContain("partner");
   expect(layout.edges.every((edge) => edge.path.startsWith("M "))).toBe(true);
+});
+
+test("computes final family bounds from shifted cards", () => {
+  const padding = 36;
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      liam: { id: "liam", name: "Liam" },
+    },
+    relationships: [
+      rel.partner("henry", "emma", { order: 1 }),
+      rel.partner("henry", "carol", { order: 2 }),
+      rel.children(["henry", "emma"], ["ava"], { order: 1 }),
+      rel.children(["henry", "carol"], ["liam"], { order: 2 }),
+      rel.children(["ava"], ["noah"], { order: 3 }),
+    ],
+    measurements: {
+      ava: { width: 92, height: 60 },
+      carol: { width: 124, height: 60 },
+      emma: { width: 124, height: 60 },
+      henry: { width: 160, height: 72 },
+      liam: { width: 92, height: 60 },
+      noah: { width: 92, height: 60 },
+    },
+    spacing: {
+      column: 56,
+      padding,
+      row: 88,
+    },
+  });
+
+  expect(layout.bounds.width).toBeGreaterThanOrEqual(maxCardX(layout) + padding);
+  expect(layout.bounds.height).toBeGreaterThanOrEqual(maxCardY(layout) + padding);
+});
+
+test("keeps multiple right-side relatives inside family bounds", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      liam: { id: "liam", name: "Liam" },
+      mia: { id: "mia", name: "Mia" },
+      zoe: { id: "zoe", name: "Zoe" },
+    },
+    relationships: [
+      rel.partner("henry", "emma", { order: 1 }),
+      rel.partner("henry", "carol", { order: 2 }),
+      rel.partner("henry", "mia", { order: 3 }),
+      rel.children(["henry", "emma"], ["ava"], { order: 1 }),
+      rel.children(["henry", "carol"], ["liam"], { order: 2 }),
+      rel.children(["henry", "mia"], ["zoe"], { order: 3 }),
+    ],
+    measurements: {
+      ava: { width: 80, height: 60 },
+      carol: { width: 120, height: 60 },
+      emma: { width: 120, height: 60 },
+      henry: { width: 140, height: 70 },
+      liam: { width: 80, height: 60 },
+      mia: { width: 120, height: 60 },
+      zoe: { width: 80, height: 60 },
+    },
+    spacing: {
+      column: 64,
+      padding: 28,
+      row: 84,
+    },
+  });
+
+  expect(layout.cards.every((card) => card.x + card.width <= layout.bounds.width)).toBe(true);
 });
 
 test("marks separated and divorced partnership lines", () => {

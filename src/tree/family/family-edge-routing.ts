@@ -1,7 +1,6 @@
 import {
   bottomCenterPoint,
   centerPoint,
-  createTreeEdgePath,
   roundTreeCoordinate,
   topCenterPoint,
 } from "../core";
@@ -24,6 +23,24 @@ const parentageJoinPoint = <Person>(pair: [FamilyTreeLayoutCard<Person>, FamilyT
     clearY: Math.max(bottomCenterPoint(first).y, bottomCenterPoint(second).y),
     y: (centerPoint(first).y + centerPoint(second).y) / 2,
   };
+};
+const createFamilyDescendantPath = (
+  start: { x: number; y: number; clearY?: number },
+  end: { x: number; y: number },
+  lineShape: TreeLineShape,
+) => {
+  const routeStartY = start.clearY ?? start.y;
+  const midY = roundTreeCoordinate(routeStartY + (end.y - routeStartY) * 0.5);
+  const startX = roundTreeCoordinate(start.x);
+  const startY = roundTreeCoordinate(start.y);
+  const endX = roundTreeCoordinate(end.x);
+  const endY = roundTreeCoordinate(end.y);
+
+  if (lineShape === "curved") {
+    return `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
+  }
+
+  return `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
 };
 
 export interface RouteFamilyEdgesOptions {
@@ -121,7 +138,7 @@ export function routeFamilyEdges<Person>(
       if (!child) return;
       addPersonEdge({
         id,
-        path: createTreeEdgePath(start, topCenterPoint(child), lineShape),
+        path: createFamilyDescendantPath(start, topCenterPoint(child), lineShape),
         kind,
         status,
         sourceId: parents[0],
@@ -157,17 +174,23 @@ export function routeFamilyEdges<Person>(
 
   relationships.forEach((relationship, relationshipIndex) => {
     if (relationship.type === "partnership") {
-      const [partnerAId, partnerBId] = relationship.partners;
-      if (!partnerAId || !partnerBId) return;
-      if (drawnParentBars.has(partnershipKey(partnerAId, partnerBId))) return;
-      const pair = findOrderedPair(partnerAId, partnerBId);
-      if (!pair) return;
-      drawParentBar(
-        pair,
-        relationship.id ?? `partnership-${relationshipIndex}`,
-        relationship.relation ?? "partner",
-        relationship.status,
-      );
+      const visiblePartners = relationship.partners
+        .map((partnerId) => cardsById.get(partnerId))
+        .filter((card): card is FamilyTreeLayoutCard<Person> => Boolean(card))
+        .toSorted((a, b) => a.x - b.x);
+      const baseId = relationship.id ?? `partnership-${relationshipIndex}`;
+      for (let partnerIndex = 0; partnerIndex < visiblePartners.length - 1; partnerIndex += 1) {
+        const first = visiblePartners[partnerIndex];
+        const second = visiblePartners[partnerIndex + 1];
+        if (!first || !second) continue;
+        if (drawnParentBars.has(partnershipKey(first.personId, second.personId))) continue;
+        drawParentBar(
+          [first, second],
+          visiblePartners.length === 2 ? baseId : `${baseId}-${partnerIndex + 1}`,
+          relationship.relation ?? "partner",
+          relationship.status,
+        );
+      }
       return;
     }
   });
@@ -229,7 +252,7 @@ export function routeFamilyEdges<Person>(
         if (!childCard) continue;
         addPersonEdge({
           id: `${relationship.id ?? `guardianship-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${guardianId}-${childId}-${relationship.relation ?? "guardian"}`,
-          path: createTreeEdgePath(bottomCenterPoint(guardianCard), topCenterPoint(childCard), lineShape),
+          path: createFamilyDescendantPath(bottomCenterPoint(guardianCard), topCenterPoint(childCard), lineShape),
           kind: relationship.relation ?? "guardian",
           status: relationship.status,
           sourceId: guardianId,

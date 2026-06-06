@@ -58,7 +58,7 @@ Avoid wrapping custom cards in native buttons if the card can contain nested but
 
 Default \`interactionMode\` is \`"pan"\`: users can drag the canvas and non-interactive card areas. Buttons, links, inputs, selects, textareas, contenteditable elements, and \`[data-tree-drag-ignore]\` do not start pan drags.
 
-Other modes are \`"scroll"\` for normal browser scrollbars and \`"none"\` for no viewport interaction.
+Other modes are \`"pan-page-scroll"\` for drag-panning while vertical touch gestures scroll the page, \`"scroll"\` for normal browser scrollbars, and \`"none"\` for no viewport interaction.
 
 \`treeApiRef\` exposes only \`centerPerson(personId)\`, \`fitToSubject()\`, and \`resetViewport()\`.
 
