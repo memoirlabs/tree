@@ -1,13 +1,12 @@
-# Memoir Tree v0.4.4
+# Memoir Tree v0.4.5
 
-Patch release for reliable tree drag-panning from canvas and card surfaces.
+Docs-only patch for tree drag interaction behavior.
 
 ## Changes
 
-- Allow touch and pen drag starts without relying on mouse-only `button` values.
-- Keep `pan-page-scroll` vertical touch gestures available for page scroll while horizontal touch drags pan the tree.
-- Apply touch-action behavior through the canvas/card wrapper layers.
-- Show `grabbing` while a drag is active.
+- Clarify `pan`, `pan-page-scroll`, `scroll`, and `none`.
+- Document mouse, touch, and pen drag behavior from canvas and non-interactive card surfaces.
+- Update README, docs pages, and `llms.txt`.
 
 ## Verify
 
