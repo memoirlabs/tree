@@ -35,8 +35,10 @@ const getSize = (
   personId: PersonId,
 ) => measurements[personId] ?? fallbackCardSize;
 
-const createSubjectRow = <Person>(neighborhood: Pick<FamilyNeighborhood<Person>, "siblings" | "halfSiblings" | "self" | "partners">) => {
-  const partners = uniqueRelatives(neighborhood.partners);
+const createSubjectRow = <Person>(
+  neighborhood: Pick<FamilyNeighborhood<Person>, "siblings" | "halfSiblings" | "self" | "partners" | "relationships">,
+) => {
+  const partners = orderSubjectPartners(neighborhood);
   const splitIndex = Math.floor(partners.length / 2);
   return uniqueRelatives([
     ...neighborhood.siblings,
@@ -101,10 +103,10 @@ const createGroupedRowItems = <Person>(
 };
 
 const createSubjectRowItems = <Person>(
-  neighborhood: Pick<FamilyNeighborhood<Person>, "siblings" | "halfSiblings" | "self" | "partners">,
+  neighborhood: Pick<FamilyNeighborhood<Person>, "siblings" | "halfSiblings" | "self" | "partners" | "relationships">,
   anchorIds: string[],
 ): FamilyRowItem<Person>[] => {
-  const partners = uniqueRelatives(neighborhood.partners);
+  const partners = orderSubjectPartners(neighborhood);
   const splitIndex = Math.floor(partners.length / 2);
   const subjectCluster = [
     ...partners.slice(0, splitIndex),
@@ -116,6 +118,45 @@ const createSubjectRowItems = <Person>(
     ...singleRelativeItems(uniqueRelatives(neighborhood.siblings)),
     { id: rowItemId(relativeIds(subjectCluster)), relatives: subjectCluster, anchorIds },
     ...singleRelativeItems(uniqueRelatives(neighborhood.halfSiblings)),
+  ];
+};
+
+const orderSubjectPartners = <Person>(
+  neighborhood: Pick<FamilyNeighborhood<Person>, "self" | "partners" | "relationships">,
+) => {
+  const partners = uniqueRelatives(neighborhood.partners);
+  const partnersById = new Map(partners.map((partner) => [partner.personId, partner]));
+  const childBearingPartnerIds: PersonId[] = [];
+
+  for (const relationship of neighborhood.relationships.toSorted(byRelationshipOrder)) {
+    if (relationship.type !== "parentage" || !relationship.parents.includes(neighborhood.self.personId)) continue;
+    for (const parentId of relationship.parents) {
+      if (parentId === neighborhood.self.personId || !partnersById.has(parentId)) continue;
+      if (!childBearingPartnerIds.includes(parentId)) childBearingPartnerIds.push(parentId);
+    }
+  }
+
+  const leftChildPartners: FamilyRelative<Person>[] = [];
+  const rightChildPartners: FamilyRelative<Person>[] = [];
+  childBearingPartnerIds.forEach((partnerId, index) => {
+    const partner = partnersById.get(partnerId);
+    if (!partner) return;
+    if (index % 2 === 0) {
+      leftChildPartners.push(partner);
+    } else {
+      rightChildPartners.push(partner);
+    }
+  });
+
+  const childBearingPartnerSet = new Set(childBearingPartnerIds);
+  const otherPartners = partners.filter((partner) => !childBearingPartnerSet.has(partner.personId));
+  const otherSplitIndex = Math.floor(otherPartners.length / 2);
+
+  return [
+    ...otherPartners.slice(0, otherSplitIndex),
+    ...leftChildPartners.toReversed(),
+    ...rightChildPartners,
+    ...otherPartners.slice(otherSplitIndex),
   ];
 };
 

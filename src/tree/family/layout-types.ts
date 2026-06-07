@@ -27,8 +27,8 @@ export interface FamilyTreeLayoutResult<Person> {
 }
 
 export interface BuildFamilyTreeLayoutInput<Person> {
-  subject: PersonId;
-  people: PeopleById<Person>;
+  subject?: PersonId;
+  people?: PeopleById<Person>;
   relationships?: FamilyRelationship[];
   graph?: FamilyGraph<Person>;
   collapsed?: PersonId[];

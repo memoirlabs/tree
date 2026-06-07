@@ -291,6 +291,38 @@ test("balances multiple partners around the subject row", () => {
   expect(["iris", "liam"].map(centerX).every((x) => x > subjectCenter)).toBe(true);
 });
 
+test("keeps child-bearing partners closest to the subject anchors", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      iris: { id: "iris", name: "Iris" },
+      liam: { id: "liam", name: "Liam" },
+      mia: { id: "mia", name: "Mia" },
+      zoe: { id: "zoe", name: "Zoe" },
+    },
+    relationships: [
+      rel.partner("henry", "carol", { order: 1 }),
+      rel.partner("henry", "emma", { order: 2 }),
+      rel.partner("henry", "iris", { order: 3 }),
+      rel.children(["henry", "iris"], ["liam"], { order: 4 }),
+      rel.children(["henry", "emma"], ["mia"], { order: 5 }),
+    ],
+    limits: {
+      partners: null,
+    },
+  });
+  const row = layout.cards
+    .filter((card) => card.relation.side === "self" || card.relation.side === "partner")
+    .toSorted((a, b) => a.x - b.x)
+    .map((card) => card.personId);
+  const subjectIndex = row.indexOf("henry");
+
+  expect(row[subjectIndex - 1]).toBe("iris");
+  expect(row[subjectIndex + 1]).toBe("emma");
+  expect(row).toContain("carol");
+});
+
 test("builds lower-level layered layouts with internal anchor points", () => {
   const layout = buildLayeredTreeLayout({
     spacing: { row: 80, column: 24, padding: 16 },

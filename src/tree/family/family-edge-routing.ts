@@ -24,6 +24,19 @@ const parentageJoinPoint = <Person>(pair: [FamilyTreeLayoutCard<Person>, FamilyT
     y: (centerPoint(first).y + centerPoint(second).y) / 2,
   };
 };
+const rowOverlap = <Person>(a: FamilyTreeLayoutCard<Person>, b: FamilyTreeLayoutCard<Person>) =>
+  Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > Math.min(a.height, b.height) * 0.5;
+const hasCardBetweenPair = <Person>(
+  pair: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>],
+  cards: FamilyTreeLayoutCard<Person>[],
+) => {
+  const [first, second] = pair;
+  return cards.some((card) => {
+    if (card.personId === first.personId || card.personId === second.personId) return false;
+    if (!rowOverlap(first, card) || !rowOverlap(second, card)) return false;
+    return card.x >= first.x + first.width && card.x + card.width <= second.x;
+  });
+};
 const createFamilyDescendantPath = (
   start: { x: number; y: number; clearY?: number },
   end: { x: number; y: number },
@@ -41,6 +54,31 @@ const createFamilyDescendantPath = (
   }
 
   return `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
+};
+const createFamilyMultiParentPath = <Person>(
+  parents: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>],
+  children: FamilyTreeLayoutCard<Person>[],
+) => {
+  const parentPoints = parents.map(bottomCenterPoint);
+  const childPoints = children.map(topCenterPoint);
+  const parentClearY = Math.max(...parentPoints.map((point) => point.y));
+  const minChildY = Math.min(...childPoints.map((point) => point.y));
+  const busY = roundTreeCoordinate(parentClearY + (minChildY - parentClearY) * 0.5);
+  const busPoints = [...parentPoints, ...childPoints];
+  const minBusX = Math.min(...busPoints.map((point) => point.x));
+  const maxBusX = Math.max(...busPoints.map((point) => point.x));
+
+  return [
+    ...parentPoints.map(
+      (point) =>
+        `M ${roundTreeCoordinate(point.x)} ${roundTreeCoordinate(point.y)} L ${roundTreeCoordinate(point.x)} ${busY}`,
+    ),
+    `M ${roundTreeCoordinate(minBusX)} ${busY} L ${roundTreeCoordinate(maxBusX)} ${busY}`,
+    ...childPoints.map(
+      (point) =>
+        `M ${roundTreeCoordinate(point.x)} ${busY} L ${roundTreeCoordinate(point.x)} ${roundTreeCoordinate(point.y)}`,
+    ),
+  ].join(" ");
 };
 
 export interface RouteFamilyEdgesOptions {
@@ -117,6 +155,7 @@ export function routeFamilyEdges<Person>(
     children,
     id,
     kind,
+    parentCards,
     parents,
     start,
     status,
@@ -124,6 +163,7 @@ export function routeFamilyEdges<Person>(
     children: FamilyTreeLayoutCard<Person>[];
     id: string;
     kind: string;
+    parentCards?: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>];
     parents: PersonId[];
     start: { x: number; y: number; clearY?: number };
     status: FamilyRelationship["status"];
@@ -132,6 +172,18 @@ export function routeFamilyEdges<Person>(
     const key = parentageGroupKey(parents, children.map((child) => child.personId), kind);
     if (drawnParentageGroups.has(key)) return;
     drawnParentageGroups.add(key);
+
+    if (parentCards) {
+      edges.push({
+        id,
+        path: createFamilyMultiParentPath(parentCards, children),
+        kind,
+        status,
+        sourceId: parents[0],
+        targetId: children[0]?.personId,
+      });
+      return;
+    }
 
     if (children.length === 1) {
       const child = children[0];
@@ -204,7 +256,8 @@ export function routeFamilyEdges<Person>(
           const pair = findOrderedPair(parentAId, parentBId);
           if (pair) {
             const key = partnershipKey(parentAId, parentBId);
-            if (!drawnParentBars.has(key)) {
+            const hasInterveningCard = hasCardBetweenPair(pair, cards);
+            if (!hasInterveningCard && !drawnParentBars.has(key)) {
               drawParentBar(
                 pair,
                 `${relationship.id ?? `parentage-${relationshipIndex}`}-bar`,
@@ -218,6 +271,7 @@ export function routeFamilyEdges<Person>(
                 .filter((childCard): childCard is FamilyTreeLayoutCard<Person> => Boolean(childCard)),
               id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${parentAId}-${parentBId}-${relationship.relation ?? "biological"}`,
               kind: relationship.relation ?? "biological",
+              parentCards: hasInterveningCard ? pair : undefined,
               parents: [parentAId, parentBId],
               start: parentageJoinPoint(pair),
               status: relationship.status,

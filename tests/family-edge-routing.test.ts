@@ -26,6 +26,50 @@ function edgeKind(layout: ReturnType<typeof buildFamilyTreeLayout>, idPrefix: st
   return layout.edges.find((edge) => edge.id.startsWith(idPrefix))?.kind;
 }
 
+function pathSegments(path: string) {
+  const tokens = path.split(/\s+/);
+  const segments: Array<{ x1: number; x2: number; y1: number; y2: number }> = [];
+  let current: { x: number; y: number } | null = null;
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    const command = tokens[index];
+    if (command !== "M" && command !== "L") continue;
+    const x = Number(tokens[index + 1]);
+    const y = Number(tokens[index + 2]);
+    index += 2;
+    if (command === "L" && current) {
+      segments.push({ x1: current.x, y1: current.y, x2: x, y2: y });
+    }
+    current = { x, y };
+  }
+
+  return segments;
+}
+
+function segmentCrossesCardInterior(
+  segment: { x1: number; x2: number; y1: number; y2: number },
+  card: Pick<FamilyTreeLayoutCard<unknown>, "height" | "width" | "x" | "y">,
+) {
+  const left = card.x + 1;
+  const right = card.x + card.width - 1;
+  const top = card.y + 1;
+  const bottom = card.y + card.height - 1;
+
+  if (segment.y1 === segment.y2) {
+    const minX = Math.min(segment.x1, segment.x2);
+    const maxX = Math.max(segment.x1, segment.x2);
+    return segment.y1 > top && segment.y1 < bottom && maxX > left && minX < right;
+  }
+
+  if (segment.x1 === segment.x2) {
+    const minY = Math.min(segment.y1, segment.y2);
+    const maxY = Math.max(segment.y1, segment.y2);
+    return segment.x1 > left && segment.x1 < right && maxY > top && minY < bottom;
+  }
+
+  return false;
+}
+
 test("routes two-parent child groups below the parent cards", () => {
   const layout = buildFamilyTreeLayout({
     subject: "parentA",
@@ -198,4 +242,54 @@ test("draws adjacent visible partner bars for multi-partner groups", () => {
     "parentB->parentC",
   ]);
   expect(partnerEdges.map((edge) => edge.path)).toEqual(["M 100 40 L 140 40", "M 240 40 L 280 40"]);
+});
+
+test("routes non-adjacent parentage around intervening cards", () => {
+  const cards: FamilyTreeLayoutCard<{ name: string }>[] = [
+    {
+      personId: "parentA",
+      person: { name: "Parent A" },
+      relation: { label: "parent", generation: -1, side: "ancestor" },
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 80,
+    },
+    {
+      personId: "other",
+      person: { name: "Other" },
+      relation: { label: "partner", generation: 0, side: "partner" },
+      x: 120,
+      y: 0,
+      width: 100,
+      height: 80,
+    },
+    {
+      personId: "parentB",
+      person: { name: "Parent B" },
+      relation: { label: "parent", generation: -1, side: "ancestor" },
+      x: 240,
+      y: 0,
+      width: 100,
+      height: 80,
+    },
+    {
+      personId: "childA",
+      person: { name: "Child A" },
+      relation: { label: "child", generation: 1, side: "descendant" },
+      x: 120,
+      y: 160,
+      width: 100,
+      height: 60,
+    },
+  ];
+
+  const edge = routeFamilyEdges(cards, [rel.children(["parentA", "parentB"], ["childA"])]).find(
+    (layoutEdge) => layoutEdge.targetId === "childA",
+  );
+  expect(edge).toBeDefined();
+  expect(edge?.path).toContain("M 50 80 L 50 120");
+  expect(edge?.path).toContain("M 290 80 L 290 120");
+  expect(edge?.path).not.toContain("M 100 40 L 240 40");
+  expect(pathSegments(edge?.path ?? "").some((segment) => segmentCrossesCardInterior(segment, cards[1]!))).toBe(false);
 });
