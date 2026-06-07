@@ -117,6 +117,8 @@ Partnership groups and child groups participate in layout before SVG edges are r
 
 Two-parent child groups use the visible midpoint between the parent cards as the parentage join. Multi-child groups split through a horizontal bus between the parent row and child row. In compact layouts, the bus is centered in the clear vertical gap below the parent cards so it does not run through the parent row.
 
+Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
+
 The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Very crowded families can become wide; use `limits` when you want to cap the visible neighborhood, expand vertical depth, or include nearby sibling and partner branches.
 
 Default spacing is compact:

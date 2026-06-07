@@ -1,14 +1,14 @@
-# Memoir Tree v0.4.8
+# Memoir Tree v0.4.9
 
-Anchored routing and layout verification patch.
+Unknown partner placeholder routing patch.
 
 ## Changes
 
-- Route non-adjacent two-parent child groups through clear card anchors instead of drawing row bars through intervening cards.
-- Keep child-bearing partners closest to the subject in crowded multi-partner rows.
-- Add geometric invariant tests for card overlap, bounds containment, edge bounds, and edge/card crossings.
-- Add a `/visual-check` docs route for repeatable browser stress testing.
-- Fix `buildFamilyTreeLayout` input types so graph mode does not require redundant `subject` and `people`.
+- Treat partnerships with `relation: "unknown"` or `status: "unknown"` as placeholder/layout facts, not real spouse bars.
+- Keep unknown placeholder cards visible without drawing a fake horizontal partner edge.
+- Still connect unknown placeholders when they are actually included as parents in the child parentage group.
+- Add the unknown-placeholder case to `/visual-check`.
+- Document the placeholder rule in README, docs, API notes, and `llms.txt`.
 
 ## Verify
 

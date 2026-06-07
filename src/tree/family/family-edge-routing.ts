@@ -37,6 +37,8 @@ const hasCardBetweenPair = <Person>(
     return card.x >= first.x + first.width && card.x + card.width <= second.x;
   });
 };
+const shouldDrawPartnershipBar = (relationship: Extract<FamilyRelationship, { type: "partnership" }>) =>
+  relationship.relation !== "unknown" && relationship.status !== "unknown";
 const createFamilyDescendantPath = (
   start: { x: number; y: number; clearY?: number },
   end: { x: number; y: number },
@@ -226,6 +228,7 @@ export function routeFamilyEdges<Person>(
 
   relationships.forEach((relationship, relationshipIndex) => {
     if (relationship.type === "partnership") {
+      if (!shouldDrawPartnershipBar(relationship)) return;
       const visiblePartners = relationship.partners
         .map((partnerId) => cardsById.get(partnerId))
         .filter((card): card is FamilyTreeLayoutCard<Person> => Boolean(card))

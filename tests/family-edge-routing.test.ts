@@ -293,3 +293,32 @@ test("routes non-adjacent parentage around intervening cards", () => {
   expect(edge?.path).not.toContain("M 100 40 L 240 40");
   expect(pathSegments(edge?.path ?? "").some((segment) => segmentCrossesCardInterior(segment, cards[1]!))).toBe(false);
 });
+
+test("does not draw a fake partnership bar for unknown partner placeholders", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "parentA",
+    people,
+    relationships: [
+      rel.partner("parentA", "parentB", { relation: "unknown", status: "unknown" }),
+      rel.children(["parentA"], ["childA"]),
+    ],
+  });
+
+  expect(layout.cards.map((card) => card.personId)).toEqual(["parentA", "parentB", "childA"]);
+  expect(layout.edges.some((edge) => edge.sourceId === "parentA" && edge.targetId === "parentB")).toBe(false);
+  expect(layout.edges.filter((edge) => edge.sourceId === "parentA" && edge.targetId === "childA")).toHaveLength(1);
+});
+
+test("connects an unknown placeholder when it is actually a parent", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "parentA",
+    people,
+    relationships: [
+      rel.partner("parentA", "parentB", { relation: "unknown", status: "unknown" }),
+      rel.children(["parentA", "parentB"], ["childA"]),
+    ],
+  });
+
+  expect(layout.edges.some((edge) => edge.sourceId === "parentA" && edge.targetId === "parentB")).toBe(true);
+  expect(layout.edges.filter((edge) => edge.targetId === "childA")).toHaveLength(1);
+});

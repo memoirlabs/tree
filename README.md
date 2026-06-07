@@ -155,6 +155,8 @@ Family layout is subject-centered and neighborhood-based. By default it renders 
 
 Two-parent child groups use the visible midpoint between the parent cards as the parentage join. Multi-child groups split through a horizontal bus centered in the clear gap below the parent cards and above the child row.
 
+Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
+
 Large or blended families can still become visually wide. Use `limits` to control the visible neighborhood; set a group cap to `null` to disable that cap. Use `limits.lateralFamilyGenerations` to include nearby sibling and partner family branches without expanding the entire graph.
 
 Default spacing is intentionally compact: `{ row: 80, column: 24, padding: 24 }`. Override it per tree when your card size needs more or less room:

@@ -76,6 +76,12 @@ const orgGraph: OrgChartGraph<Person> = {
   ],
 };
 
+const unknownPartnerPeople = {
+  child: { name: "Child" },
+  self: { name: "Self" },
+  unknown: { name: "Unknown" },
+};
+
 function StressCard({ person, ...props }: { person: Person } & HTMLAttributes<HTMLElement>) {
   return (
     <article {...props} style={{ background: "white", border: "2px solid #111", minWidth: 132, padding: 12 }}>
@@ -150,6 +156,18 @@ export default function VisualCheckPage() {
           relationships={[rel.partner("a", "b"), rel.partner("b", "c"), rel.children(["b", "c"], ["d"])]}
           card={FamilyStressCard}
           interactionMode="scroll"
+        />
+      </section>
+      <section style={{ height: 360 }}>
+        <FamilyTree
+          people={unknownPartnerPeople}
+          subject="self"
+          relationships={[
+            rel.partner("self", "unknown", { relation: "unknown", status: "unknown" }),
+            rel.children(["self"], ["child"]),
+          ]}
+          card={FamilyStressCard}
+          interactionMode="pan"
         />
       </section>
     </main>

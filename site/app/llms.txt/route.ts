@@ -40,6 +40,8 @@ Graph normalization groups \`parentChildLinks\` by \`groupId\`, \`relation\`, \`
 
 Two-parent child groups join at the visible midpoint between parent cards. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row.
 
+Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with \`relation: "unknown"\` or \`status: "unknown"\` renders the visible placeholder card without drawing a horizontal partnership edge. If that placeholder is also an actual co-parent, include it in the child \`parentChildLinks\` or \`rel.children([...parents], children)\` parent list so the parentage edge connects from both parents.
+
 ## OrgChart
 
 Use \`OrgChart\` for rooted manager/report hierarchies. Recommended production input is \`graph\` with \`people\`, \`root\`, and \`reportingLinks\`. Simple examples can use \`people\`, \`root\`, and \`relationships\` with \`org.reports(managerId, reportIds, options?)\`.
