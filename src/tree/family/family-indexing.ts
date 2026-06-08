@@ -347,6 +347,7 @@ const collectAncestorGenerations = <Person>(
   index: FamilyIndex<Person>,
   subject: PersonId,
   lateralParentIds: PersonId[],
+  partnerParentIds: PersonId[],
   limits: FamilyNeighborhoodLimits,
 ): FamilyGenerationLayer<Person>[] => {
   const layers: FamilyGenerationLayer<Person>[] = [];
@@ -356,7 +357,9 @@ const collectAncestorGenerations = <Person>(
   for (let generation = 1; !generationLimitReached(generation, limits.ancestorGenerations); generation += 1) {
     const ids = compactIds([
       ...frontier.flatMap((personId) => getParentLikeIds(index, personId)),
-      ...(generation === 1 && limits.lateralFamilyGenerations !== 0 ? lateralParentIds : []),
+      ...(generation === 1 && limits.lateralFamilyGenerations !== 0
+        ? [...lateralParentIds, ...partnerParentIds]
+        : []),
     ]).filter((personId) => !seen.has(personId));
     if (ids.length === 0) break;
     ids.forEach((personId) => seen.add(personId));
@@ -383,6 +386,11 @@ const collectAncestorGenerations = <Person>(
               generation: -generation,
               side: "other",
             }),
+            createRelatives(index, partnerParentIds, {
+              label: "partner-parent",
+              generation: -generation,
+              side: "other",
+            }),
           )
         : createRelatives(index, ids, {
             label: ancestorLabelForGeneration(generation),
@@ -391,7 +399,13 @@ const collectAncestorGenerations = <Person>(
           });
     const relatives = capGenerationRelatives(generation, relativesForGeneration, limits);
     if (relatives.length > 0) layers.push({ generation: -generation, relatives });
-    frontier = ids;
+    frontier =
+      generation === 1
+        ? compactIds([
+            ...getParentLikeIds(index, subject),
+            ...lateralParentIds,
+          ]).filter((personId) => ids.includes(personId))
+        : ids;
   }
 
   return layers;
@@ -516,14 +530,32 @@ export function collectFamilyNeighborhood<Person>(
         (candidateId) => candidateId !== subject && !childIds.includes(candidateId),
       )
     : [];
-  const lateralIds = compactIds([...siblings, ...halfSiblings, ...explicitPartnerIds, ...coparentOnlyIds]);
+  const partnerLikeIds = compactIds([...explicitPartnerIds, ...coparentOnlyIds]);
+  const lateralIds = compactIds([...siblings, ...halfSiblings, ...partnerLikeIds]);
   const lateralParentIds =
     resolvedLimits.lateralFamilyGenerations === 0
       ? []
       : compactIds([...siblings, ...halfSiblings].flatMap((personId) => getParentLikeIds(index, personId))).filter(
           (personId) => !parentIds.includes(personId) && !guardianOnlyIds.includes(personId),
         );
-  const ancestorGenerations = collectAncestorGenerations(index, subject, lateralParentIds, resolvedLimits);
+  const partnerParentIds =
+    resolvedLimits.lateralFamilyGenerations === 0
+      ? []
+      : compactIds(partnerLikeIds.flatMap((personId) => getParentLikeIds(index, personId)))
+          .filter(
+            (personId) =>
+              personId !== subject &&
+              !parentIds.includes(personId) &&
+              !guardianOnlyIds.includes(personId) &&
+              !lateralIds.includes(personId),
+          );
+  const ancestorGenerations = collectAncestorGenerations(
+    index,
+    subject,
+    lateralParentIds,
+    partnerParentIds,
+    resolvedLimits,
+  );
   const descendantGenerations = collectDescendantGenerations(index, subject, lateralIds, resolvedLimits);
 
   const grandparents =

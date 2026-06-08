@@ -122,7 +122,7 @@ export function EditableFamilyTree({ initialGraph }: { initialGraph: FamilyGraph
 
 Save the same graph shape to your database. Keep `id`, `groupId`, and `order` values stable for clean JSON diffs and predictable re-renders.
 
-For add-member flows, let the app decide which relation choices are allowed for the selected person. Helpers such as `getFamilyPartnershipGroupIds(graph, personId)` and `getFamilyChildBearingGroupIds(graph, personId)` can identify the relevant union IDs for custom editors.
+For add-member flows, let the app decide which relation choices are allowed for the selected person. Helpers such as `getFamilyPartnershipGroupIds(graph, personId)`, `getFamilyChildBearingGroupIds(graph, personId)`, and `getFamilyChildPlacementGroupIds(graph, personId)` can identify the relevant union IDs for custom editors.
 
 ## Model Real Relationships
 
@@ -370,7 +370,7 @@ Use `buildLayeredTreeLayout()` only when you need the small shared measured-box 
 - Relationship helpers: `rel`, `org` with `org.manager`, `org.report`, and `org.reports`
 - Graph helpers: `graphToFamilyRelationships`, `graphToOrgReportingRelationships`
 - Family helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`, `buildFamilyTreeLayout`
-- Advanced family helpers: `createFamilyLayoutService`, `layoutFamilyTree`, `createUnionParentLinks`, `defaultFamilyLayoutOptions`, `resolveFamilyLayoutOptions`, `getFamilyPartnershipGroupIds`, `getFamilyChildBearingGroupIds`
+- Advanced family helpers: `createFamilyLayoutService`, `layoutFamilyTree`, `createUnionParentLinks`, `defaultFamilyLayoutOptions`, `resolveFamilyLayoutOptions`, `getFamilyPartnershipGroupIds`, `getFamilyChildBearingGroupIds`, `getFamilyChildPlacementGroupIds`
 - Org helpers: `createOrgChartIndex`, `collectOrgChartSubtree`, `buildOrgChartLayout`
 - Core layout helper: `buildLayeredTreeLayout`
 - Family primitives: `TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, `useTreeLayout`

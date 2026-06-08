@@ -21,6 +21,7 @@ import {
   defaultFamilyLayoutOptions,
   defaultFamilyNeighborhoodLimits,
   getFamilyChildBearingGroupIds,
+  getFamilyChildPlacementGroupIds,
   getFamilyPartnershipGroupIds,
   getTreeStyleName,
   graphToFamilyRelationships,
@@ -65,6 +66,7 @@ Most apps only need the `theme` prop and CSS variables. These helpers are useful
 - `createUnionParentLinks(union, child, options?)`: helper for add-child flows where the selected UI context is a union.
 - `getFamilyPartnershipGroupIds(graph, personId)`: returns stable partnership group IDs involving a person, sorted by group order.
 - `getFamilyChildBearingGroupIds(graph, personId)`: returns stable group IDs where a person already owns parent or guardian child links.
+- `getFamilyChildPlacementGroupIds(graph, personId)`: returns stable group IDs where a person can place a child, including existing partnership groups before they have child links.
 - `layoutFamilyTree(input)`: convenience wrapper around `createFamilyLayoutService().layout(input)`.
 - `buildLayeredTreeLayout(input)`: small measured-box layout primitive used by the renderers.
 
@@ -74,7 +76,7 @@ Use `createFamilyLayoutService()` when you need lower-level data similar to the 
 
 When an app adds a child from a selected union context, use `createUnionParentLinks()` so the child is owned by that union and the edge routes from the union. Parent-only links without a union ID intentionally create a single-parent/synthetic union instead of guessing among a person's possible unions.
 
-For selected-card add flows, keep relation permissions and dialogs in your app. Use `getFamilyPartnershipGroupIds()` and `getFamilyChildBearingGroupIds()` to find the relevant union IDs, then persist the chosen `groupId` on the new parent-child links.
+For selected-card add flows, keep relation permissions and dialogs in your app. Use `getFamilyPartnershipGroupIds()`, `getFamilyChildBearingGroupIds()`, or `getFamilyChildPlacementGroupIds()` to find the relevant union IDs, then persist the chosen `groupId` on the new parent-child links.
 
 ## Family Props
 
@@ -336,6 +338,7 @@ Use these in tests, previews, or custom renderers:
 - `createUnionParentLinks(union, child, options?)`
 - `getFamilyPartnershipGroupIds(graph, personId)`
 - `getFamilyChildBearingGroupIds(graph, personId)`
+- `getFamilyChildPlacementGroupIds(graph, personId)`
 - `layoutFamilyTree(input)`
 - `buildLayeredTreeLayout(input)`
 - `createOrgChartIndex(people, relationships)`

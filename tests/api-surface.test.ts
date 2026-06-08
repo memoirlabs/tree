@@ -29,6 +29,7 @@ const expectedRuntimeExports = [
   "TreeProvider",
   "useTreeLayout",
   "getFamilyChildBearingGroupIds",
+  "getFamilyChildPlacementGroupIds",
   "getFamilyPartnershipGroupIds",
   "graphToFamilyRelationships",
   "rel",

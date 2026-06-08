@@ -130,6 +130,7 @@ export type ComputedRelationLabel =
   | "cousin"
   | "niece-nephew"
   | "partner"
+  | "partner-parent"
   | "coparent"
   | "guardian"
   | "relative"

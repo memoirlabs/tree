@@ -162,6 +162,28 @@ describe("tree primitives", () => {
     expect(markup).not.toContain("overflow:auto");
   });
 
+  test("passes custom card root aria and data props with hybrid pan behavior", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree
+        card={FamilyCard}
+        interactionMode="pan-page-scroll"
+        onPersonClick={() => undefined}
+        people={people}
+        relationships={relationships}
+        selected="henry"
+        subject="henry"
+      />,
+    );
+
+    expect(markup).toContain("data-tree-interaction=\"pan-page-scroll\"");
+    expect(markup).toContain("aria-label=\"Henry, subject\"");
+    expect(markup).toContain("aria-selected=\"true\"");
+    expect(markup).toContain("data-family-card");
+    expect(markup).toContain("data-tree-card");
+    expect(markup).toContain("data-focused");
+    expect(markup).toContain("data-selected");
+  });
+
   test("passes app-owned props through to custom cards", () => {
     const markup = renderToStaticMarkup(
       <FamilyTree<Person, AppCardProps>

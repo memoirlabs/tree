@@ -5,6 +5,7 @@ import {
   collectFamilyNeighborhood,
   createFamilyIndex,
   getFamilyChildBearingGroupIds,
+  getFamilyChildPlacementGroupIds,
   getFamilyPartnershipGroupIds,
   graphToFamilyRelationships,
   rel,
@@ -134,6 +135,27 @@ test("graph helpers expose child-bearing union ids without guessing", () => {
   expect(getFamilyPartnershipGroupIds(graph, "alex")).toEqual(["alex-drew", "alex-blair"]);
   expect(getFamilyChildBearingGroupIds(graph, "alex")).toEqual(["alex-drew", "alex-blair"]);
   expect(getFamilyChildBearingGroupIds(graph, "finn")).toEqual([]);
+});
+
+test("graph helpers expose child placement unions before they have children", () => {
+  const graph: FamilyGraph = {
+    people,
+    subject: "alex",
+    partnershipGroups: [
+      { id: "alex-blair", partners: ["alex", "blair"], status: "divorced", order: 2 },
+      { id: "alex-drew", partners: ["alex", "drew"], status: "current", order: 1 },
+      { id: "gray-harper", partners: ["gray", "harper"], status: "current", order: 3 },
+    ],
+    parentChildLinks: [
+      { id: "alex-casey", groupId: "alex-blair", parentId: "alex", childId: "casey", order: 2 },
+      { id: "blair-casey", groupId: "alex-blair", parentId: "blair", childId: "casey", order: 2 },
+    ],
+  };
+
+  expect(getFamilyChildBearingGroupIds(graph, "alex")).toEqual(["alex-blair"]);
+  expect(getFamilyChildPlacementGroupIds(graph, "alex")).toEqual(["alex-drew", "alex-blair"]);
+  expect(getFamilyChildPlacementGroupIds(graph, "gray")).toEqual(["gray-harper"]);
+  expect(getFamilyChildPlacementGroupIds(graph, "casey")).toEqual([]);
 });
 
 test("graph mode sources grouped child edges from the partnership group", () => {
@@ -319,6 +341,29 @@ test("graph mode keeps a half-sibling's other parent in the parent row", () => {
   expect(drew?.y).toBeLessThan(finn?.y ?? 0);
   expect(Math.abs((drew?.x ?? 0) - (finn?.x ?? 0))).toBeLessThan(Math.abs((drew?.x ?? 0) - (casey?.x ?? 0)));
   expect(layout.edges.some((edge) => edge.id.includes("alex-drew") && edge.targetId === "finn")).toBe(true);
+});
+
+test("graph mode includes spouse parents without labeling them as direct parents", () => {
+  const graph: FamilyGraph = {
+    people,
+    subject: "alex",
+    partnershipGroups: [{ id: "alex-blair", partners: ["alex", "blair"], relation: "spouse" }],
+    parentChildLinks: [{ id: "drew-blair", parentId: "drew", childId: "blair" }],
+  };
+  const neighborhood = collectFamilyNeighborhood(createFamilyIndex(people, graphToFamilyRelationships(graph)), "alex", {
+    lateralFamilyGenerations: 1,
+  });
+  const layout = buildFamilyTreeLayout({ graph, limits: { lateralFamilyGenerations: 1 } });
+  const drew = layout.cards.find((card) => card.personId === "drew");
+
+  expect(neighborhood?.parents.find((relative) => relative.personId === "drew")?.relation).toMatchObject({
+    label: "partner-parent",
+    generation: -1,
+    side: "other",
+  });
+  expect(drew?.relation).toMatchObject({ label: "partner-parent", generation: -1, side: "other" });
+  expect(drew?.relation.label).not.toBe("parent");
+  expect(layout.edges.some((edge) => edge.sourceId === "drew" && edge.targetId === "blair")).toBe(true);
 });
 
 test("graph mode lays out parent siblings and cousins once the family chain exists", () => {

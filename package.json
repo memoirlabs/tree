@@ -1,6 +1,6 @@
 {
   "name": "@memoir/tree",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Ergonomic React family trees and org charts with relationship-aware layout.",
   "homepage": "https://github.com/memoirlabs/tree#readme",
   "repository": {
@@ -72,11 +72,11 @@
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "oxlint": "^1.67.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "oxlint": "^1.69.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

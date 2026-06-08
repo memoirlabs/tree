@@ -5,6 +5,7 @@ export { DefaultOrgCard, OrgChart } from "./tree/org-chart/index";
 export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./tree/family/index";
 export {
   getFamilyChildBearingGroupIds,
+  getFamilyChildPlacementGroupIds,
   getFamilyPartnershipGroupIds,
   graphToFamilyRelationships,
   rel,

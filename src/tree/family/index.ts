@@ -2,7 +2,11 @@ export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./FamilyTree";
 export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./FamilyTreePrimitives";
 export { rel } from "./family-rel";
 export { graphToFamilyRelationships } from "./family-graph";
-export { getFamilyChildBearingGroupIds, getFamilyPartnershipGroupIds } from "./family-graph-helpers";
+export {
+  getFamilyChildBearingGroupIds,
+  getFamilyChildPlacementGroupIds,
+  getFamilyPartnershipGroupIds,
+} from "./family-graph-helpers";
 export { buildFamilyTreeLayout } from "./family-layout";
 export {
   createFamilyLayoutService,

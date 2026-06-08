@@ -36,3 +36,10 @@ export function getFamilyChildBearingGroupIds<Person>(graph: FamilyGraph<Person>
   ]).toSorted(byGroupOrder(groups));
 }
 
+export function getFamilyChildPlacementGroupIds<Person>(graph: FamilyGraph<Person>, personId: PersonId): string[] {
+  const groups = new Map(graph.partnershipGroups.map((group) => [group.id, group]));
+  return unique([
+    ...getFamilyPartnershipGroupIds(graph, personId),
+    ...getFamilyChildBearingGroupIds(graph, personId),
+  ]).toSorted(byGroupOrder(groups));
+}
