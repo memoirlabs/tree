@@ -5,7 +5,9 @@ description: Build app features around @memoir/tree without moving your data mod
 
 `@memoir/tree` is a renderer. It does not ship a database, editor, router, auth system, analytics layer, or form flow.
 
-## App Responsibilities
+Your app owns the graph. Tree renders the graph.
+
+## Responsibilities
 
 Keep these in your app:
 
@@ -15,56 +17,123 @@ Keep these in your app:
 - Selection state, side panels, forms, routes, and analytics.
 - Card markup and app-specific actions.
 
-The package handles layout, measured cards, SVG edges, pan/scroll viewport state, subject-relative family labels, spouse-aware family grouping, org hierarchy, and accessibility props.
+Tree handles measured cards, layout, SVG edges, pan/scroll viewport state, subject-relative family labels, spouse-aware family grouping, org hierarchy, and accessibility props.
 
-## Data Flow
+## Recommended Family Flow
 
-Fetch or compute data before rendering the tree. Simple relationship helpers are fine for small trees:
+Use graph mode for production family data:
 
 ```tsx
-import { FamilyTree } from "@memoir/tree";
+import { useState } from "react";
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 
-export function FamilyPanel({ family }: { family: FamilyData }) {
+type Person = {
+  id: string;
+  name: string;
+};
+
+export function FamilyPanel({ initialGraph }: { initialGraph: FamilyGraph<Person> }) {
+  const [graph, setGraph] = useState(initialGraph);
+  const [selected, setSelected] = useState<string | null>(null);
+
   return (
     <FamilyTree
-      people={family.people}
-      subject={family.subjectId}
-      relationships={family.relationships}
-      selected={family.selectedId}
-      onPersonClick={family.openProfile}
+      graph={graph}
+      selected={selected}
+      onPersonClick={(_person, personId) => setSelected(personId)}
     />
   );
 }
 ```
 
-For production family apps, prefer graph mode so partnerships, parent-child links, and guardianship links have stable IDs:
+Fetch from your API, normalize into `FamilyGraph`, render `FamilyTree`, then save the changed graph back through your app. Tree never writes to your data.
+
+## Add A Family Member
+
+Adding a person means updating `people` plus the relationship facts that connect that person to the visible family.
 
 ```tsx
-import { FamilyTree, type FamilyGraph } from "@memoir/tree";
+function addChildToParents(parentA: string, parentB: string, groupId: string) {
+  const childId = crypto.randomUUID();
 
-export function FamilyPanel({ graph }: { graph: FamilyGraph<Person> }) {
-  return <FamilyTree graph={graph} />;
+  setGraph((current) => ({
+    ...current,
+    people: {
+      ...current.people,
+      [childId]: { id: childId, name: "New child" },
+    },
+    parentChildLinks: [
+      ...current.parentChildLinks,
+      {
+        id: `${parentA}-${childId}`,
+        groupId,
+        parentId: parentA,
+        childId,
+        relation: "biological",
+      },
+      {
+        id: `${parentB}-${childId}`,
+        groupId,
+        parentId: parentB,
+        childId,
+        relation: "biological",
+      },
+    ],
+  }));
 }
 ```
 
-The tree never writes back to your data. Clicks and add-relative actions call your handlers.
+That is enough for Tree to re-render the child under the correct parent group. Use one parent-child link for a single-parent child, two links for a two-parent child, and more only when your domain actually models more parent links.
 
-## Editing Flows
+## Add A Partner And Child
+
+When a child belongs to a new union, create the partner, the group, and the child links together:
 
 ```tsx
-<FamilyTree
-  people={people}
-  subject="alex"
-  relationships={relationships}
-  selected={selectedPersonId}
-  onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
-  onAddRelationship={(_person, personId) => openAddRelativeDialog(personId)}
-  readOnly={!canEditFamily}
-/>
+function addPartnerAndChild(subjectId: string, partnerName: string, childName: string) {
+  const partnerId = crypto.randomUUID();
+  const childId = crypto.randomUUID();
+  const groupId = `${subjectId}-${partnerId}`;
+
+  setGraph((current) => ({
+    ...current,
+    people: {
+      ...current.people,
+      [partnerId]: { id: partnerId, name: partnerName },
+      [childId]: { id: childId, name: childName },
+    },
+    partnershipGroups: [
+      ...current.partnershipGroups,
+      {
+        id: groupId,
+        partners: [subjectId, partnerId],
+        relation: "coparent",
+        order: current.partnershipGroups.length + 1,
+      },
+    ],
+    parentChildLinks: [
+      ...current.parentChildLinks,
+      { id: `${subjectId}-${childId}`, groupId, parentId: subjectId, childId },
+      { id: `${partnerId}-${childId}`, groupId, parentId: partnerId, childId },
+    ],
+  }));
+}
 ```
 
-`readOnly` prevents `onAddRelationship` from being passed into cards. It does not block selection.
+The important part is the shared `groupId`. That is what makes the child come out of the union instead of one arbitrary parent node.
+
+## Stable IDs And Diffs
+
+For clean diffs and predictable re-renders:
+
+- Keep `people` keyed by stable person IDs.
+- Keep each `partnershipGroups[].id` stable.
+- Keep each `parentChildLinks[].id` stable after creation.
+- Use the same `groupId` for parent-child links that belong to the same union.
+- Use `order` when several unions or child groups need a stable visual order.
+
+Reordering equivalent `parentChildLinks` does not change rendered relationship IDs. Changing IDs, group IDs, relation kinds, or order values is treated as a real model change.
 
 ## Custom Cards
 
@@ -73,16 +142,9 @@ Custom cards are regular React components:
 ```tsx
 import type { FamilyCardProps } from "@memoir/tree";
 
-type Person = {
-  id: string;
-  name: string;
-  avatarUrl?: string;
-};
-
 export function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProps<Person>) {
   return (
     <article {...rootProps}>
-      {person.avatarUrl ? <img src={person.avatarUrl} alt="" /> : null}
       <strong>{person.name}</strong>
       <small>{relation.label}</small>
     </article>
@@ -92,6 +154,35 @@ export function ProfileCard({ focused, person, relation, ...rootProps }: FamilyC
 
 Spread `rootProps` so the tree can attach accessibility props, handlers, and stable data attributes.
 
+Use `cardProps` for app-owned card inputs:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  card={ProfileCard}
+  cardProps={(person) => ({
+    href: `/people/${person.id}`,
+    canEdit: canEditFamily,
+  })}
+/>
+```
+
+## Editing Hooks
+
+Use tree callbacks to open your app UI:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  selected={selectedPersonId}
+  onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
+  onAddRelationship={(_person, personId) => openAddRelativeDialog(personId)}
+  readOnly={!canEditFamily}
+/>
+```
+
+`readOnly` prevents add-relationship actions from being passed into cards. It does not block selection.
+
 ## Viewport Interaction
 
 `interactionMode` defaults to `"pan"`. Users can drag the canvas and non-interactive card surfaces with mouse, touch, or pen. Buttons, links, inputs, selects, textareas, contenteditable elements, and anything marked with `data-tree-drag-ignore` keep their own pointer behavior.
@@ -100,6 +191,34 @@ Use `"pan-page-scroll"` when the tree should drag with mouse or horizontal touch
 
 ```tsx
 <FamilyTree graph={graph} interactionMode="scroll" />
+```
+
+## Org Data Flow
+
+Org charts can use simple mode or graph mode. Use graph mode when reporting links have database IDs:
+
+```tsx
+import { OrgChart, type OrgChartGraph } from "@memoir/tree";
+
+export function TeamPanel({ graph }: { graph: OrgChartGraph<Person> }) {
+  return <OrgChart graph={graph} />;
+}
+```
+
+Adding a report is the same pattern:
+
+```tsx
+setGraph((current) => ({
+  ...current,
+  people: {
+    ...current.people,
+    [reportId]: { id: reportId, name: "New report" },
+  },
+  reportingLinks: [
+    ...current.reportingLinks,
+    { id: `${managerId}-${reportId}`, managerId, reportId },
+  ],
+}));
 ```
 
 ## Checks
@@ -118,11 +237,12 @@ When integrating:
 
 When family lines do not connect where you expect:
 
-- Prefer graph mode for blended families. Simple mode cannot give every partnership group and parent-child link a stable app-owned ID.
-- Check that both parents in a two-parent child group use the same `groupId` when the child belongs to that visible pair.
-- Check relation kinds. Biological plus step/adoptive links in the same group intentionally render as distinct edge kinds instead of one merged biological edge.
+- Prefer graph mode for blended families.
+- Check that both parents in a two-parent child group use the same `groupId`.
+- Keep `groupId` stable across edits.
+- Check relation kinds. Biological plus step/adoptive links in the same group intentionally render as distinct edge kinds.
 - Use `order` on partnership groups and parent-child links when several unions should render in a specific left-to-right order.
 - Confirm every referenced person ID exists in `people`; missing cards are skipped by layout and routing.
-- Keep custom card roots spreading the provided props. Missing root props remove the stable data attributes and accessibility handlers the tree expects.
+- Keep custom card roots spreading the provided props.
 
 For the exact prop surface, see [API](./api).

@@ -9,7 +9,10 @@ All public package exports come from `@memoir/tree`. Import the stylesheet separ
 import {
   FamilyTree,
   OrgChart,
+  buildFamilyTreeLayout,
   buildLayeredTreeLayout,
+  getFamilyChildBearingGroupIds,
+  getFamilyPartnershipGroupIds,
   getTreeStyleName,
   graphToFamilyRelationships,
   graphToOrgReportingRelationships,
@@ -44,6 +47,24 @@ import "@memoir/tree/styles.css";
 
 Most apps only need the `theme` prop and CSS variables. These helpers are useful for wrappers that need to mirror the package's preset names.
 
+## Layout Exports
+
+- `buildFamilyTreeLayout(input)`: React-free family layout used by `FamilyTree`. It accepts graph or simple relationship data and returns positioned cards, SVG edge paths, and bounds.
+- `createFamilyLayoutService(options?)`: lower-level family service for app code that needs old-style `people`, `unions`, `parentLinks`, and `center` control while still using the current graph/layout model.
+- `createUnionParentLinks(union, child, options?)`: helper for add-child flows where the selected UI context is a union.
+- `getFamilyPartnershipGroupIds(graph, personId)`: returns stable partnership group IDs involving a person, sorted by group order.
+- `getFamilyChildBearingGroupIds(graph, personId)`: returns stable group IDs where a person already owns parent or guardian child links.
+- `layoutFamilyTree(input)`: convenience wrapper around `createFamilyLayoutService().layout(input)`.
+- `buildLayeredTreeLayout(input)`: small measured-box layout primitive used by the renderers.
+
+Use `FamilyTree` for the normal app UI. Use `buildFamilyTreeLayout()` when you need to render the same family layout yourself or build a custom non-React surface. React card size stays owned by rendered components and CSS; the React wrapper only passes measured card dimensions into this layout function.
+
+Use `createFamilyLayoutService()` when you need lower-level data similar to the earlier layout API. It returns person nodes, union nodes, edges, bounds, warnings, and the derived `FamilyGraph`. Union entities can carry app-owned `data`.
+
+When an app adds a child from a selected union context, use `createUnionParentLinks()` so the child is owned by that union and the edge routes from the union. Parent-only links without a union ID intentionally create a single-parent/synthetic union instead of guessing among a person's possible unions.
+
+For selected-card add flows, keep relation permissions and dialogs in your app. Use `getFamilyPartnershipGroupIds()` and `getFamilyChildBearingGroupIds()` to find the relevant union IDs, then persist the chosen `groupId` on the new parent-child links.
+
 ## Family Props
 
 Recommended graph-mode props:
@@ -51,6 +72,25 @@ Recommended graph-mode props:
 - `graph`: graph-shaped family facts with `people`, `subject`, `partnershipGroups`, `parentChildLinks`, and optional `guardianshipLinks`.
 
 When `graph` is provided, `FamilyTree` uses the graph's `people`, `subject`, and relationships derived from graph links.
+
+The graph is normal app state. Add or remove family members by updating that state and re-rendering:
+
+```tsx
+setGraph((current) => ({
+  ...current,
+  people: {
+    ...current.people,
+    [childId]: { id: childId, name: "New child" },
+  },
+  parentChildLinks: [
+    ...current.parentChildLinks,
+    { id: `alex-${childId}`, groupId: "alex-jordan", parentId: "alex", childId },
+    { id: `jordan-${childId}`, groupId: "alex-jordan", parentId: "jordan", childId },
+  ],
+}));
+```
+
+The shared `groupId` is what attaches the child to the union instead of one arbitrary parent card. Keep IDs stable after creation for clean JSON diffs.
 
 Simple-mode alternative:
 
@@ -77,6 +117,7 @@ interface FamilyPartnershipGroup {
   relation?: "spouse" | "partner" | "coparent" | "unknown";
   status?: "current" | "former" | "divorced" | "separated" | "unknown";
   order?: number;
+  data?: unknown;
 }
 
 interface FamilyParentChildLink {
@@ -100,7 +141,9 @@ interface FamilyGuardianshipLink {
 }
 ```
 
-Graph normalization groups `parentChildLinks` by `groupId`, `relation`, `status`, and `order`. Links that share those values become one rendered parentage relationship. Links with different relation kinds, such as biological plus step within one partnership group, remain separate so each edge can keep its own kind.
+Graph normalization groups `parentChildLinks` by `groupId`, `relation`, `status`, and `order`. Links that share those values become one rendered parentage relationship with a deterministic rendered ID. Links with different relation kinds, such as biological plus step within one partnership group, remain separate so each edge can keep its own kind.
+
+In graph mode, grouped child edges expose the relationship `groupId` as their source ID. That keeps the rendered edge associated with the parent group in your app state instead of arbitrarily assigning it to one parent.
 
 Common optional props:
 
@@ -115,7 +158,7 @@ Common optional props:
 - `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
-Family layout is subject-centered and renders a bounded neighborhood: ancestor generations, the subject row with siblings and partners, and descendant generations. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair.
+Family layout is subject-centered and renders a bounded neighborhood: ancestor generations, the subject row with siblings and partners, and descendant generations. Lateral branches such as parent siblings, cousins, and nieces/nephews render only when `lateralFamilyGenerations` is above `0`. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair.
 
 Two-parent child groups join at the visible midpoint between parent cards. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row.
 
@@ -138,6 +181,9 @@ Default family limits are:
   parents: 4,
   siblings: 8,
   halfSiblings: 8,
+  auntsUncles: 8,
+  cousins: 12,
+  niecesNephews: 12,
   partners: 3,
   children: 8,
   grandchildren: 8,
@@ -273,6 +319,11 @@ Use these in tests, previews, or custom renderers:
 - `createFamilyIndex(people, relationships)`
 - `collectFamilyNeighborhood(index, subject, limits?)`
 - `buildFamilyTreeLayout(input)`
+- `createFamilyLayoutService(options?)`
+- `createUnionParentLinks(union, child, options?)`
+- `getFamilyPartnershipGroupIds(graph, personId)`
+- `getFamilyChildBearingGroupIds(graph, personId)`
+- `layoutFamilyTree(input)`
 - `buildLayeredTreeLayout(input)`
 - `createOrgChartIndex(people, relationships)`
 - `collectOrgChartSubtree(index, root, options?)`
@@ -316,6 +367,7 @@ Common exports include:
 
 - `PersonId`, `PeopleById`
 - `FamilyTreeProps`, `FamilyCardProps`, `FamilyGraph`, `FamilyPartnershipGroup`, `FamilyParentChildLink`, `FamilyGuardianshipLink`, `FamilyRelationship`, `ComputedRelation`, `FamilyNeighborhoodLimits`
+- `FamilyLayoutInput`, `FamilyLayoutResult`, `FamilyLayoutNode`, `FamilyPersonLayoutNode`, `FamilyUnionLayoutNode`, `FamilyLayoutWarning`, `CreateUnionParentLinksOptions`
 - `OrgChartProps`, `OrgCardProps`, `OrgChartGraph`, `OrgReportingLink`, `OrgReportingRelationship`
 - `TreeApi`, `TreeViewport`, `TreeInteractionMode`, `TreeLineShape`
 - `TreeStylePreset`, `TreeThemeStyle`

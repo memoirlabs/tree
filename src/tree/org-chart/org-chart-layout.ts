@@ -18,7 +18,7 @@ import type {
   PersonId,
 } from "./types";
 
-const defaultFallbackCardSize: OrgChartSize = {
+const defaultEstimatedCardSize: OrgChartSize = {
   width: 220,
   height: 80,
 };
@@ -37,9 +37,9 @@ interface Subtree {
 
 const getSize = (
   measurements: Record<PersonId, OrgChartSize>,
-  fallbackCardSize: OrgChartSize,
+  estimatedCardSize: OrgChartSize,
   personId: PersonId,
-): OrgChartSize => measurements[personId] ?? fallbackCardSize;
+): OrgChartSize => measurements[personId] ?? estimatedCardSize;
 
 const groupByParent = <Person>(relatives: OrgChartRelative<Person>[]) => {
   const reportsByParent = new Map<PersonId, OrgChartRelative<Person>[]>();
@@ -66,7 +66,7 @@ export function buildOrgChartLayout<Person>({
   maxDepth = null,
   lineShape = "orthogonal",
 }: BuildOrgChartLayoutInput<Person>): OrgChartLayoutResult<Person> {
-  const fallbackCardSize = defaultFallbackCardSize;
+  const estimatedCardSize = defaultEstimatedCardSize;
   const spacing = { ...defaultSpacing, ...spacingOverrides };
   const normalized = normalizeOrgChartInput({ graph, people, relationships, root });
   root = normalized.root;
@@ -86,7 +86,7 @@ export function buildOrgChartLayout<Person>({
   const reportsByParent = groupByParent(relatives);
   const rowHeights = new Map<number, number>();
   for (const relative of relatives) {
-    const size = getSize(measurements, fallbackCardSize, relative.personId);
+    const size = getSize(measurements, estimatedCardSize, relative.personId);
     rowHeights.set(relative.depth, Math.max(rowHeights.get(relative.depth) ?? 0, size.height));
   }
 
@@ -94,7 +94,7 @@ export function buildOrgChartLayout<Person>({
   let nextY = spacing.padding;
   for (const depth of Array.from(rowHeights.keys()).toSorted((a, b) => a - b)) {
     rowY.set(depth, nextY);
-    nextY += (rowHeights.get(depth) ?? fallbackCardSize.height) + spacing.row;
+    nextY += (rowHeights.get(depth) ?? estimatedCardSize.height) + spacing.row;
   }
 
   const buildSubtree = (personId: PersonId): Subtree => {
@@ -102,7 +102,7 @@ export function buildOrgChartLayout<Person>({
     const children = reportIds.map(buildSubtree);
     const childWidth =
       children.reduce((sum, child) => sum + child.width, 0) + Math.max(0, children.length - 1) * spacing.column;
-    const size = getSize(measurements, fallbackCardSize, personId);
+    const size = getSize(measurements, estimatedCardSize, personId);
     return {
       personId,
       width: Math.max(size.width, childWidth),
@@ -114,7 +114,7 @@ export function buildOrgChartLayout<Person>({
   const placeSubtree = (subtree: Subtree, left: number) => {
     const relative = relativesById.get(subtree.personId);
     if (!relative) return;
-    const size = getSize(measurements, fallbackCardSize, subtree.personId);
+    const size = getSize(measurements, estimatedCardSize, subtree.personId);
     cards.push({
       personId: relative.personId,
       person: relative.person,

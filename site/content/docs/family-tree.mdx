@@ -1,19 +1,366 @@
 ---
 title: FamilyTree
-description: Render a subject-centered family neighborhood from graph or simple relationship facts.
+description: Render and update a subject-centered family tree from app-owned graph data.
 ---
 
-`FamilyTree` renders one person's readable family neighborhood from app-owned people and family graph facts. Simple relationship helpers are still available for small trees and examples.
+`FamilyTree` renders a readable family neighborhood around one subject. Your app owns the people, relationship records, editing UI, persistence, permissions, and custom card markup. Tree owns measured layout, partner grouping, child routing, SVG edges, viewport behavior, accessibility props, and the small stylesheet.
 
-It handles measured cards, spouse-aware grouping, SVG relationship edges, pan/scroll viewport state, accessible card props, custom React cards, and the tiny stylesheet.
+For production apps, use graph mode. It gives every person, partnership, parent-child link, and guardianship link a stable app-owned identity, so changing your JSON and re-rendering the component is the whole data flow.
+
+## The Mental Model
+
+A family tree graph has five concepts:
+
+- `people`: records keyed by person ID.
+- `subject`: the person whose neighborhood should be centered.
+- `partnershipGroups`: visible partner, spouse, co-parent, or unknown-parent groups.
+- `parentChildLinks`: one parent-to-child lineage record per parent.
+- `guardianshipLinks`: optional non-parent caregiver links.
+
+```tsx
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+
+type Person = {
+  id: string;
+  name: string;
+};
+
+const graph: FamilyGraph<Person> = {
+  people: {
+    alex: { id: "alex", name: "Alex" },
+    jordan: { id: "jordan", name: "Jordan" },
+    riley: { id: "riley", name: "Riley" },
+  },
+  subject: "riley",
+  partnershipGroups: [
+    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse" },
+  ],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
+  ],
+};
+
+export function FamilyPanel() {
+  return <FamilyTree graph={graph} />;
+}
+```
+
+That is all the renderer needs. The tree derives layout and edges from those facts on every render.
+
+## Add Someone And Re-Render
+
+Because the graph is plain React state, adding a family member is just an immutable state update. The tree re-renders from the new graph.
+
+This example adds a child to the existing `alex-jordan` partnership group:
+
+```tsx
+import { useState } from "react";
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
+
+type Person = {
+  id: string;
+  name: string;
+};
+
+export function EditableFamilyTree({ initialGraph }: { initialGraph: FamilyGraph<Person> }) {
+  const [graph, setGraph] = useState(initialGraph);
+
+  function addChild() {
+    const childId = crypto.randomUUID();
+    const groupId = "alex-jordan";
+
+    setGraph((current) => ({
+      ...current,
+      people: {
+        ...current.people,
+        [childId]: { id: childId, name: "New child" },
+      },
+      parentChildLinks: [
+        ...current.parentChildLinks,
+        {
+          id: `alex-${childId}`,
+          groupId,
+          parentId: "alex",
+          childId,
+          relation: "biological",
+        },
+        {
+          id: `jordan-${childId}`,
+          groupId,
+          parentId: "jordan",
+          childId,
+          relation: "biological",
+        },
+      ],
+    }));
+  }
+
+  return (
+    <>
+      <button type="button" onClick={addChild}>
+        Add child
+      </button>
+      <FamilyTree graph={graph} />
+    </>
+  );
+}
+```
+
+Nothing else is required. Keep IDs stable after creation, save the same graph shape to your database, and render the tree from whatever graph comes back from your app state.
+
+## Add A New Union
+
+If the child belongs to a new spouse, partner, or co-parent group, add the partner person, add a partnership group, then attach the child links to that group.
+
+```ts
+const partnerId = "morgan";
+const childId = "casey";
+const groupId = "alex-morgan";
+
+setGraph((current) => ({
+  ...current,
+  people: {
+    ...current.people,
+    [partnerId]: { id: partnerId, name: "Morgan" },
+    [childId]: { id: childId, name: "Casey" },
+  },
+  partnershipGroups: [
+    ...current.partnershipGroups,
+    {
+      id: groupId,
+      partners: ["alex", partnerId],
+      relation: "coparent",
+      status: "former",
+      order: 2,
+    },
+  ],
+  parentChildLinks: [
+    ...current.parentChildLinks,
+    { id: `alex-${childId}`, groupId, parentId: "alex", childId },
+    { id: `${partnerId}-${childId}`, groupId, parentId: partnerId, childId },
+  ],
+}));
+```
+
+The child edge now comes out of the `alex-morgan` union, not from Alex alone and not from the wrong partner group.
+
+## Parent-Child Links
+
+`parentChildLinks` are per parent. A two-parent biological child normally has two links with the same `groupId`, `relation`, `status`, and `order`.
+
+```ts
+parentChildLinks: [
+  { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
+  { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
+];
+```
+
+Tree groups those links into one rendered parentage relationship and routes it from the visible parent pair. The rendered edge exposes the shared `groupId` as its source ID, which keeps editor diffs tied to the union in your app state.
+
+Equivalent link reordering does not change rendered relationship IDs. Stable `id`, `groupId`, and `order` values are what make JSON diffs and re-renders predictable.
+
+## Per-Parent Lineage
+
+Lineage belongs to each parent-child link, not to the whole union. If Alex is biological and Jordan is step, model that truth directly:
+
+```ts
+parentChildLinks: [
+  {
+    id: "alex-riley",
+    groupId: "alex-jordan",
+    parentId: "alex",
+    childId: "riley",
+    relation: "biological",
+  },
+  {
+    id: "jordan-riley",
+    groupId: "alex-jordan",
+    parentId: "jordan",
+    childId: "riley",
+    relation: "step",
+  },
+];
+```
+
+Because the relation kinds differ, Tree keeps those as distinct rendered relationship edges. It does not merge biological, step, adoptive, foster, and unknown lineage into one misleading edge.
+
+## Multiple Unions
+
+One person can belong to multiple partnership groups. Children stay anchored to the group that produced or raised them:
+
+```ts
+partnershipGroups: [
+  { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse", order: 1 },
+  { id: "alex-morgan", partners: ["alex", "morgan"], relation: "coparent", status: "former", order: 2 },
+],
+parentChildLinks: [
+  { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
+  { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
+  { id: "alex-casey", groupId: "alex-morgan", parentId: "alex", childId: "casey" },
+  { id: "morgan-casey", groupId: "alex-morgan", parentId: "morgan", childId: "casey" },
+];
+```
+
+Use `order` when several partner groups need a predictable left-to-right order.
+
+## Guardianship
+
+Guardianship is separate from parentage. Use it for caregivers who should not be modeled as parents:
+
+```ts
+guardianshipLinks: [
+  {
+    id: "morgan-riley-guardian",
+    guardianId: "morgan",
+    childId: "riley",
+    relation: "guardian",
+  },
+];
+```
+
+If the same person is both a parent and a guardian, model both facts. Tree keeps those relationship kinds distinct.
+
+## Unknown Parents
+
+Unknown partner placeholders are display/layout facts, not automatic spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the placeholder card without drawing a horizontal partnership edge.
+
+If the unknown placeholder is also an actual co-parent, include it in `parentChildLinks`:
+
+```ts
+people: {
+  self: { id: "self", name: "Self" },
+  unknown: { id: "unknown", name: "Unknown parent" },
+  child: { id: "child", name: "Child" },
+},
+partnershipGroups: [
+  { id: "self-unknown", partners: ["self", "unknown"], relation: "unknown" },
+],
+parentChildLinks: [
+  { id: "self-child", groupId: "self-unknown", parentId: "self", childId: "child" },
+  { id: "unknown-child", groupId: "self-unknown", parentId: "unknown", childId: "child", relation: "unknown" },
+];
+```
+
+## Custom Cards
+
+Most apps should render their own cards. Spread the provided root props so Tree can attach ARIA attributes, keyboard handlers, click handlers, and stable data attributes.
+
+```tsx
+import type { FamilyCardProps } from "@memoir/tree";
+
+function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProps<Person>) {
+  return (
+    <article {...rootProps}>
+      <strong>{person.name}</strong>
+      <small>{relation.label}</small>
+    </article>
+  );
+}
+
+<FamilyTree graph={graph} card={ProfileCard} />;
+```
+
+Use `cardProps` for typed app-owned card inputs:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  card={ProfileCard}
+  cardProps={(person) => ({
+    href: `/people/${person.id}`,
+    canEdit: currentUserCanEdit,
+  })}
+/>
+```
+
+Graph-mode cards also receive placement metadata:
+
+```ts
+placement?: {
+  partnershipGroupIds: string[];
+  parentChildLinkIds: string[];
+  guardianshipLinkIds: string[];
+  visibleRelationshipIds: string[];
+};
+```
+
+Use that metadata when your card needs to open the exact relationship editor that placed the person.
+
+## Selection And Editing Hooks
+
+Tree does not mutate your graph. Use handlers to open your app UI:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  selected={selectedPersonId}
+  onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
+  onAddRelationship={(_person, personId) => openAddRelativeDialog(personId)}
+  readOnly={!canEditFamily}
+/>
+```
+
+`readOnly` only prevents add-relationship actions from being passed into cards. Selection still belongs to your app.
+
+## Layout Behavior
+
+Family layout is subject-centered and neighborhood-based:
+
+- Ancestor generations.
+- Subject row with siblings, half-siblings, and partners.
+- Descendant generations.
+
+Partnership groups and child groups participate in layout before SVG edges are routed. Spouse bars, divorce markers, parent-child buses, and guardianship lines are derived from measured card positions.
+
+Two-parent child groups use the visible midpoint between parent cards. Multi-child groups split through a horizontal bus in the clear gap below the parent row and above the child row.
+
+The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Large blended families can become wide; use `limits` to control the visible neighborhood.
+
+```tsx
+<FamilyTree
+  graph={graph}
+  limits={{ ancestorGenerations: 3, descendantGenerations: 2, partners: null }}
+/>
+```
+
+Default limits are 2 ancestor generations, 2 descendant generations, no lateral family expansion, 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. Set a cap to `null` to disable that cap.
+
+Default spacing is compact:
+
+```ts
+{ row: 80, column: 24, padding: 24 }
+```
+
+Override `spacing` only when your cards need a different density:
+
+```tsx
+<FamilyTree graph={graph} spacing={{ row: 72, column: 20, padding: 24 }} />
+```
+
+## Viewport
+
+The subject is centered by default after cards are measured. Use `defaultViewport` for a custom uncontrolled starting position, or `initialViewport` for explicit modes:
+
+```tsx
+<FamilyTree graph={graph} initialViewport={{ mode: "center-person", personId: "riley" }} />
+```
+
+`treeApiRef` exposes a small API:
+
+- `centerPerson(personId)`
+- `fitToSubject()`
+- `resetViewport()`
+
+The default `interactionMode` is `"pan"`. Use `"pan-page-scroll"` when vertical touch gestures should scroll the page, `"scroll"` for normal browser scrollbars, or `"none"` for a static viewport. Native controls inside cards keep their own pointer behavior; add `data-tree-drag-ignore` to custom card elements that should not start panning.
 
 ## Simple Mode
 
-Simple mode uses `rel` helpers. It is compact, but graph mode is preferred for real family apps because parentage is per link and children can belong to explicit partnership groups.
+Simple mode is still useful for examples and small static trees:
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
-import "@memoir/tree/styles.css";
 
 const people = {
   alex: { id: "alex", name: "Alex" },
@@ -34,173 +381,4 @@ export function FamilyPanel() {
 }
 ```
 
-You can omit `card` to use `DefaultFamilyCard`.
-
-## Graph Mode
-
-Graph mode is the recommended shape for production family-tree apps. It gives every partnership group and parent-child or guardianship link an app-owned identity, so persistence, editing flows, and card metadata stay stable.
-
-```tsx
-import { FamilyTree, type FamilyGraph } from "@memoir/tree";
-
-const graph: FamilyGraph<Person> = {
-  people,
-  subject: "riley",
-  partnershipGroups: [
-    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse" },
-    { id: "alex-morgan", partners: ["alex", "morgan"], relation: "coparent", status: "former" },
-  ],
-  parentChildLinks: [
-    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley", relation: "biological" },
-    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley", relation: "step" },
-    { id: "alex-casey", groupId: "alex-morgan", parentId: "alex", childId: "casey" },
-    { id: "morgan-casey", groupId: "alex-morgan", parentId: "morgan", childId: "casey" },
-  ],
-  guardianshipLinks: [
-    { id: "morgan-riley-guardian", guardianId: "morgan", childId: "riley", relation: "guardian" },
-  ],
-};
-
-<FamilyTree graph={graph} />;
-```
-
-Tree renders and lays out the graph. Your app still owns persistence, permissions, editing, routing, invites, and data validation.
-
-## Multiple Unions
-
-Children are anchored to the parent group that produced or raised them. If the subject has a current spouse and a former spouse, each child group stays attached to the correct pair.
-
-```ts
-const graph: FamilyGraph<Person> = {
-  people,
-  subject: "alex",
-  partnershipGroups: [
-    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse", order: 1 },
-    { id: "alex-morgan", partners: ["alex", "morgan"], relation: "coparent", status: "former", order: 2 },
-  ],
-  parentChildLinks: [
-    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
-    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
-    { id: "alex-casey", groupId: "alex-morgan", parentId: "alex", childId: "casey" },
-    { id: "morgan-casey", groupId: "alex-morgan", parentId: "morgan", childId: "casey" },
-  ],
-};
-```
-
-## Per-Parent Lineage
-
-`parentChildLinks` are per parent. Links with the same `groupId`, `relation`, `status`, and `order` are grouped into one rendered parentage relationship. If the relation differs per parent, Tree keeps those links distinct so the edge kind remains truthful.
-
-```ts
-const graph: FamilyGraph<Person> = {
-  people,
-  subject: "riley",
-  partnershipGroups: [{ id: "alex-jordan", partners: ["alex", "jordan"] }],
-  parentChildLinks: [
-    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley", relation: "biological" },
-    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley", relation: "step" },
-  ],
-};
-```
-
-That example renders biological and step lineage as distinct parent-child edges. If both links are biological, they group into one two-parent parentage edge from the visible parent pair.
-
-## Layout Behavior
-
-Family layout is subject-centered and neighborhood-based:
-
-- Ancestor generations
-- Subject row with siblings, half-siblings, and partners
-- Descendant generations
-
-Partnership groups and child groups participate in layout before SVG edges are routed. That means spouse bars, divorce markers, parent-child buses, and guardianship lines are derived from measured card positions.
-
-Two-parent child groups use the visible midpoint between the parent cards as the parentage join. Multi-child groups split through a horizontal bus between the parent row and child row. In compact layouts, the bus is centered in the clear vertical gap below the parent cards so it does not run through the parent row.
-
-Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
-
-The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Very crowded families can become wide; use `limits` when you want to cap the visible neighborhood, expand vertical depth, or include nearby sibling and partner branches.
-
-Default spacing is compact:
-
-```ts
-{ row: 80, column: 24, padding: 24 }
-```
-
-Override `spacing` when your custom card dimensions need a different density:
-
-```tsx
-<FamilyTree graph={graph} spacing={{ row: 72, column: 20, padding: 24 }} />
-```
-
-## Custom Card
-
-```tsx
-import type { FamilyCardProps } from "@memoir/tree";
-
-type Person = (typeof people)[string];
-
-function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProps<Person>) {
-  return (
-    <article {...rootProps}>
-      <strong>{person.name}</strong>
-      <small>{relation.label}</small>
-    </article>
-  );
-}
-
-<FamilyTree people={people} subject="alex" relationships={relationships} card={ProfileCard} />;
-```
-
-The card receives accessibility props, keyboard handlers, stable `data-*` attributes, relationship metadata, selection state, and the original person record. Spread the remaining props onto the card root.
-
-In graph mode, `placement` identifies the visible relationship facts that placed the person:
-
-```ts
-placement?: {
-  partnershipGroupIds: string[];
-  parentChildLinkIds: string[];
-  guardianshipLinkIds: string[];
-  visibleRelationshipIds: string[];
-};
-```
-
-## Relationship Helpers
-
-```ts
-rel.parents("alex", ["morgan", "casey"], {
-  relation: "biological",
-  status: "current",
-});
-
-rel.partner("alex", "jordan", {
-  relation: "spouse",
-  status: "current",
-});
-
-rel.guardians("riley", ["morgan"]);
-```
-
-These helpers are simple-mode helpers. `FamilyTree` also accepts graph mode for partnership groups, per-parent lineage, multiple unions, and guardianship. App-specific data like permissions, profile drawers, images, and actions belongs on your person records or typed `cardProps`.
-
-## Common Options
-
-```tsx
-<FamilyTree
-  people={people}
-  subject="alex"
-  relationships={relationships}
-  selected={selectedPersonId}
-  collapsed={["riley"]}
-  limits={{ children: null, siblings: 12 }}
-  onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
-/>
-```
-
-Use `selected` for app-owned selection, `collapsed` to hide deeper ancestor or descendant rows, and `limits` to control visible-relative caps.
-
-Default limits are 2 ancestor generations, 2 descendant generations, no lateral family expansion, 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. Set a cap to `null` to disable that cap.
-
-The subject is centered by default after cards are measured. Use `defaultViewport` for a custom uncontrolled starting position or `initialViewport` for explicit modes like `"canvas"`. For viewport controls, pass `treeApiRef`. Available helpers are `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
-
-The default `interactionMode` is `"pan"`. Users can drag the canvas and non-interactive card surfaces with mouse, touch, or pen. Use `"pan-page-scroll"` when the tree should drag with mouse or horizontal touch gestures, while vertical touch gestures scroll the page. Native controls inside custom cards keep their own pointer behavior; add `data-tree-drag-ignore` to any custom element that should not start panning.
+Prefer graph mode when your app needs stable relationship IDs, multiple unions, per-parent lineage, guardianship, unknown parents, or clean JSON diffs.

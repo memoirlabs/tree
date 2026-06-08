@@ -1,15 +1,26 @@
-export { TreeSurface, getTreeStyleName, treeStylePresets } from "./tree/core";
-export { buildLayeredTreeLayout } from "./tree/core";
-export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./tree/family";
-export { DefaultOrgCard, OrgChart } from "./tree/org-chart";
-export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./tree/family";
-export { graphToFamilyRelationships, rel } from "./tree/family";
-export { graphToOrgReportingRelationships, org } from "./tree/org-chart";
-export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./tree/family";
-export { collectOrgChartSubtree, createOrgChartIndex } from "./tree/org-chart";
-export { buildFamilyTreeLayout } from "./tree/family";
-export { buildOrgChartLayout } from "./tree/org-chart";
-export { layoutFamilyTree } from "./layout";
+export { TreeSurface, getTreeStyleName, treeStylePresets } from "./tree/core/index";
+export { buildLayeredTreeLayout } from "./tree/core/index";
+export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./tree/family/index";
+export { DefaultOrgCard, OrgChart } from "./tree/org-chart/index";
+export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./tree/family/index";
+export {
+  getFamilyChildBearingGroupIds,
+  getFamilyPartnershipGroupIds,
+  graphToFamilyRelationships,
+  rel,
+} from "./tree/family/index";
+export { graphToOrgReportingRelationships, org } from "./tree/org-chart/index";
+export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./tree/family/index";
+export { collectOrgChartSubtree, createOrgChartIndex } from "./tree/org-chart/index";
+export { buildFamilyTreeLayout } from "./tree/family/index";
+export {
+  createFamilyLayoutService,
+  createUnionParentLinks,
+  defaultFamilyLayoutOptions,
+  layoutFamilyTree,
+  resolveFamilyLayoutOptions,
+} from "./tree/family/index";
+export { buildOrgChartLayout } from "./tree/org-chart/index";
 
 export type {
   PeopleById,
@@ -35,19 +46,19 @@ export type {
   TreeThemeStyle,
   TreeViewport,
   TreeViewportProps,
-} from "./tree/core";
+} from "./tree/core/index";
 
-export type { BuildLayeredTreeLayoutInput, BuildLayeredTreeLayoutResult } from "./tree/core";
+export type { BuildLayeredTreeLayoutInput, BuildLayeredTreeLayoutResult } from "./tree/core/index";
 
-export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./tree/family";
-export type { OrgRelationshipHelpers, OrgReportsOptions } from "./tree/org-chart";
+export type { ParentageOptions, PartnershipOptions, GuardianshipOptions, RelationshipHelpers } from "./tree/family/index";
+export type { OrgRelationshipHelpers, OrgReportsOptions } from "./tree/org-chart/index";
 
 export type {
   StyledFamilyCardAvatar,
   StyledFamilyCardProps,
   StyledFamilyCardRadius,
   StyledFamilyCardShadow,
-} from "./tree/family";
+} from "./tree/family/index";
 
 export type {
   ComputedRelation,
@@ -78,7 +89,7 @@ export type {
   GuardianshipRelation,
   ParentageRelation,
   PartnershipRelation,
-} from "./tree/family";
+} from "./tree/family/index";
 
 export type {
   BuildFamilyTreeLayoutInput,
@@ -86,18 +97,7 @@ export type {
   FamilyTreeLayoutCard,
   FamilyTreeLayoutEdge,
   FamilyTreeLayoutResult,
-} from "./tree/family";
-
-export type {
-  FamilyTreePrimitiveContext,
-  FamilyTreeProviderProps,
-  TreeCanvasProps,
-  TreeEdgesProps,
-  TreeNodeLayerProps,
-  TreePrimitiveContext,
-  TreePrimitiveType,
-  TreeProviderProps,
-} from "./tree/family";
+} from "./tree/family/index";
 
 export type {
   FamilyLayoutBounds,
@@ -110,6 +110,7 @@ export type {
   FamilyLayoutWarning,
   FamilyLayoutWarningCode,
   FamilyNodeId,
+  CreateUnionParentLinksOptions,
   FamilyParentLink,
   FamilyParentLinkKind,
   FamilyPersonLayoutNode,
@@ -117,9 +118,23 @@ export type {
   FamilyUnionKind,
   FamilyUnionLayoutNode,
   FamilyUnionStatus,
+  NormalizedFamilyLayoutInput,
+  NormalizedFamilyPerson,
+  NormalizedFamilyUnion,
   PartialFamilyLayoutOptions,
   UnionId,
-} from "./layout";
+} from "./tree/family/index";
+
+export type {
+  FamilyTreePrimitiveContext,
+  FamilyTreeProviderProps,
+  TreeCanvasProps,
+  TreeEdgesProps,
+  TreeNodeLayerProps,
+  TreePrimitiveContext,
+  TreePrimitiveType,
+  TreeProviderProps,
+} from "./tree/family/index";
 
 export type {
   BuildOrgChartLayoutInput,
@@ -140,4 +155,4 @@ export type {
   OrgReportingRelationship,
   OrgReportingRelation,
   OrgReportingStatus,
-} from "./tree/org-chart";
+} from "./tree/org-chart/index";

@@ -2,7 +2,15 @@ export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./FamilyTree";
 export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./TreePrimitives";
 export { rel } from "./family-rel";
 export { graphToFamilyRelationships } from "./family-graph";
+export { getFamilyChildBearingGroupIds, getFamilyPartnershipGroupIds } from "./family-graph-helpers";
 export { buildFamilyTreeLayout } from "./family-layout";
+export {
+  createFamilyLayoutService,
+  createUnionParentLinks,
+  defaultFamilyLayoutOptions,
+  layoutFamilyTree,
+  resolveFamilyLayoutOptions,
+} from "./family-layout-service";
 export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./family-indexing";
 
 export type {
@@ -63,3 +71,28 @@ export type {
   FamilyTreeLayoutEdge,
   FamilyTreeLayoutResult,
 } from "./layout-types";
+export type {
+  FamilyLayoutBounds,
+  FamilyLayoutEdge,
+  FamilyLayoutInput,
+  FamilyLayoutNode,
+  FamilyLayoutOptions,
+  FamilyLayoutPoint,
+  FamilyLayoutResult,
+  FamilyLayoutWarning,
+  FamilyLayoutWarningCode,
+  FamilyNodeId,
+  CreateUnionParentLinksOptions,
+  FamilyParentLink,
+  FamilyParentLinkKind,
+  FamilyPersonLayoutNode,
+  FamilyUnion,
+  FamilyUnionKind,
+  FamilyUnionLayoutNode,
+  FamilyUnionStatus,
+  NormalizedFamilyLayoutInput,
+  NormalizedFamilyPerson,
+  NormalizedFamilyUnion,
+  PartialFamilyLayoutOptions,
+  UnionId,
+} from "./family-layout-service";

@@ -1,4 +1,4 @@
-import { buildLayeredTreeLayout, createBoundsFromBoxes, roundTreeCoordinate } from "../../layout-engine";
+import { buildLayeredTreeLayout, roundTreeCoordinate } from "../../layout-engine";
 import { routeFamilyEdges } from "./family-edge-routing";
 import { normalizeFamilyInput } from "./family-graph";
 import { collectFamilyNeighborhood, createFamilyIndex } from "./family-indexing";
@@ -13,7 +13,7 @@ import type { BuildFamilyTreeLayoutInput, FamilyTreeLayoutResult } from "./layou
 import type { ComputedRelation, FamilyTreeSize, FamilyTreeSpacing, PersonId } from "./types";
 import type { FamilyPlacementMetadata, FamilyRelationship } from "./types";
 
-const defaultFallbackCardSize: FamilyTreeSize = {
+const defaultEstimatedCardSize: FamilyTreeSize = {
   width: 220,
   height: 80,
 };
@@ -22,6 +22,48 @@ const defaultSpacing: FamilyTreeSpacing = {
   row: 80,
   column: 24,
   padding: 24,
+};
+
+const centerSubjectInBounds = (
+  cards: Array<{ personId: PersonId; x: number; width: number }>,
+  subject: PersonId,
+  padding: number,
+) => {
+  const subjectCard = cards.find((card) => card.personId === subject);
+  if (!subjectCard || cards.length === 0) return 0;
+
+  const subjectCenter = subjectCard.x + subjectCard.width / 2;
+  const maxX = Math.max(...cards.map((card) => card.x + card.width));
+  const leftPaddingNeeded = maxX + padding - subjectCenter * 2;
+  if (leftPaddingNeeded <= 0) return 0;
+
+  const shift = roundTreeCoordinate(leftPaddingNeeded);
+  for (const card of cards) {
+    card.x = roundTreeCoordinate(card.x + shift);
+  }
+  return shift;
+};
+
+const createSubjectCenteredBounds = (
+  cards: Array<{ personId: PersonId; x: number; y: number; width: number; height: number }>,
+  subject: PersonId,
+  padding: number,
+) => {
+  const maxX = Math.max(...cards.map((card) => card.x + card.width));
+  const maxY = Math.max(...cards.map((card) => card.y + card.height));
+  const subjectCard = cards.find((card) => card.personId === subject);
+  if (!subjectCard) {
+    return {
+      width: roundTreeCoordinate(maxX + padding),
+      height: roundTreeCoordinate(maxY + padding),
+    };
+  }
+
+  const subjectCenter = subjectCard.x + subjectCard.width / 2;
+  return {
+    width: roundTreeCoordinate(Math.max(maxX + padding, subjectCenter * 2)),
+    height: roundTreeCoordinate(maxY + padding),
+  };
 };
 
 const emptyPlacement = (): FamilyPlacementMetadata => ({
@@ -126,7 +168,7 @@ export function buildFamilyTreeLayout<Person>({
   subject = normalized.subject;
   people = normalized.people;
   relationships = normalized.relationships;
-  const fallbackCardSize = defaultFallbackCardSize;
+  const estimatedCardSize = defaultEstimatedCardSize;
   const spacing = { ...defaultSpacing, ...spacingOverrides };
   const index = createFamilyIndex(people, relationships);
   const neighborhood = collectFamilyNeighborhood(index, subject, limits);
@@ -159,10 +201,10 @@ export function buildFamilyTreeLayout<Person>({
   const personGap = Math.min(spacing.column, 24);
   const layers = createFamilyLayoutLayers(neighborhood, visibleRows);
   const layeredLayout = buildLayeredTreeLayout({
-    layers: createFamilyLayerBoxes(layers, measurements, fallbackCardSize, personGap),
+    layers: createFamilyLayerBoxes(layers, measurements, estimatedCardSize, personGap),
     spacing,
   });
-  const cards = createFamilyLayoutCards(layeredLayout.boxes, measurements, fallbackCardSize, personGap);
+  const cards = createFamilyLayoutCards(layeredLayout.boxes, measurements, estimatedCardSize, personGap);
 
   const subjectCard = cards.find((card) => card.personId === subject);
   const subjectShift = subjectCard ? -(subjectCard.x + subjectCard.width / 2) : 0;
@@ -188,10 +230,11 @@ export function buildFamilyTreeLayout<Person>({
     card.y = roundTreeCoordinate(card.y + offsetY);
     card.placement = placementByPerson.get(card.personId) ?? emptyPlacement();
   }
+  centerSubjectInBounds(cards, subject, spacing.padding);
 
   return {
     cards,
     edges: routeFamilyEdges(cards, relationships, { lineShape }),
-    bounds: createBoundsFromBoxes(cards, spacing.padding),
+    bounds: createSubjectCenteredBounds(cards, subject, spacing.padding),
   };
 }

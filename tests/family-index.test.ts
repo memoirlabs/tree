@@ -123,6 +123,90 @@ test("collects nearby lateral family parents for half-siblings", () => {
   expect(neighborhood?.parents.find((relative) => relative.personId === "halfSiblingParent")?.relation.side).toBe("other");
 });
 
+test("collects immediate lateral branches when intermediate relatives exist", () => {
+  const index = createFamilyIndex(
+    {
+      self: { id: "self" },
+      parent: { id: "parent" },
+      grandparent: { id: "grandparent" },
+      aunt: { id: "aunt" },
+      cousin: { id: "cousin" },
+      sibling: { id: "sibling" },
+      niece: { id: "niece" },
+    },
+    [
+      rel.parents("parent", ["grandparent"]),
+      rel.parents("aunt", ["grandparent"]),
+      rel.parents("self", ["parent"]),
+      rel.parents("sibling", ["parent"]),
+      rel.parents("cousin", ["aunt"]),
+      rel.parents("niece", ["sibling"]),
+    ],
+  );
+  const neighborhood = collectFamilyNeighborhood(index, "self", { lateralFamilyGenerations: 1 });
+
+  expect(neighborhood?.auntsUncles.map((relative) => relative.personId)).toEqual(["aunt"]);
+  expect(neighborhood?.auntsUncles[0]?.relation).toMatchObject({ label: "aunt-uncle", generation: -1, side: "other" });
+  expect(neighborhood?.cousins.map((relative) => relative.personId)).toEqual(["cousin"]);
+  expect(neighborhood?.cousins[0]?.relation).toMatchObject({ label: "cousin", generation: 0, side: "other" });
+  expect(neighborhood?.niecesNephews.map((relative) => relative.personId)).toEqual(["niece"]);
+  expect(neighborhood?.niecesNephews[0]?.relation).toMatchObject({
+    label: "niece-nephew",
+    generation: 1,
+    side: "other",
+  });
+});
+
+test("does not collect lateral branch relatives by default", () => {
+  const index = createFamilyIndex(
+    {
+      self: { id: "self" },
+      parent: { id: "parent" },
+      grandparent: { id: "grandparent" },
+      aunt: { id: "aunt" },
+      cousin: { id: "cousin" },
+    },
+    [
+      rel.parents("parent", ["grandparent"]),
+      rel.parents("aunt", ["grandparent"]),
+      rel.parents("self", ["parent"]),
+      rel.parents("cousin", ["aunt"]),
+    ],
+  );
+  const neighborhood = collectFamilyNeighborhood(index, "self");
+
+  expect(neighborhood?.auntsUncles).toEqual([]);
+  expect(neighborhood?.cousins).toEqual([]);
+  expect(neighborhood?.niecesNephews).toEqual([]);
+});
+
+test("treats null lateral generation limit as uncapped", () => {
+  const index = createFamilyIndex(
+    {
+      self: { id: "self" },
+      sibling: { id: "sibling" },
+      parent: { id: "parent" },
+      niece: { id: "niece" },
+      grandNiece: { id: "grandNiece" },
+    },
+    [
+      rel.parents("self", ["parent"]),
+      rel.parents("sibling", ["parent"]),
+      rel.parents("niece", ["sibling"]),
+      rel.parents("grandNiece", ["niece"]),
+    ],
+  );
+  const neighborhood = collectFamilyNeighborhood(index, "self", {
+    descendantGenerations: 2,
+    lateralFamilyGenerations: null,
+  });
+
+  expect(neighborhood?.descendantGenerations.map((layer) => layer.relatives.map((relative) => relative.personId))).toEqual([
+    ["niece"],
+    ["grandNiece"],
+  ]);
+});
+
 test("rejects parentage cycles", () => {
   expect(() =>
     createFamilyIndex(people, [

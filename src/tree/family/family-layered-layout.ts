@@ -31,17 +31,21 @@ const personAnchorId = (personId: PersonId) => `family-person-anchor:${personId}
 const relativeIds = <Person>(relatives: FamilyRelative<Person>[]) => relatives.map((relative) => relative.personId);
 const getSize = (
   measurements: Record<PersonId, FamilyTreeSize>,
-  fallbackCardSize: FamilyTreeSize,
+  estimatedCardSize: FamilyTreeSize,
   personId: PersonId,
-) => measurements[personId] ?? fallbackCardSize;
+) => measurements[personId] ?? estimatedCardSize;
 
 const createSubjectRow = <Person>(
-  neighborhood: Pick<FamilyNeighborhood<Person>, "siblings" | "halfSiblings" | "self" | "partners" | "relationships">,
+  neighborhood: Pick<
+    FamilyNeighborhood<Person>,
+    "siblings" | "halfSiblings" | "cousins" | "self" | "partners" | "relationships"
+  >,
 ) => {
   const partners = orderSubjectPartners(neighborhood);
   const splitIndex = Math.floor(partners.length / 2);
   return uniqueRelatives([
     ...neighborhood.siblings,
+    ...neighborhood.cousins,
     ...neighborhood.halfSiblings,
     ...partners.slice(0, splitIndex),
     neighborhood.self,
@@ -51,9 +55,15 @@ const createSubjectRow = <Person>(
 
 export const createFamilyRelativeRows = <Person>(neighborhood: FamilyNeighborhood<Person>) =>
   [
-    ...neighborhood.ancestorGenerations.toReversed().map((layer) => uniqueRelatives(layer.relatives)),
+    ...neighborhood.ancestorGenerations
+      .toReversed()
+      .map((layer) =>
+        uniqueRelatives(layer.generation === -1 ? [...layer.relatives, ...neighborhood.auntsUncles] : layer.relatives),
+      ),
     createSubjectRow(neighborhood),
-    ...neighborhood.descendantGenerations.map((layer) => uniqueRelatives(layer.relatives)),
+    ...neighborhood.descendantGenerations.map((layer) =>
+      uniqueRelatives(layer.generation === 1 ? [...neighborhood.niecesNephews, ...layer.relatives] : layer.relatives),
+    ),
   ].filter((row) => row.length > 0);
 
 const createVisiblePersonOrder = <Person>(items: FamilyRowItem<Person>[]) =>
@@ -103,7 +113,10 @@ const createGroupedRowItems = <Person>(
 };
 
 const createSubjectRowItems = <Person>(
-  neighborhood: Pick<FamilyNeighborhood<Person>, "siblings" | "halfSiblings" | "self" | "partners" | "relationships">,
+  neighborhood: Pick<
+    FamilyNeighborhood<Person>,
+    "siblings" | "halfSiblings" | "cousins" | "self" | "partners" | "relationships"
+  >,
   anchorIds: string[],
 ): FamilyRowItem<Person>[] => {
   const partners = orderSubjectPartners(neighborhood);
@@ -116,6 +129,7 @@ const createSubjectRowItems = <Person>(
 
   return [
     ...singleRelativeItems(uniqueRelatives(neighborhood.siblings)),
+    ...singleRelativeItems(uniqueRelatives(neighborhood.cousins)),
     { id: rowItemId(relativeIds(subjectCluster)), relatives: subjectCluster, anchorIds },
     ...singleRelativeItems(uniqueRelatives(neighborhood.halfSiblings)),
   ];
@@ -216,6 +230,9 @@ export const createFamilyLayoutLayers = <Person>(
     parents: visibleRelatives(neighborhood.parents),
     siblings: visibleRelatives(neighborhood.siblings),
     halfSiblings: visibleRelatives(neighborhood.halfSiblings),
+    auntsUncles: visibleRelatives(neighborhood.auntsUncles),
+    cousins: visibleRelatives(neighborhood.cousins),
+    niecesNephews: visibleRelatives(neighborhood.niecesNephews),
     partners: visibleRelatives(neighborhood.partners),
     descendantGenerations: neighborhood.descendantGenerations.map((layer) => ({
       ...layer,
@@ -234,7 +251,9 @@ export const createFamilyLayoutLayers = <Person>(
   };
 
   for (const layer of visibleNeighborhood.ancestorGenerations.toReversed()) {
-    appendLayer(createGroupedRowItems(layer.relatives, neighborhood.relationships));
+    const relatives =
+      layer.generation === -1 ? uniqueRelatives([...layer.relatives, ...visibleNeighborhood.auntsUncles]) : layer.relatives;
+    appendLayer(createGroupedRowItems(relatives, neighborhood.relationships));
   }
 
   const subjectAnchorIds = Array.from(
@@ -252,7 +271,11 @@ export const createFamilyLayoutLayers = <Person>(
   appendLayer(createSubjectRowItems(visibleNeighborhood, subjectAnchorIds));
 
   for (const layer of visibleNeighborhood.descendantGenerations) {
-    appendLayer(createChildRowItems(layer.relatives, neighborhood.relationships, previousPersonOrder));
+    const relatives =
+      layer.generation === 1
+        ? uniqueRelatives([...visibleNeighborhood.niecesNephews, ...layer.relatives])
+        : layer.relatives;
+    appendLayer(createChildRowItems(relatives, neighborhood.relationships, previousPersonOrder));
   }
 
   return layers;
@@ -261,13 +284,13 @@ export const createFamilyLayoutLayers = <Person>(
 const measureItem = <Person>(
   item: FamilyRowItem<Person>,
   measurements: Record<PersonId, FamilyTreeSize>,
-  fallbackCardSize: FamilyTreeSize,
+  estimatedCardSize: FamilyTreeSize,
   personGap: number,
 ) => {
   let x = 0;
   let height = 0;
   const anchorPoints = item.relatives.map((relative) => {
-    const size = getSize(measurements, fallbackCardSize, relative.personId);
+    const size = getSize(measurements, estimatedCardSize, relative.personId);
     height = Math.max(height, size.height);
     const anchorPoint = { id: personAnchorId(relative.personId), offsetX: x + size.width / 2 };
     x += size.width + personGap;
@@ -284,13 +307,13 @@ const measureItem = <Person>(
 export const createFamilyLayerBoxes = <Person>(
   layers: FamilyRowItem<Person>[][],
   measurements: Record<PersonId, FamilyTreeSize>,
-  fallbackCardSize: FamilyTreeSize,
+  estimatedCardSize: FamilyTreeSize,
   personGap: number,
 ): TreeLayeredBoxInput<FamilyRowItem<Person>>[][] =>
   layers.map((layer) =>
     layer.map((item) => ({
       id: item.id,
-      ...measureItem(item, measurements, fallbackCardSize, personGap),
+      ...measureItem(item, measurements, estimatedCardSize, personGap),
       anchorIds: item.anchorIds,
       data: item,
     })),
@@ -299,14 +322,14 @@ export const createFamilyLayerBoxes = <Person>(
 export const createFamilyLayoutCards = <Person>(
   boxes: TreeLayeredBox<FamilyRowItem<Person>>[],
   measurements: Record<PersonId, FamilyTreeSize>,
-  fallbackCardSize: FamilyTreeSize,
+  estimatedCardSize: FamilyTreeSize,
   personGap: number,
 ): FamilyTreeLayoutCard<Person>[] =>
   boxes.flatMap((box) => {
     if (!box.data) return [];
     let x = box.x;
     return box.data.relatives.map((relative) => {
-      const size = getSize(measurements, fallbackCardSize, relative.personId);
+      const size = getSize(measurements, estimatedCardSize, relative.personId);
       const card = {
         personId: relative.personId,
         person: relative.person,

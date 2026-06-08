@@ -21,11 +21,11 @@ const guardianshipLinkId = (guardianId: PersonId, childId: PersonId, index: numb
   `guardian-${guardianId}-${childId}-${index}`;
 
 const groupedParentageId = (
-  groupId: string | undefined,
-  childId: PersonId,
+  groupId: string,
   relation: string,
-  index: number,
-) => `parentage-${groupId ?? "ungrouped"}-${childId}-${relation}-${index}`;
+  status: string | undefined,
+  order: number | undefined,
+) => `parentage-${groupId}-${relation}-${status ?? "none"}-${order ?? "none"}`;
 
 export function graphToFamilyRelationships<Person>(graph: FamilyGraph<Person>): FamilyRelationship[] {
   const partnerships: FamilyPartnershipRelationship[] = graph.partnershipGroups.map((group) => ({
@@ -66,7 +66,7 @@ export function graphToFamilyRelationships<Person>(graph: FamilyGraph<Person>): 
       order: link.order,
     } satisfies FamilyParentageRelationship;
     if (link.groupId) {
-      relationship.id = groupedParentageId(link.groupId, "children", relation, parentageGroups.size);
+      relationship.id = groupedParentageId(link.groupId, relation, link.status, link.order);
     }
     parentageGroups.set(key, relationship);
     parentage.push(relationship);

@@ -26,6 +26,19 @@ function maxCardY(layout: { cards: Array<{ y: number; height: number }> }) {
   return Math.max(...layout.cards.map((card) => card.y + card.height));
 }
 
+function cardCenterX(layout: { cards: Array<{ personId: string; x: number; width: number }> }, personId: string) {
+  const card = layout.cards.find((candidate) => candidate.personId === personId);
+  expect(card).toBeDefined();
+  return (card?.x ?? 0) + (card?.width ?? 0) / 2;
+}
+
+function expectSubjectNearCanvasCenter(
+  layout: { bounds: { width: number }; cards: Array<{ personId: string; x: number; width: number }> },
+  personId: string,
+) {
+  expect(Math.abs(cardCenterX(layout, personId) - layout.bounds.width / 2)).toBeLessThanOrEqual(0.5);
+}
+
 test("builds measured subject-centered layout cards", () => {
   const layout = buildFamilyTreeLayout({
     subject: "henry",
@@ -47,6 +60,37 @@ test("builds measured subject-centered layout cards", () => {
   });
   expect(layout.bounds.width).toBeGreaterThan(0);
   expect(layout.bounds.height).toBeGreaterThan(0);
+});
+
+test("keeps the requested subject near the horizontal center of the family bounds", () => {
+  const family = {
+    childA: { id: "childA", name: "Child A" },
+    childB: { id: "childB", name: "Child B" },
+    grandchild: { id: "grandchild", name: "Grandchild" },
+    parentA: { id: "parentA", name: "Parent A" },
+    parentB: { id: "parentB", name: "Parent B" },
+    partner: { id: "partner", name: "Partner" },
+    subject: { id: "subject", name: "Subject" },
+  };
+  const familyRelationships = [
+    rel.parents("subject", ["parentA", "parentB"]),
+    rel.partner("subject", "partner"),
+    rel.children(["subject", "partner"], ["childA", "childB"]),
+    rel.children(["childA"], ["grandchild"]),
+  ];
+
+  expectSubjectNearCanvasCenter(
+    buildFamilyTreeLayout({ people: family, relationships: familyRelationships, subject: "subject" }),
+    "subject",
+  );
+  expectSubjectNearCanvasCenter(
+    buildFamilyTreeLayout({ people: family, relationships: familyRelationships, subject: "parentA" }),
+    "parentA",
+  );
+  expectSubjectNearCanvasCenter(
+    buildFamilyTreeLayout({ people: family, relationships: familyRelationships, subject: "grandchild" }),
+    "grandchild",
+  );
 });
 
 test("emits visible relationship edges", () => {

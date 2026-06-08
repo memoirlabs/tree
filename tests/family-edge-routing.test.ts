@@ -153,7 +153,7 @@ test("routes right-shifted single children below the parent cards", () => {
   expect(firstLineY(edge?.path ?? "")).toBeGreaterThan(80);
 });
 
-test("draws explicit partnership bars before parentage fallback bars", () => {
+test("draws explicit partnership bars before inferred parentage bars", () => {
   const childrenFirst = buildFamilyTreeLayout({
     subject: "childA",
     people,

@@ -12,6 +12,7 @@ import type {
 export interface FamilyIndex<Person> {
   people: PeopleById<Person>;
   relationships: FamilyRelationship[];
+  relationshipOrderByPerson: Map<PersonId, number>;
   parentageByChild: Map<PersonId, FamilyParentageRelationship[]>;
   parentageByParent: Map<PersonId, FamilyParentageRelationship[]>;
   guardianshipByChild: Map<PersonId, FamilyGuardianshipRelationship[]>;
@@ -39,6 +40,9 @@ export interface FamilyNeighborhood<Person> {
   parents: FamilyRelative<Person>[];
   siblings: FamilyRelative<Person>[];
   halfSiblings: FamilyRelative<Person>[];
+  auntsUncles: FamilyRelative<Person>[];
+  cousins: FamilyRelative<Person>[];
+  niecesNephews: FamilyRelative<Person>[];
   partners: FamilyRelative<Person>[];
   children: FamilyRelative<Person>[];
   grandchildren: FamilyRelative<Person>[];
@@ -53,6 +57,9 @@ export const defaultFamilyNeighborhoodLimits: FamilyNeighborhoodLimits = {
   parents: 4,
   siblings: 8,
   halfSiblings: 8,
+  auntsUncles: 8,
+  cousins: 12,
+  niecesNephews: 12,
   partners: 3,
   children: 8,
   grandchildren: 8,
@@ -70,14 +77,24 @@ const pushToMap = <K, V>(map: Map<K, V[]>, key: K, value: V) => {
 const byOrderThenId = <T extends { personId: PersonId; order: number }>(a: T, b: T) =>
   a.order - b.order || a.personId.localeCompare(b.personId);
 
-const relationOrder = (relationships: FamilyRelationship[]): number => {
-  let lowest = Number.POSITIVE_INFINITY;
+const relationshipPersonIds = (relationship: FamilyRelationship): PersonId[] => {
+  if (relationship.type === "parentage") return [...relationship.parents, ...relationship.children];
+  if (relationship.type === "partnership") return relationship.partners;
+  return [...relationship.guardians, ...relationship.children];
+};
+
+const createRelationshipOrderByPerson = (relationships: FamilyRelationship[]) => {
+  const relationshipOrderByPerson = new Map<PersonId, number>();
   for (const relationship of relationships) {
-    if (relationship.order !== undefined && relationship.order < lowest) {
-      lowest = relationship.order;
+    if (relationship.order === undefined) continue;
+    for (const personId of relationshipPersonIds(relationship)) {
+      const existing = relationshipOrderByPerson.get(personId);
+      if (existing === undefined || relationship.order < existing) {
+        relationshipOrderByPerson.set(personId, relationship.order);
+      }
     }
   }
-  return lowest;
+  return relationshipOrderByPerson;
 };
 
 const hasPerson = <Person>(people: PeopleById<Person>, personId: PersonId): personId is keyof PeopleById<Person> =>
@@ -179,6 +196,7 @@ export function createFamilyIndex<Person>(
   return {
     people,
     relationships,
+    relationshipOrderByPerson: createRelationshipOrderByPerson(relationships),
     parentageByChild,
     parentageByParent,
     guardianshipByChild,
@@ -213,17 +231,7 @@ const getExplicitPartners = <Person>(index: FamilyIndex<Person>, personId: Perso
   );
 
 const relationshipOrderForPerson = <Person>(index: FamilyIndex<Person>, personId: PersonId) =>
-  relationOrder(
-    index.relationships.filter((relationship) => {
-      if (relationship.type === "parentage") {
-        return relationship.parents.includes(personId) || relationship.children.includes(personId);
-      }
-      if (relationship.type === "partnership") {
-        return relationship.partners.includes(personId);
-      }
-      return relationship.guardians.includes(personId) || relationship.children.includes(personId);
-    }),
-  );
+  index.relationshipOrderByPerson.get(personId) ?? Number.POSITIVE_INFINITY;
 
 const createRelative = <Person>(
   index: FamilyIndex<Person>,
@@ -265,6 +273,35 @@ const mergeRelatives = <Person>(...groups: FamilyRelative<Person>[][]): FamilyRe
   }
   return merged.toSorted(byOrderThenId);
 };
+
+const collectVisiblePersonIds = <Person>(groups: FamilyRelative<Person>[][]) => {
+  const visibleIds = new Set<PersonId>();
+  for (const group of groups) {
+    for (const relative of group) {
+      visibleIds.add(relative.personId);
+    }
+  }
+  return visibleIds;
+};
+
+const filterVisibleRelationships = (relationships: FamilyRelationship[], visibleIds: Set<PersonId>) =>
+  relationships.filter((relationship) => {
+    if (relationship.type === "partnership") {
+      return relationship.partners.filter((personId) => visibleIds.has(personId)).length >= 2;
+    }
+
+    if (relationship.type === "parentage") {
+      return (
+        relationship.parents.some((personId) => visibleIds.has(personId)) &&
+        relationship.children.some((personId) => visibleIds.has(personId))
+      );
+    }
+
+    return (
+      relationship.guardians.some((personId) => visibleIds.has(personId)) &&
+      relationship.children.some((personId) => visibleIds.has(personId))
+    );
+  });
 
 const generationLimitReached = (generation: number, limit: number | null) => limit !== null && generation > limit;
 
@@ -379,7 +416,7 @@ const collectDescendantGenerations = <Person>(
     directIds.forEach((personId) => directSeen.add(personId));
 
     const shouldCollectLateral =
-      limits.lateralFamilyGenerations !== null && generation <= limits.lateralFamilyGenerations;
+      limits.lateralFamilyGenerations === null || generation <= limits.lateralFamilyGenerations;
     const lateralOnlyIds = shouldCollectLateral
       ? compactIds(lateralFrontier.flatMap((personId) => getChildLikeIds(index, personId))).filter(
           (personId) => !directSeen.has(personId) && !lateralSeen.has(personId),
@@ -452,6 +489,33 @@ export function collectFamilyNeighborhood<Person>(
 
   const grandparentIds = compactIds(parentIds.flatMap((parentId) => getParents(index, parentId)));
   const grandchildIds = compactIds(childIds.flatMap((childId) => getChildren(index, childId)));
+  const shouldCollectImmediateLateral = resolvedLimits.lateralFamilyGenerations !== 0;
+  const auntUncleIds = shouldCollectImmediateLateral
+    ? compactIds(
+        parentIds.flatMap((parentId) =>
+          getParentLikeIds(index, parentId).flatMap((grandparentId) =>
+            getChildLikeIds(index, grandparentId).filter((candidateId) => candidateId !== parentId),
+          ),
+        ),
+      ).filter(
+        (candidateId) =>
+          candidateId !== subject && !parentIds.includes(candidateId) && !guardianOnlyIds.includes(candidateId),
+      )
+    : [];
+  const cousinIds = shouldCollectImmediateLateral
+    ? compactIds(auntUncleIds.flatMap((personId) => getChildLikeIds(index, personId))).filter(
+        (candidateId) =>
+          candidateId !== subject &&
+          !childIds.includes(candidateId) &&
+          !siblings.includes(candidateId) &&
+          !halfSiblings.includes(candidateId),
+      )
+    : [];
+  const nieceNephewIds = shouldCollectImmediateLateral
+    ? compactIds([...siblings, ...halfSiblings].flatMap((personId) => getChildLikeIds(index, personId))).filter(
+        (candidateId) => candidateId !== subject && !childIds.includes(candidateId),
+      )
+    : [];
   const lateralIds = compactIds([...siblings, ...halfSiblings, ...explicitPartnerIds, ...coparentOnlyIds]);
   const lateralParentIds =
     resolvedLimits.lateralFamilyGenerations === 0
@@ -462,88 +526,138 @@ export function collectFamilyNeighborhood<Person>(
   const ancestorGenerations = collectAncestorGenerations(index, subject, lateralParentIds, resolvedLimits);
   const descendantGenerations = collectDescendantGenerations(index, subject, lateralIds, resolvedLimits);
 
+  const grandparents =
+    ancestorGenerations.find((layer) => layer.generation === -2)?.relatives ??
+    capRelatives(
+      createRelatives(index, grandparentIds, {
+        label: "grandparent",
+        generation: -2,
+        side: "ancestor",
+      }),
+      resolvedLimits.grandparents,
+    );
+  const parents =
+    ancestorGenerations.find((layer) => layer.generation === -1)?.relatives ??
+    capRelatives(
+      mergeRelatives(
+        createRelatives(index, parentIds, {
+          label: "parent",
+          generation: -1,
+          side: "ancestor",
+        }),
+        createRelatives(index, guardianOnlyIds, {
+          label: "guardian",
+          generation: -1,
+          side: "ancestor",
+        }),
+      ),
+      resolvedLimits.parents,
+    );
+  const siblingRelatives = capRelatives(
+    createRelatives(index, siblings, {
+      label: "sibling",
+      generation: 0,
+      side: "sibling",
+    }),
+    resolvedLimits.siblings,
+  );
+  const halfSiblingRelatives = capRelatives(
+    createRelatives(index, halfSiblings, {
+      label: "half-sibling",
+      generation: 0,
+      side: "sibling",
+    }),
+    resolvedLimits.halfSiblings,
+  );
+  const auntUncleRelatives = capRelatives(
+    createRelatives(index, auntUncleIds, {
+      label: "aunt-uncle",
+      generation: -1,
+      side: "other",
+    }),
+    resolvedLimits.auntsUncles,
+  );
+  const cousinRelatives = capRelatives(
+    createRelatives(index, cousinIds, {
+      label: "cousin",
+      generation: 0,
+      side: "other",
+    }),
+    resolvedLimits.cousins,
+  );
+  const nieceNephewRelatives = capRelatives(
+    createRelatives(index, nieceNephewIds, {
+      label: "niece-nephew",
+      generation: 1,
+      side: "other",
+    }),
+    resolvedLimits.niecesNephews,
+  );
+  const partnerRelatives = capRelatives(
+    mergeRelatives(
+      createRelatives(index, explicitPartnerIds, {
+        label: "partner",
+        generation: 0,
+        side: "partner",
+      }),
+      createRelatives(index, coparentOnlyIds, {
+        label: "coparent",
+        generation: 0,
+        side: "partner",
+      }),
+    ),
+    resolvedLimits.partners,
+  );
+  const children =
+    descendantGenerations.find((layer) => layer.generation === 1)?.relatives ??
+    capRelatives(
+      createRelatives(index, childIds, {
+        label: "child",
+        generation: 1,
+        side: "descendant",
+      }).filter((relative) => !childSet.has(subject) && relative.personId !== subject),
+      resolvedLimits.children,
+    );
+  const grandchildren =
+    descendantGenerations.find((layer) => layer.generation === 2)?.relatives ??
+    capRelatives(
+      createRelatives(index, grandchildIds, {
+        label: "grandchild",
+        generation: 2,
+        side: "descendant",
+      }),
+      resolvedLimits.grandchildren,
+    );
+  const visibleIds = collectVisiblePersonIds([
+    [self],
+    grandparents,
+    parents,
+    siblingRelatives,
+    halfSiblingRelatives,
+    auntUncleRelatives,
+    cousinRelatives,
+    nieceNephewRelatives,
+    partnerRelatives,
+    children,
+    grandchildren,
+    ...ancestorGenerations.map((layer) => layer.relatives),
+    ...descendantGenerations.map((layer) => layer.relatives),
+  ]);
+
   return {
     self,
     ancestorGenerations,
     descendantGenerations,
-    grandparents:
-      ancestorGenerations.find((layer) => layer.generation === -2)?.relatives ??
-      capRelatives(
-        createRelatives(index, grandparentIds, {
-          label: "grandparent",
-          generation: -2,
-          side: "ancestor",
-        }),
-        resolvedLimits.grandparents,
-      ),
-    parents:
-      ancestorGenerations.find((layer) => layer.generation === -1)?.relatives ??
-      capRelatives(
-        mergeRelatives(
-          createRelatives(index, parentIds, {
-            label: "parent",
-            generation: -1,
-            side: "ancestor",
-          }),
-          createRelatives(index, guardianOnlyIds, {
-            label: "guardian",
-            generation: -1,
-            side: "ancestor",
-          }),
-        ),
-        resolvedLimits.parents,
-      ),
-    siblings: capRelatives(
-      createRelatives(index, siblings, {
-        label: "sibling",
-        generation: 0,
-        side: "sibling",
-      }),
-      resolvedLimits.siblings,
-    ),
-    halfSiblings: capRelatives(
-      createRelatives(index, halfSiblings, {
-        label: "half-sibling",
-        generation: 0,
-        side: "sibling",
-      }),
-      resolvedLimits.halfSiblings,
-    ),
-    partners: capRelatives(
-      mergeRelatives(
-        createRelatives(index, explicitPartnerIds, {
-          label: "partner",
-          generation: 0,
-          side: "partner",
-        }),
-        createRelatives(index, coparentOnlyIds, {
-          label: "coparent",
-          generation: 0,
-          side: "partner",
-        }),
-      ),
-      resolvedLimits.partners,
-    ),
-    children:
-      descendantGenerations.find((layer) => layer.generation === 1)?.relatives ??
-      capRelatives(
-        createRelatives(index, childIds, {
-          label: "child",
-          generation: 1,
-          side: "descendant",
-        }).filter((relative) => !childSet.has(subject) && relative.personId !== subject),
-        resolvedLimits.children,
-      ),
-    grandchildren:
-      descendantGenerations.find((layer) => layer.generation === 2)?.relatives ??
-      capRelatives(
-        createRelatives(index, grandchildIds, {
-          label: "grandchild",
-          generation: 2,
-          side: "descendant",
-        }),
-        resolvedLimits.grandchildren,
-      ),
-    relationships: index.relationships,
+    grandparents,
+    parents,
+    siblings: siblingRelatives,
+    halfSiblings: halfSiblingRelatives,
+    auntsUncles: auntUncleRelatives,
+    cousins: cousinRelatives,
+    niecesNephews: nieceNephewRelatives,
+    partners: partnerRelatives,
+    children,
+    grandchildren,
+    relationships: filterVisibleRelationships(index.relationships, visibleIds),
   };
 }

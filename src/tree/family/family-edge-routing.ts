@@ -159,6 +159,7 @@ export function routeFamilyEdges<Person>(
     kind,
     parentCards,
     parents,
+    sourceId,
     start,
     status,
   }: {
@@ -167,6 +168,7 @@ export function routeFamilyEdges<Person>(
     kind: string;
     parentCards?: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>];
     parents: PersonId[];
+    sourceId?: PersonId;
     start: { x: number; y: number; clearY?: number };
     status: FamilyRelationship["status"];
   }) => {
@@ -181,7 +183,7 @@ export function routeFamilyEdges<Person>(
         path: createFamilyMultiParentPath(parentCards, children),
         kind,
         status,
-        sourceId: parents[0],
+        sourceId: sourceId ?? parents[0],
         targetId: children[0]?.personId,
       });
       return;
@@ -195,7 +197,7 @@ export function routeFamilyEdges<Person>(
         path: createFamilyDescendantPath(start, topCenterPoint(child), lineShape),
         kind,
         status,
-        sourceId: parents[0],
+        sourceId: sourceId ?? parents[0],
         targetId: child.personId,
       });
       return;
@@ -221,7 +223,7 @@ export function routeFamilyEdges<Person>(
       path,
       kind,
       status,
-      sourceId: parents[0],
+      sourceId: sourceId ?? parents[0],
       targetId: children[0]?.personId,
     });
   };
@@ -276,6 +278,7 @@ export function routeFamilyEdges<Person>(
               kind: relationship.relation ?? "biological",
               parentCards: hasInterveningCard ? pair : undefined,
               parents: [parentAId, parentBId],
+              sourceId: relationship.groupId,
               start: parentageJoinPoint(pair),
               status: relationship.status,
             });
@@ -294,6 +297,7 @@ export function routeFamilyEdges<Person>(
           id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${parentId}-${relationship.relation ?? "biological"}`,
           kind: relationship.relation ?? "biological",
           parents: [parentId],
+          sourceId: relationship.groupId,
           start: bottomCenterPoint(parentCard),
           status: relationship.status,
         });

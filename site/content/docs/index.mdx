@@ -24,30 +24,58 @@ import "@memoir/tree/styles.css";
 
 ## Family Tree
 
-This quick start uses simple relationship helpers. Use graph mode for production family trees that need partnership groups, multiple unions, per-parent lineage, guardianship, or stable persistence IDs.
+Graph mode is the best starting point for app code. It is just JSON-shaped state: people, a subject, partnership groups, and parent-child links.
 
 ```tsx
-import { FamilyTree, rel } from "@memoir/tree";
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
 import "@memoir/tree/styles.css";
 
-const people = {
-  alex: { id: "alex", name: "Alex" },
-  morgan: { id: "morgan", name: "Morgan" },
-  casey: { id: "casey", name: "Casey" },
-  jordan: { id: "jordan", name: "Jordan" },
-  riley: { id: "riley", name: "Riley" },
+type Person = {
+  id: string;
+  name: string;
 };
 
-const relationships = [
-  rel.parents("alex", ["morgan", "casey"]),
-  rel.partner("alex", "jordan"),
-  rel.children(["alex", "jordan"], ["riley"]),
-];
+const graph: FamilyGraph<Person> = {
+  people: {
+    alex: { id: "alex", name: "Alex" },
+    jordan: { id: "jordan", name: "Jordan" },
+    riley: { id: "riley", name: "Riley" },
+  },
+  subject: "riley",
+  partnershipGroups: [
+    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse" },
+  ],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
+  ],
+};
 
 export function Page() {
-  return <FamilyTree people={people} subject="alex" relationships={relationships} />;
+  return <FamilyTree graph={graph} />;
 }
 ```
+
+To add someone, update the same graph state and let React re-render:
+
+```tsx
+const childId = crypto.randomUUID();
+
+setGraph((current) => ({
+  ...current,
+  people: {
+    ...current.people,
+    [childId]: { id: childId, name: "New child" },
+  },
+  parentChildLinks: [
+    ...current.parentChildLinks,
+    { id: `alex-${childId}`, groupId: "alex-jordan", parentId: "alex", childId },
+    { id: `jordan-${childId}`, groupId: "alex-jordan", parentId: "jordan", childId },
+  ],
+}));
+```
+
+Links with the same `groupId` attach children to the correct union. Stable IDs make JSON diffs and re-renders predictable.
 
 ## Org Chart
 
@@ -82,7 +110,7 @@ Pass `spacing` when your custom cards need a different density. The default `int
 
 ## Next
 
-- [FamilyTree](/docs/family-tree): parentage, partnership, guardianship, custom cards, and family options.
+- [FamilyTree](/docs/family-tree): graph mode, adding relatives, multiple unions, lineage, guardianship, and family options.
 - [Org Chart](/docs/org-chart): manager/report facts, custom cards, depth limits, and selection.
 - [Design](/docs/design): stylesheet import, CSS variables, themes, and stable selectors.
 - [Integration](/docs/development): app-owned data, editing flows, and practical checks.

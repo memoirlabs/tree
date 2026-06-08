@@ -12,6 +12,7 @@ app/
   family/
     page.tsx
     family-data.ts
+    family-actions.ts
     profile-card.tsx
 ```
 
@@ -79,24 +80,69 @@ export function ProfileCard({ person, relation, ...rootProps }: FamilyCardProps<
 `page.tsx` renders the tree:
 
 ```tsx
+"use client";
+
+import { useState } from "react";
 import { FamilyTree } from "@memoir/tree";
 import "@memoir/tree/styles.css";
-import { people, relationships } from "./family-data";
+import { graph } from "./family-data";
+import { addChildToGroup } from "./family-actions";
 import { ProfileCard } from "./profile-card";
 
 export default function FamilyPage() {
+  const [familyGraph, setFamilyGraph] = useState(graph);
+
   return (
-    <FamilyTree
-      people={people}
-      subject="alex"
-      relationships={relationships}
-      card={ProfileCard}
-    />
+    <>
+      <button
+        type="button"
+        onClick={() => setFamilyGraph((current) => addChildToGroup(current, "alex-morgan"))}
+      >
+        Add child
+      </button>
+      <FamilyTree graph={familyGraph} card={ProfileCard} />
+    </>
   );
 }
 ```
 
-When you use graph mode, render `<FamilyTree graph={graph} card={ProfileCard} />` instead.
+`family-actions.ts` can hold small graph update helpers:
+
+```ts
+import type { FamilyGraph } from "@memoir/tree";
+
+type Person = {
+  id: string;
+  name: string;
+};
+
+export function addChildToGroup(graph: FamilyGraph<Person>, groupId: string): FamilyGraph<Person> {
+  const group = graph.partnershipGroups.find((partnership) => partnership.id === groupId);
+  if (!group) return graph;
+
+  const childId = crypto.randomUUID();
+
+  return {
+    ...graph,
+    people: {
+      ...graph.people,
+      [childId]: { id: childId, name: "New child" },
+    },
+    parentChildLinks: [
+      ...graph.parentChildLinks,
+      ...group.partners.map((parentId) => ({
+        id: `${parentId}-${childId}`,
+        groupId,
+        parentId,
+        childId,
+        relation: "biological" as const,
+      })),
+    ],
+  };
+}
+```
+
+That helper returns a new graph. React re-renders `FamilyTree` from the new state, and your app can persist the same graph JSON.
 
 Keep layout options close to the route or panel that owns the experience:
 
@@ -168,6 +214,7 @@ export const graph = {
 - Pass `people`, relationship facts, and a root ID (`subject` or `root`).
 - Prefer `graph` for production family data with multiple unions, guardianship, or per-parent lineage.
 - Prefer `graph` for production org data when reporting edges need stable IDs or per-report ordering.
+- Update graph state immutably when adding people or relationships, then re-render the same tree component.
 - Use `card` or `renderCard` when default cards are too simple.
 - Keep custom card roots spreading the supplied props.
 - Keep selection and editing state in your app.

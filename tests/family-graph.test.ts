@@ -1,6 +1,14 @@
 import { expect, test } from "bun:test";
 
-import { buildFamilyTreeLayout, collectFamilyNeighborhood, createFamilyIndex, graphToFamilyRelationships, rel } from "../src/index";
+import {
+  buildFamilyTreeLayout,
+  collectFamilyNeighborhood,
+  createFamilyIndex,
+  getFamilyChildBearingGroupIds,
+  getFamilyPartnershipGroupIds,
+  graphToFamilyRelationships,
+  rel,
+} from "../src/index";
 import type { FamilyGraph } from "../src/index";
 
 const people = {
@@ -32,7 +40,7 @@ test("graph mode renders a simple two-parent family", () => {
   expect(layout.cards.map((card) => card.personId)).toEqual(["alex", "blair", "casey"]);
   expect(layout.edges.map((edge) => edge.id)).toEqual(expect.arrayContaining(["alex-blair"]));
   expect(childEdges).toHaveLength(1);
-  expect(childEdges[0]?.id).toContain("parentage-alex-blair-children-biological");
+  expect(childEdges[0]?.id).toContain("parentage-alex-blair-biological");
   expect(layout.cards.find((card) => card.personId === "casey")?.placement).toMatchObject({
     partnershipGroupIds: ["alex-blair"],
     parentChildLinkIds: ["alex-casey", "blair-casey"],
@@ -104,6 +112,86 @@ test("graph mode keeps two spouses and two child groups distinct", () => {
   expect(layout.cards.find((card) => card.personId === "ellis")?.placement?.partnershipGroupIds).toEqual(["alex-drew"]);
 });
 
+test("graph helpers expose child-bearing union ids without guessing", () => {
+  const graph: FamilyGraph = {
+    people,
+    subject: "alex",
+    partnershipGroups: [
+      { id: "alex-blair", partners: ["alex", "blair"], status: "divorced", order: 2 },
+      { id: "alex-drew", partners: ["alex", "drew"], status: "current", order: 1 },
+      { id: "gray-harper", partners: ["gray", "harper"], status: "current", order: 3 },
+    ],
+    parentChildLinks: [
+      { id: "alex-casey", groupId: "alex-blair", parentId: "alex", childId: "casey", order: 2 },
+      { id: "blair-casey", groupId: "alex-blair", parentId: "blair", childId: "casey", order: 2 },
+      { id: "alex-ellis", groupId: "alex-drew", parentId: "alex", childId: "ellis", order: 1 },
+      { id: "drew-ellis", groupId: "alex-drew", parentId: "drew", childId: "ellis", order: 1 },
+      { id: "alex-finn", parentId: "alex", childId: "finn", order: 3 },
+    ],
+    guardianshipLinks: [{ id: "alex-indigo", groupId: "alex-drew", guardianId: "alex", childId: "indigo" }],
+  };
+
+  expect(getFamilyPartnershipGroupIds(graph, "alex")).toEqual(["alex-drew", "alex-blair"]);
+  expect(getFamilyChildBearingGroupIds(graph, "alex")).toEqual(["alex-drew", "alex-blair"]);
+  expect(getFamilyChildBearingGroupIds(graph, "finn")).toEqual([]);
+});
+
+test("graph mode sources grouped child edges from the partnership group", () => {
+  const graph: FamilyGraph = {
+    people,
+    subject: "alex",
+    partnershipGroups: [
+      { id: "alex-blair", partners: ["alex", "blair"], order: 1 },
+      { id: "alex-drew", partners: ["alex", "drew"], order: 2 },
+    ],
+    parentChildLinks: [
+      { id: "alex-casey", groupId: "alex-blair", parentId: "alex", childId: "casey", order: 1 },
+      { id: "blair-casey", groupId: "alex-blair", parentId: "blair", childId: "casey", order: 1 },
+      { id: "alex-ellis", groupId: "alex-drew", parentId: "alex", childId: "ellis", order: 2 },
+      { id: "drew-ellis", groupId: "alex-drew", parentId: "drew", childId: "ellis", order: 2 },
+    ],
+  };
+
+  const childEdges = buildFamilyTreeLayout({ graph }).edges.filter((edge) => edge.kind === "biological");
+
+  expect(childEdges.map((edge) => [edge.sourceId, edge.targetId]).toSorted()).toEqual([
+    ["alex-blair", "casey"],
+    ["alex-drew", "ellis"],
+  ]);
+  expect(childEdges.some((edge) => edge.sourceId === "alex")).toBe(false);
+});
+
+test("graph mode keeps rendered relationship ids stable when parent links are reordered", () => {
+  const graph: FamilyGraph = {
+    people,
+    subject: "alex",
+    partnershipGroups: [
+      { id: "alex-blair", partners: ["alex", "blair"], order: 1 },
+      { id: "alex-drew", partners: ["alex", "drew"], order: 2 },
+    ],
+    parentChildLinks: [
+      { id: "alex-casey", groupId: "alex-blair", parentId: "alex", childId: "casey", order: 1 },
+      { id: "blair-casey", groupId: "alex-blair", parentId: "blair", childId: "casey", order: 1 },
+      { id: "alex-ellis", groupId: "alex-drew", parentId: "alex", childId: "ellis", order: 2 },
+      { id: "drew-ellis", groupId: "alex-drew", parentId: "drew", childId: "ellis", order: 2 },
+    ],
+  };
+  const reorderedGraph: FamilyGraph = {
+    ...graph,
+    parentChildLinks: [
+      graph.parentChildLinks[2]!,
+      graph.parentChildLinks[3]!,
+      graph.parentChildLinks[0]!,
+      graph.parentChildLinks[1]!,
+    ],
+  };
+
+  const edgeIds = buildFamilyTreeLayout({ graph }).edges.map((edge) => edge.id).toSorted();
+  const reorderedEdgeIds = buildFamilyTreeLayout({ graph: reorderedGraph }).edges.map((edge) => edge.id).toSorted();
+
+  expect(reorderedEdgeIds).toEqual(edgeIds);
+});
+
 test("graph mode places multiple partners around the subject to avoid crossing cards", () => {
   const layout = buildFamilyTreeLayout({
     graph: {
@@ -148,6 +236,10 @@ test("graph mode keeps biological and step lineage per parent", () => {
   });
 
   expect(layout.edges.map((edge) => edge.kind)).toEqual(expect.arrayContaining(["biological", "step"]));
+  expect(layout.edges.filter((edge) => edge.targetId === "casey").map((edge) => edge.sourceId)).toEqual([
+    "alex-blair",
+    "alex-blair",
+  ]);
 });
 
 test("graph mode keeps biological and guardian links distinct", () => {
@@ -227,6 +319,38 @@ test("graph mode keeps a half-sibling's other parent in the parent row", () => {
   expect(drew?.y).toBeLessThan(finn?.y ?? 0);
   expect(Math.abs((drew?.x ?? 0) - (finn?.x ?? 0))).toBeLessThan(Math.abs((drew?.x ?? 0) - (casey?.x ?? 0)));
   expect(layout.edges.some((edge) => edge.id.includes("alex-drew") && edge.targetId === "finn")).toBe(true);
+});
+
+test("graph mode lays out parent siblings and cousins once the family chain exists", () => {
+  const layout = buildFamilyTreeLayout({
+    graph: {
+      people: {
+        ...people,
+        jordan: { name: "Jordan" },
+      },
+      subject: "casey",
+      partnershipGroups: [],
+      parentChildLinks: [
+        { id: "alex-casey", parentId: "alex", childId: "casey" },
+        { id: "gray-alex", parentId: "gray", childId: "alex" },
+        { id: "gray-harper", parentId: "gray", childId: "harper" },
+        { id: "harper-jordan", parentId: "harper", childId: "jordan" },
+      ],
+    },
+    limits: { lateralFamilyGenerations: 1 },
+  });
+
+  expect(layout.cards.map((card) => card.personId)).toEqual(["gray", "alex", "harper", "jordan", "casey"]);
+  expect(layout.cards.find((card) => card.personId === "harper")?.relation).toMatchObject({
+    label: "aunt-uncle",
+    generation: -1,
+    side: "other",
+  });
+  expect(layout.cards.find((card) => card.personId === "jordan")?.relation).toMatchObject({
+    label: "cousin",
+    generation: 0,
+    side: "other",
+  });
 });
 
 test("child with two parent groups does not create layout cycles", () => {

@@ -39,6 +39,7 @@ export interface FamilyPartnershipGroup {
   relation?: PartnershipRelation;
   status?: FamilyRelationshipStatus;
   order?: number;
+  data?: unknown;
 }
 
 export interface FamilyParentChildLink {
@@ -120,11 +121,14 @@ export type ComputedRelationLabel =
   | "parent"
   | "grandparent"
   | "ancestor"
+  | "aunt-uncle"
   | "child"
   | "grandchild"
   | "descendant"
   | "sibling"
   | "half-sibling"
+  | "cousin"
+  | "niece-nephew"
   | "partner"
   | "coparent"
   | "guardian"
@@ -147,6 +151,9 @@ export interface FamilyNeighborhoodLimits {
   parents: number | null;
   siblings: number | null;
   halfSiblings: number | null;
+  auntsUncles: number | null;
+  cousins: number | null;
+  niecesNephews: number | null;
   partners: number | null;
   children: number | null;
   grandchildren: number | null;

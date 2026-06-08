@@ -1,18 +1,24 @@
-<h1 align="center">Tree</h1>
+<h1 align="center">@memoir/tree</h1>
 
 <p align="center">
-  Lightweight React family trees and org charts.
+  Lightweight React family trees and org charts from app-owned data.
 </p>
 
-[![npm](https://img.shields.io/npm/v/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
-[![npm downloads](https://img.shields.io/npm/dw/%40memoir%2Ftree)](https://www.npmjs.com/package/@memoir/tree)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@memoir/tree">
+    <img src="https://img.shields.io/npm/v/%40memoir%2Ftree" alt="npm version" />
+  </a>
+  <a href="https://www.npmjs.com/package/@memoir/tree">
+    <img src="https://img.shields.io/npm/dw/%40memoir%2Ftree" alt="npm downloads" />
+  </a>
+</p>
 
-`@memoir/tree` renders relationship-aware trees from your app-owned data. You provide people, family graph facts or simple relationship helpers, and optional custom cards. The package handles measured layout, spouse-aware family grouping, SVG edges, pan/scroll viewport state, accessibility props, and a small CSS-variable skin.
+`@memoir/tree` renders relationship-aware family trees and org charts. Your app owns the records, persistence, editing flows, routing, permissions, and custom card markup. Tree handles measured layout, relationship edges, viewport behavior, accessibility props, and a tiny CSS-variable skin.
 
-It is not a graph editor, database, permission system, invite flow, router, or form system. Your app keeps ownership of persistence, permissions, routing, editing flows, data validation, and card markup.
+It is not a graph editor, database, form builder, auth system, or React Flow replacement. It is a focused renderer for family and org tree UIs.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/memoirlabs/tree/main/public/logo.png" alt="Memoir Labs Tree" width="720" />
+  <img src="https://raw.githubusercontent.com/memoirlabs/tree/main/public/logo.png" alt="Memoir Tree" width="720" />
 </p>
 
 ## Install
@@ -21,21 +27,163 @@ It is not a graph editor, database, permission system, invite flow, router, or f
 bun add @memoir/tree
 ```
 
-Requires React 19. Import the stylesheet once when you want the default Memoir skin:
+React is a peer dependency. Import the stylesheet once when you want the default Memoir skin:
 
 ```tsx
 import "@memoir/tree/styles.css";
 ```
 
-## Family Tree
+## Family Trees
 
-### Simple mode
+Use graph mode for real family apps. The graph is plain app-owned state:
 
-Simple mode uses the `rel` helpers. It is good for small examples and straightforward trees. Use graph mode when you need stable partnership groups, multiple unions, per-parent lineage, guardianship, or production persistence IDs.
+- `people`: records keyed by person ID.
+- `subject`: the person to center.
+- `partnershipGroups`: spouse, partner, co-parent, or unknown-parent groups.
+- `parentChildLinks`: one parent-to-child lineage link per parent.
+- `guardianshipLinks`: optional caregiver links that are not parentage.
+
+```tsx
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
+import "@memoir/tree/styles.css";
+
+type Person = {
+  id: string;
+  name: string;
+};
+
+const graph: FamilyGraph<Person> = {
+  people: {
+    alex: { id: "alex", name: "Alex" },
+    jordan: { id: "jordan", name: "Jordan" },
+    riley: { id: "riley", name: "Riley" },
+  },
+  subject: "riley",
+  partnershipGroups: [
+    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse" },
+  ],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
+  ],
+};
+
+export function FamilyPanel() {
+  return <FamilyTree graph={graph} />;
+}
+```
+
+Children attach to the correct union through `groupId`. A child with links from Alex and Jordan using `groupId: "alex-jordan"` renders from that parent group, not from one arbitrary parent card.
+
+## Add Family Members
+
+Because the graph is normal React state, editing is just an immutable state update. Update the graph, pass it back into `FamilyTree`, and React re-renders the tree.
+
+```tsx
+import { useState } from "react";
+import { FamilyTree, type FamilyGraph } from "@memoir/tree";
+
+type Person = {
+  id: string;
+  name: string;
+};
+
+export function EditableFamilyTree({ initialGraph }: { initialGraph: FamilyGraph<Person> }) {
+  const [graph, setGraph] = useState(initialGraph);
+
+  function addChild() {
+    const childId = crypto.randomUUID();
+    const groupId = "alex-jordan";
+
+    setGraph((current) => ({
+      ...current,
+      people: {
+        ...current.people,
+        [childId]: { id: childId, name: "New child" },
+      },
+      parentChildLinks: [
+        ...current.parentChildLinks,
+        { id: `alex-${childId}`, groupId, parentId: "alex", childId, relation: "biological" },
+        { id: `jordan-${childId}`, groupId, parentId: "jordan", childId, relation: "biological" },
+      ],
+    }));
+  }
+
+  return (
+    <>
+      <button type="button" onClick={addChild}>
+        Add child
+      </button>
+      <FamilyTree graph={graph} />
+    </>
+  );
+}
+```
+
+Save the same graph shape to your database. Keep `id`, `groupId`, and `order` values stable for clean JSON diffs and predictable re-renders.
+
+For add-member flows, let the app decide which relation choices are allowed for the selected person. Helpers such as `getFamilyPartnershipGroupIds(graph, personId)` and `getFamilyChildBearingGroupIds(graph, personId)` can identify the relevant union IDs for custom editors.
+
+## Model Real Relationships
+
+Multiple unions stay separate:
+
+```ts
+const graph: FamilyGraph<Person> = {
+  people,
+  subject: "alex",
+  partnershipGroups: [
+    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse", order: 1 },
+    { id: "alex-morgan", partners: ["alex", "morgan"], relation: "coparent", status: "former", order: 2 },
+  ],
+  parentChildLinks: [
+    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
+    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
+    { id: "alex-casey", groupId: "alex-morgan", parentId: "alex", childId: "casey" },
+    { id: "morgan-casey", groupId: "alex-morgan", parentId: "morgan", childId: "casey" },
+  ],
+};
+```
+
+Per-parent lineage stays truthful:
+
+```ts
+parentChildLinks: [
+  {
+    id: "alex-riley",
+    groupId: "alex-jordan",
+    parentId: "alex",
+    childId: "riley",
+    relation: "biological",
+  },
+  {
+    id: "jordan-riley",
+    groupId: "alex-jordan",
+    parentId: "jordan",
+    childId: "riley",
+    relation: "step",
+  },
+];
+```
+
+Links with the same `groupId`, `relation`, `status`, and `order` are grouped into one rendered parentage relationship. Links with different lineage kinds, such as biological plus step, stay distinct.
+
+Guardianship is separate from parentage:
+
+```ts
+guardianshipLinks: [
+  { id: "morgan-riley-guardian", guardianId: "morgan", childId: "riley", relation: "guardian" },
+];
+```
+
+Unknown parent placeholders are display facts. A partnership with `relation: "unknown"` or `status: "unknown"` renders the placeholder without drawing a spouse bar. If the unknown person is also a co-parent, include a `parentChildLink` for that placeholder.
+
+## Simple Family Mode
+
+For small examples, simple relationship helpers are still available:
 
 ```tsx
 import { FamilyTree, rel } from "@memoir/tree";
-import "@memoir/tree/styles.css";
 
 const people = {
   alex: { id: "alex", name: "Alex" },
@@ -56,121 +204,11 @@ export function FamilyPanel() {
 }
 ```
 
-### Graph mode
+Use graph mode when you need stable IDs, multiple unions, per-parent lineage, guardianship, unknown parents, or clean persisted diffs.
 
-Graph mode is recommended for production family-tree apps. It models partnership groups, per-parent child lineage, guardianship, and people who participate in multiple unions. The family layout treats partner groups and child groups as layout inputs, so children anchor to the correct parent pair even when one person appears in more than one union.
+## Org Charts
 
-```tsx
-import { FamilyTree, type FamilyGraph } from "@memoir/tree";
-import "@memoir/tree/styles.css";
-
-const graph: FamilyGraph<Person> = {
-  people,
-  subject: "riley",
-  partnershipGroups: [
-    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse" },
-  ],
-  parentChildLinks: [
-    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley", relation: "biological" },
-    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley", relation: "biological" },
-  ],
-};
-
-export function FamilyPanel() {
-  return <FamilyTree graph={graph} />;
-}
-```
-
-### Multiple unions / blended family
-
-Children are attached to the group that produced or raised that child, so multiple spouse or co-parent groups do not collapse into one mixed union.
-
-```ts
-const graph: FamilyGraph<Person> = {
-  people,
-  subject: "alex",
-  partnershipGroups: [
-    { id: "alex-jordan", partners: ["alex", "jordan"], relation: "spouse", order: 1 },
-    { id: "alex-morgan", partners: ["alex", "morgan"], relation: "coparent", status: "former", order: 2 },
-  ],
-  parentChildLinks: [
-    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley" },
-    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley" },
-    { id: "alex-casey", groupId: "alex-morgan", parentId: "alex", childId: "casey" },
-    { id: "morgan-casey", groupId: "alex-morgan", parentId: "morgan", childId: "casey" },
-  ],
-};
-```
-
-### Per-parent lineage
-
-Lineage belongs to each parent-child link, not to the whole union.
-
-```ts
-const graph: FamilyGraph<Person> = {
-  people,
-  subject: "riley",
-  partnershipGroups: [{ id: "alex-jordan", partners: ["alex", "jordan"] }],
-  parentChildLinks: [
-    { id: "alex-riley", groupId: "alex-jordan", parentId: "alex", childId: "riley", relation: "biological" },
-    { id: "jordan-riley", groupId: "alex-jordan", parentId: "jordan", childId: "riley", relation: "step" },
-  ],
-};
-```
-
-Links with the same `groupId`, `relation`, `status`, and `order` are grouped into one rendered parentage relationship. Mixed lineage in the same partnership group, such as biological plus step, stays distinct so each edge keeps the correct kind.
-
-### Guardianship
-
-Guardianship is separate from parentage, so a guardian is not rendered as a biological parent unless you model that link too.
-
-```ts
-const graph: FamilyGraph<Person> = {
-  people,
-  subject: "riley",
-  partnershipGroups: [],
-  parentChildLinks: [
-    { id: "alex-riley", parentId: "alex", childId: "riley", relation: "biological" },
-  ],
-  guardianshipLinks: [
-    { id: "morgan-riley-guardian", guardianId: "morgan", childId: "riley", relation: "guardian" },
-  ],
-};
-```
-
-Custom family cards receive placement metadata when graph mode is used:
-
-```ts
-placement?: {
-  partnershipGroupIds: string[];
-  parentChildLinkIds: string[];
-  guardianshipLinkIds: string[];
-  visibleRelationshipIds: string[];
-};
-```
-
-### Layout behavior
-
-Family layout is subject-centered and neighborhood-based. By default it renders two ancestor generations, the subject row with siblings and partners, and two descendant generations. `limits.ancestorGenerations` and `limits.descendantGenerations` can expand or shrink that vertical range. Partnership groups and child groups participate in layout before edges are routed, so spouse bars and parent-child buses are based on measured card positions instead of being decorative afterthoughts.
-
-Two-parent child groups use the visible midpoint between the parent cards as the parentage join. Multi-child groups split through a horizontal bus centered in the clear gap below the parent cards and above the child row.
-
-Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
-
-Large or blended families can still become visually wide. Use `limits` to control the visible neighborhood; set a group cap to `null` to disable that cap. Use `limits.lateralFamilyGenerations` to include nearby sibling and partner family branches without expanding the entire graph.
-
-Default spacing is intentionally compact: `{ row: 80, column: 24, padding: 24 }`. Override it per tree when your card size needs more or less room:
-
-```tsx
-<FamilyTree
-  graph={graph}
-  spacing={{ row: 72, column: 20, padding: 24 }}
-/>
-```
-
-## Org Chart
-
-### Simple mode
+Org charts can use simple helper relationships:
 
 ```tsx
 import { OrgChart, org } from "@memoir/tree";
@@ -191,9 +229,7 @@ export function TeamChart() {
 }
 ```
 
-### Graph mode
-
-Use graph mode when reporting edges need stable app-owned IDs or per-report ordering.
+Use org graph mode when reporting edges need stable app-owned IDs:
 
 ```tsx
 import { OrgChart, type OrgChartGraph } from "@memoir/tree";
@@ -214,12 +250,12 @@ export function TeamChart() {
 
 ## Custom Cards
 
-Most apps should bring their own card component. Spread the provided props onto the card root so data attributes, ARIA props, click handlers, and keyboard handlers reach the DOM.
+Most apps should provide their own card component. Spread the supplied props onto the card root so ARIA props, keyboard handlers, click handlers, and stable data attributes reach the DOM.
 
 ```tsx
 import type { FamilyCardProps } from "@memoir/tree";
 
-function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProps<Person>) {
+function ProfileCard({ person, relation, ...rootProps }: FamilyCardProps<Person>) {
   return (
     <article {...rootProps}>
       <strong>{person.name}</strong>
@@ -228,34 +264,63 @@ function ProfileCard({ focused, person, relation, ...rootProps }: FamilyCardProp
   );
 }
 
-<FamilyTree people={people} subject="alex" relationships={relationships} card={ProfileCard} />;
+<FamilyTree graph={graph} card={ProfileCard} />;
 ```
 
-Use `cardProps` when your card needs app-owned typed props.
-
-## Viewport and Interaction
-
-The default `interactionMode` is `"pan"`. Users can drag the canvas or non-interactive card surfaces with mouse, touch, or pen to move the tree viewport. Native controls inside cards such as buttons, links, inputs, selects, textareas, and `[contenteditable="true"]` keep their own pointer behavior. Add `data-tree-drag-ignore` to any custom element that should not start panning.
-
-Use `"pan-page-scroll"` when the tree should still drag with mouse or horizontal touch gestures, while vertical touch gestures scroll the page. Use `"scroll"` when you want normal browser scrollbars instead of drag panning, and `"none"` when the viewport should not be interactive.
-
-```tsx
-<FamilyTree graph={graph} onViewportChange={(viewport) => saveViewport(viewport)} />
-```
-
-Trees center the subject or org root by default after cards are measured. Use `defaultViewport` for a custom uncontrolled starting position, or `initialViewport` for explicit modes like `"canvas"` or `{ mode: "center-person", personId }`. `treeApiRef` exposes only `centerPerson(personId)`, `fitToSubject()`, and `resetViewport()`.
-
-## Styling
-
-The stylesheet is framework-free CSS using stable data attributes and CSS variables. Do not import it from JavaScript automatically; consumers opt in explicitly.
+Use `cardProps` for typed app-owned inputs:
 
 ```tsx
 <FamilyTree
-  className="my-tree"
-  people={people}
-  subject="alex"
-  relationships={relationships}
+  graph={graph}
+  card={ProfileCard}
+  cardProps={(person) => ({
+    href: `/people/${person.id}`,
+    canEdit: currentUserCanEdit,
+  })}
 />
+```
+
+## Layout And Viewport
+
+Family layout is subject-centered and neighborhood-based. It renders ancestor rows, a subject row with siblings and partners, and descendant rows. Partnership groups and child groups participate in layout before SVG edges are routed, so parent-child lines come from measured card positions.
+
+Large families can become wide. Use `limits` to control the visible neighborhood:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  limits={{ ancestorGenerations: 3, descendantGenerations: 2, partners: null }}
+/>
+```
+
+Default family layout keeps lateral expansion off. Set `lateralFamilyGenerations` above `0` when you want the renderer to include immediate lateral branches that already exist in the graph, such as parent siblings, cousins, and nieces/nephews. Those groups have explicit caps through `auntsUncles`, `cousins`, and `niecesNephews`; set any cap to `null` to disable it.
+
+Default spacing is compact:
+
+```ts
+{ row: 80, column: 24, padding: 24 }
+```
+
+Override spacing only when your card design needs a different density:
+
+```tsx
+<FamilyTree graph={graph} spacing={{ row: 72, column: 20, padding: 24 }} />
+```
+
+The default `interactionMode` is `"pan"`. Users can drag the canvas or non-interactive card surfaces with mouse, touch, or pen. Use `"pan-page-scroll"` when vertical touch should scroll the page, `"scroll"` for native scrollbars, or `"none"` for a static tree.
+
+`treeApiRef` exposes a small viewport API:
+
+- `centerPerson(personId)`
+- `fitToSubject()`
+- `resetViewport()`
+
+## Styling
+
+The stylesheet is framework-free CSS with variables and stable data attributes. The package never auto-imports CSS.
+
+```tsx
+<FamilyTree className="my-tree" graph={graph} />
 ```
 
 ```css
@@ -268,48 +333,52 @@ The stylesheet is framework-free CSS using stable data attributes and CSS variab
 }
 ```
 
-## Lower-Level Layout
+Useful selectors include:
 
-Use `buildLayeredTreeLayout()` when you need a small measured-box layout primitive for custom renderers. It places ordered layers, supports anchor IDs and internal anchor points, prevents same-row overlap, and returns positioned boxes plus bounds.
+- `[data-tree-surface]`
+- `[data-tree-card]`
+- `[data-tree-edge]`
+- `[data-family-card]`
+- `[data-family-edge]`
+- `[data-org-card]`
+- `[data-org-edge]`
+- `[data-selected]`
+- `[data-focused]`
+
+## React-Free Layout
+
+Use `buildFamilyTreeLayout()` when you need the same family layout data without rendering React components. Pass measurements from your own renderer and receive positioned cards, SVG paths, and bounds.
 
 ```ts
-import { buildLayeredTreeLayout } from "@memoir/tree";
-import type { TreeLayeredBoxInput } from "@memoir/tree";
+import { buildFamilyTreeLayout } from "@memoir/tree";
 
-const layers: TreeLayeredBoxInput[][] = [
-  [{ id: "parents", width: 240, height: 80, anchorPoints: [{ id: "parent-a", offsetX: 60 }] }],
-  [{ id: "child", width: 120, height: 64, anchorIds: ["parent-a"] }],
-];
-
-const layout = buildLayeredTreeLayout({
-  layers,
-  spacing: { row: 96, column: 32, padding: 24 },
+const layout = buildFamilyTreeLayout({
+  graph,
+  measurements: {
+    alex: { width: 180, height: 72 },
+    jordan: { width: 180, height: 72 },
+    riley: { width: 160, height: 68 },
+  },
 });
 ```
 
-It is intentionally not a graph editor or graph engine. `FamilyTree` and `OrgChart` remain the domain renderers.
+Use `buildLayeredTreeLayout()` only when you need the small shared measured-box layout primitive. `FamilyTree` and `OrgChart` are the main domain renderers.
 
 ## Public Surface
 
 - Components: `FamilyTree`, `OrgChart`, `DefaultFamilyCard`, `StyledFamilyCard`, `DefaultOrgCard`
-- Relationship helpers: `rel`, `org`; `rel.children()` and `rel.parents()` are simple-mode helpers
-- Family graph helpers: `graphToFamilyRelationships`
+- Relationship helpers: `rel`, `org`
+- Graph helpers: `graphToFamilyRelationships`, `graphToOrgReportingRelationships`
 - Family helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`, `buildFamilyTreeLayout`
-- Org graph helpers: `graphToOrgReportingRelationships`
+- Advanced family helpers: `createFamilyLayoutService`, `layoutFamilyTree`, `createUnionParentLinks`, `defaultFamilyLayoutOptions`, `resolveFamilyLayoutOptions`, `getFamilyPartnershipGroupIds`, `getFamilyChildBearingGroupIds`
 - Org helpers: `createOrgChartIndex`, `collectOrgChartSubtree`, `buildOrgChartLayout`
 - Core layout helper: `buildLayeredTreeLayout`
 - Family primitives: `TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, `useTreeLayout`
 - Styling helpers: `treeStylePresets`, `getTreeStyleName`
-- Shared viewport/types: `TreeSurface`, `TreeApi`, `TreeInitialViewport`, `TreeViewport`, card prop and relationship types
+- Viewport/core: `TreeSurface`, `TreeApi`, `TreeInitialViewport`, `TreeViewport`
 - Stylesheet: `@memoir/tree/styles.css`
 
-## Migrating from 0.3 to 0.4
-
-The old `people` + `subject` + `relationships` API still works as simple mode. For real family apps, move to `graph` so partnership groups and individual parent-child or guardianship links are explicit.
-
-Use `partnershipGroups` for spouse, partner, and co-parent clusters. Use `parentChildLinks` for each parent-to-child lineage, including biological, adoptive, step, foster, or unknown links. Use `guardianshipLinks` for guardians and foster guardians. Keep persistence IDs, permissions, invites, editing state, and validation in your app model; Tree only renders and lays out the graph you pass in.
-
-## Local Development
+## Development
 
 ```bash
 bun run typecheck
@@ -318,15 +387,6 @@ bun run build
 bun run lint
 bun run --cwd site ci
 ```
-
-## Release
-
-```bash
-bun run release:dry-run
-bun run release
-```
-
-Releases are manual. `bun run release` checks the package, writes `RELEASE_ANNOUNCEMENT.md`, publishes to npm, tags the release, pushes the tag, and creates a GitHub Release.
 
 ## License
 

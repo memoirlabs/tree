@@ -41,9 +41,9 @@ const requiredPackagePaths = [
   "dist/index.js",
   "dist/index.d.ts",
   "dist/styles.css",
-  "dist/tree/core.js",
-  "dist/tree/family.js",
-  "dist/tree/org-chart.js",
+  "dist/tree/core/index.js",
+  "dist/tree/family/index.js",
+  "dist/tree/org-chart/index.js",
   "README.md",
   "LICENSE",
 ];
@@ -86,7 +86,7 @@ if (missingRequiredPaths.length > 0) {
 }
 
 try {
-  await import(`${process.cwd()}/dist/index.js?audit=${Date.now()}`);
+  await import(`${process.cwd()}/dist/index.js`);
 } catch (error) {
   fail(`npm package entry point failed to import:\n${error instanceof Error ? error.stack : String(error)}`);
 }
