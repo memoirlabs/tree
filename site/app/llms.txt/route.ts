@@ -74,7 +74,7 @@ Key selectors include \`[data-tree-surface]\`, \`[data-tree-canvas]\`, \`[data-t
 
 ## Public Helpers
 
-Exports include \`FamilyTree\`, \`OrgChart\`, \`DefaultFamilyCard\`, \`StyledFamilyCard\`, \`DefaultOrgCard\`, \`TreeProvider\`, \`TreeCanvas\`, \`TreeEdges\`, \`TreeNodeLayer\`, \`TreeSurface\`, \`useTreeLayout\`, \`rel\`, \`org\`, \`graphToFamilyRelationships\`, \`graphToOrgReportingRelationships\`, \`buildFamilyTreeLayout\`, \`buildOrgChartLayout\`, \`buildLayeredTreeLayout\`, \`createFamilyIndex\`, \`collectFamilyNeighborhood\`, \`defaultFamilyNeighborhoodLimits\`, \`createOrgChartIndex\`, \`collectOrgChartSubtree\`, \`treeStylePresets\`, and \`getTreeStyleName\`.
+Exports include \`FamilyTree\`, \`OrgChart\`, \`DefaultFamilyCard\`, \`StyledFamilyCard\`, \`DefaultOrgCard\`, \`TreeProvider\`, \`TreeCanvas\`, \`TreeEdges\`, \`TreeNodeLayer\`, \`TreeSurface\`, \`useTreeLayout\`, \`rel\`, \`org\`, \`graphToFamilyRelationships\`, \`graphToOrgReportingRelationships\`, \`getFamilyPartnershipGroupIds\`, \`getFamilyChildBearingGroupIds\`, \`buildFamilyTreeLayout\`, \`buildOrgChartLayout\`, \`buildLayeredTreeLayout\`, \`createFamilyIndex\`, \`collectFamilyNeighborhood\`, \`defaultFamilyNeighborhoodLimits\`, \`createFamilyLayoutService\`, \`layoutFamilyTree\`, \`createUnionParentLinks\`, \`defaultFamilyLayoutOptions\`, \`resolveFamilyLayoutOptions\`, \`createOrgChartIndex\`, \`collectOrgChartSubtree\`, \`treeStylePresets\`, and \`getTreeStyleName\`.
 
 ## Docs
 
