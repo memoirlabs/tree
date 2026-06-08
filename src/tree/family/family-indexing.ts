@@ -608,26 +608,22 @@ export function collectFamilyNeighborhood<Person>(
     ),
     resolvedLimits.partners,
   );
-  const children =
-    descendantGenerations.find((layer) => layer.generation === 1)?.relatives ??
-    capRelatives(
-      createRelatives(index, childIds, {
-        label: "child",
-        generation: 1,
-        side: "descendant",
-      }).filter((relative) => !childSet.has(subject) && relative.personId !== subject),
-      resolvedLimits.children,
-    );
-  const grandchildren =
-    descendantGenerations.find((layer) => layer.generation === 2)?.relatives ??
-    capRelatives(
-      createRelatives(index, grandchildIds, {
-        label: "grandchild",
-        generation: 2,
-        side: "descendant",
-      }),
-      resolvedLimits.grandchildren,
-    );
+  const children = capRelatives(
+    createRelatives(index, childIds, {
+      label: "child",
+      generation: 1,
+      side: "descendant",
+    }).filter((relative) => !childSet.has(subject) && relative.personId !== subject),
+    resolvedLimits.children,
+  );
+  const grandchildren = capRelatives(
+    createRelatives(index, grandchildIds, {
+      label: "grandchild",
+      generation: 2,
+      side: "descendant",
+    }),
+    resolvedLimits.grandchildren,
+  );
   const visibleIds = collectVisiblePersonIds([
     [self],
     grandparents,

@@ -1,20 +1,23 @@
-# Memoir Tree v0.4.9
+# @memoir/tree v0.5.1
 
-Unknown partner placeholder routing patch.
+This patch tightens the `0.5.0` family layout release before the app consumes it.
 
-## Changes
+## What Changed
 
-- Treat partnerships with `relation: "unknown"` or `status: "unknown"` as placeholder/layout facts, not real spouse bars.
-- Keep unknown placeholder cards visible without drawing a fake horizontal partner edge.
-- Still connect unknown placeholders when they are actually included as parents in the child parentage group.
-- Add the unknown-placeholder case to `/visual-check`.
-- Document the placeholder rule in README, docs, API notes, and `llms.txt`.
+- Keeps direct `children` and `grandchildren` neighborhood fields semantically direct when lateral family expansion is enabled.
+- Keeps lateral relatives in their own fields: `auntsUncles`, `cousins`, and `niecesNephews`.
+- Preserves the `0.5.0` layout behavior where visible lateral branches can render once `lateralFamilyGenerations` is enabled.
+- Adds regression coverage so sibling children and cousin branches do not leak into direct descendant metadata.
 
-## Verify
+## Why It Matters
+
+Memoir app code uses layout metadata to drive add-member actions. Direct descendants and lateral relatives must remain separate even when they share a rendered row. This patch makes that contract explicit and tested.
+
+## Verification
 
 - `bun run typecheck`
 - `bun test`
-- `bun run build`
 - `bun run lint`
-- `bun run --cwd site ci`
-- Browser screenshot and drag metrics on `/visual-check`
+- `bun run build`
+
+Compare changes: https://github.com/memoirlabs/tree/compare/v0.5.0...v0.5.1

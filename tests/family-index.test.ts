@@ -155,6 +155,8 @@ test("collects immediate lateral branches when intermediate relatives exist", ()
     generation: 1,
     side: "other",
   });
+  expect(neighborhood?.children).toEqual([]);
+  expect(neighborhood?.grandchildren).toEqual([]);
 });
 
 test("does not collect lateral branch relatives by default", () => {
