@@ -29,6 +29,110 @@ h1 {
   margin: 0;
 }
 
+.engine-panel {
+  border: 2px solid #030201;
+  background: #f6f0dc;
+  box-shadow: 5px 5px 0 #030201;
+  display: grid;
+  gap: 12px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.engine-panel__header {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+}
+
+.engine-panel h2 {
+  font-size: 15px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.engine-panel pre {
+  background: #030201;
+  color: #f6f0dc;
+  font-size: 11px;
+  line-height: 1.35;
+  margin: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+.engine-stage {
+  background:
+    linear-gradient(#d4cab0 1px, transparent 1px),
+    linear-gradient(90deg, #d4cab0 1px, transparent 1px),
+    #fffaf0;
+  background-size: 24px 24px;
+  border: 1px solid #030201;
+  min-height: 360px;
+  min-width: 100%;
+  overflow: visible;
+  position: relative;
+}
+
+.engine-stage svg {
+  inset: 0;
+  overflow: visible;
+  position: absolute;
+}
+
+.engine-edge {
+  fill: none;
+  stroke: #030201;
+  stroke-linejoin: miter;
+  stroke-width: 2;
+}
+
+.engine-edge[data-status="unknown"] {
+  stroke-dasharray: 5 4;
+}
+
+.engine-person,
+.engine-union {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.engine-person {
+  align-items: center;
+  background: white;
+  border: 2px solid #030201;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.engine-person[data-synthetic] {
+  background: #f1efe7;
+  border-style: dashed;
+}
+
+.engine-person strong {
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.engine-person small {
+  color: #554b40;
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.engine-union {
+  background: #030201;
+  border: 2px solid white;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px #030201;
+}
+
 .check-tree {
   height: calc(100vh - 82px);
   min-height: 680px;

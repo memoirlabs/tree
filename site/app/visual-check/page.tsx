@@ -3,8 +3,10 @@
 import {
   FamilyTree,
   OrgChart,
+  layoutFamilyTree,
   rel,
   type FamilyCardProps,
+  type FamilyLayoutResult,
   type FamilyGraph,
   type OrgCardProps,
   type OrgChartGraph,
@@ -82,6 +84,29 @@ const unknownPartnerPeople = {
   unknown: { name: "Unknown" },
 };
 
+const engineLayout = layoutFamilyTree<Person>({
+  people: {
+    alex: { name: "Alex" },
+    jordan: { name: "Jordan" },
+    morgan: { name: "Morgan" },
+    riley: { name: "Riley" },
+    casey: { name: "Casey" },
+    drew: { name: "Drew" },
+    blair: { name: "Blair" },
+  },
+  center: "alex",
+  unions: [
+    { id: "u_alex_jordan", partners: ["alex", "jordan"], children: ["riley", "casey"], order: 1 },
+    { id: "u_alex_morgan", partners: ["alex", "morgan"], children: ["drew"], order: 2 },
+    { id: "u_multi", partners: ["alex", "blair"], children: [], order: 3, status: "unknown" },
+  ],
+  options: {
+    personSize: { width: 132, height: 72 },
+    unionSize: { width: 18, height: 18 },
+    spacing: { rank: 104, person: 28, union: 42, padding: 32 },
+  },
+});
+
 function StressCard({ person, ...props }: { person: Person } & HTMLAttributes<HTMLElement>) {
   return (
     <article {...props} style={{ background: "white", border: "2px solid #111", minWidth: 132, padding: 12 }}>
@@ -120,12 +145,112 @@ function OrgStressCard({
   return <StressCard person={person} {...props} />;
 }
 
+function EngineLayoutPanel({ result }: { result: FamilyLayoutResult<Person> }) {
+  const width = Math.max(1, result.bounds.maxX + 32);
+  const height = Math.max(1, result.bounds.maxY + 32);
+
+  return (
+    <section style={{ background: "#fffaf0", border: "2px solid #111", color: "#111", overflow: "auto", padding: 12 }}>
+      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "220px minmax(0, 1fr)", marginBottom: 12 }}>
+        <h2 style={{ fontSize: 16, lineHeight: 1.2, margin: 0 }}>New layout engine direct render</h2>
+        <pre style={{ background: "#111", color: "#fffaf0", fontSize: 11, lineHeight: 1.35, margin: 0, overflow: "auto", padding: 8 }}>
+          {JSON.stringify(
+            {
+              bounds: result.bounds,
+              edges: result.edges.length,
+              people: result.people.length,
+              unions: result.unions.length,
+              warnings: result.warnings.map((warning) => warning.code),
+            },
+            null,
+            2,
+          )}
+        </pre>
+      </div>
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #111",
+          height,
+          minWidth: "100%",
+          position: "relative",
+          width,
+        }}
+      >
+        <svg aria-hidden="true" height={height} style={{ inset: 0, overflow: "visible", position: "absolute" }} viewBox={`0 0 ${width} ${height}`} width={width}>
+          {result.edges.map((edge) => (
+            <path
+              key={edge.id}
+              d={edge.path}
+              data-kind={edge.kind}
+              data-relation={edge.relation}
+              data-status={edge.status}
+              fill="none"
+              stroke="#111"
+              strokeWidth={2}
+            />
+          ))}
+        </svg>
+        {result.unions.map((node) => (
+          <div
+            key={node.id}
+            data-engine-union
+            data-status={node.status}
+            style={{
+              background: "#111",
+              border: "2px solid white",
+              borderRadius: 999,
+              boxShadow: "0 0 0 1px #111",
+              height: node.height,
+              left: 0,
+              position: "absolute",
+              top: 0,
+              transform: `translate(${node.x}px, ${node.y}px)`,
+              width: node.width,
+            }}
+          />
+        ))}
+        {result.people.map((node) => (
+          <article
+            key={node.id}
+            data-engine-person
+            data-hidden={node.hidden ? "" : undefined}
+            data-synthetic={node.synthetic ? "" : undefined}
+            style={{
+              alignItems: "center",
+              background: "white",
+              border: "2px solid #111",
+              display: "grid",
+              gap: 4,
+              height: node.height,
+              justifyItems: "center",
+              left: 0,
+              padding: "8px 10px",
+              position: "absolute",
+              textAlign: "center",
+              top: 0,
+              transform: `translate(${node.x}px, ${node.y}px)`,
+              width: node.width,
+            }}
+          >
+            <strong style={{ fontSize: 14, lineHeight: 1.1 }}>{node.data.name}</strong>
+            <small style={{ color: "#554b40", fontSize: 11, lineHeight: 1.1 }}>{node.id}</small>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function VisualCheckPage() {
   return (
     <main style={{ background: "#111", color: "white", display: "grid", gap: 24, minHeight: "100vh", padding: 24 }}>
       <section>
         <h1 style={{ fontSize: 18, margin: 0 }}>Tree Visual Check</h1>
         <p style={{ margin: "8px 0 0" }}>Stress fixtures for family bounds, partner routing, org layout, and pan modes.</p>
+      </section>
+      <section style={{ height: 620 }}>
+        <EngineLayoutPanel result={engineLayout} />
       </section>
       <section style={{ height: 620 }}>
         <FamilyTree
