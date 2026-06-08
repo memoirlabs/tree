@@ -3,8 +3,8 @@ import {
   centerPoint,
   roundTreeCoordinate,
   topCenterPoint,
-} from "../core";
-import type { TreeLineShape } from "../core";
+} from "../../layout-engine";
+import type { LayoutLineShape } from "../../layout-engine";
 import type { FamilyRelationship, PersonId } from "./types";
 import type { FamilyTreeLayoutCard, FamilyTreeLayoutEdge } from "./layout-types";
 
@@ -42,7 +42,7 @@ const shouldDrawPartnershipBar = (relationship: Extract<FamilyRelationship, { ty
 const createFamilyDescendantPath = (
   start: { x: number; y: number; clearY?: number },
   end: { x: number; y: number },
-  lineShape: TreeLineShape,
+  lineShape: LayoutLineShape,
 ) => {
   const routeStartY = start.clearY ?? start.y;
   const midY = roundTreeCoordinate(routeStartY + (end.y - routeStartY) * 0.5);
@@ -84,7 +84,7 @@ const createFamilyMultiParentPath = <Person>(
 };
 
 export interface RouteFamilyEdgesOptions {
-  lineShape?: TreeLineShape;
+  lineShape?: LayoutLineShape;
 }
 
 export function routeFamilyEdges<Person>(

@@ -1,5 +1,5 @@
-import type { TreeLayeredBox, TreeLayeredBoxInput } from "../core";
-import { roundTreeCoordinate } from "../core";
+import type { TreeLayeredBox, TreeLayeredBoxInput } from "../../layout-engine";
+import { roundTreeCoordinate } from "../../layout-engine";
 import type { FamilyNeighborhood, FamilyRelative } from "./family-indexing";
 import type { FamilyTreeLayoutCard } from "./layout-types";
 import type { FamilyRelationship, FamilyTreeSize, PersonId } from "./types";

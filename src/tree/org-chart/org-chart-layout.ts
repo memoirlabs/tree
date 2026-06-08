@@ -1,4 +1,10 @@
-import { bottomCenterPoint, createTreeEdgePath, roundTreeCoordinate, topCenterPoint } from "../core";
+import {
+  bottomCenterPoint,
+  createBoundsFromBoxes,
+  createTreeEdgePath,
+  roundTreeCoordinate,
+  topCenterPoint,
+} from "../../layout-engine";
 import { normalizeOrgChartInput } from "./org-chart-graph";
 import { collectOrgChartSubtree, createOrgChartIndex } from "./org-chart-indexing";
 import type { OrgChartRelative } from "./org-chart-indexing";
@@ -149,15 +155,9 @@ export function buildOrgChartLayout<Person>({
     });
   }
 
-  const maxX = Math.max(...cards.map((card) => card.x + card.width));
-  const maxY = Math.max(...cards.map((card) => card.y + card.height));
-
   return {
     cards,
     edges,
-    bounds: {
-      width: roundTreeCoordinate(maxX + spacing.padding),
-      height: roundTreeCoordinate(maxY + spacing.padding),
-    },
+    bounds: createBoundsFromBoxes(cards, spacing.padding),
   };
 }

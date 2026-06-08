@@ -28,6 +28,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./layout": {
+      "types": "./dist/layout/index.d.ts",
+      "import": "./dist/layout/index.js",
+      "default": "./dist/layout/index.js"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "type": "module",

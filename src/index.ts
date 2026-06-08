@@ -9,6 +9,7 @@ export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhood
 export { collectOrgChartSubtree, createOrgChartIndex } from "./tree/org-chart";
 export { buildFamilyTreeLayout } from "./tree/family";
 export { buildOrgChartLayout } from "./tree/org-chart";
+export { layoutFamilyTree } from "./layout";
 
 export type {
   PeopleById,
@@ -97,6 +98,28 @@ export type {
   TreePrimitiveType,
   TreeProviderProps,
 } from "./tree/family";
+
+export type {
+  FamilyLayoutBounds,
+  FamilyLayoutEdge,
+  FamilyLayoutInput,
+  FamilyLayoutNode,
+  FamilyLayoutOptions,
+  FamilyLayoutPoint,
+  FamilyLayoutResult,
+  FamilyLayoutWarning,
+  FamilyLayoutWarningCode,
+  FamilyNodeId,
+  FamilyParentLink,
+  FamilyParentLinkKind,
+  FamilyPersonLayoutNode,
+  FamilyUnion,
+  FamilyUnionKind,
+  FamilyUnionLayoutNode,
+  FamilyUnionStatus,
+  PartialFamilyLayoutOptions,
+  UnionId,
+} from "./layout";
 
 export type {
   BuildOrgChartLayoutInput,
