@@ -145,11 +145,16 @@ export function buildOrgChartLayout<Person>({
     if (!card.parentId) continue;
     const parentCard = cardsById.get(card.parentId);
     if (!parentCard) continue;
+    const relationship = index.relationshipByReport.get(card.personId);
+    const relationshipId =
+      index.reportingLinkIdByReport.get(card.personId) ??
+      (relationship?.reportIds.length === 1 ? relationship.id : undefined) ??
+      `reporting-${card.parentId}-${card.personId}`;
     edges.push({
-      id: `reporting-${card.parentId}-${card.personId}`,
+      id: relationshipId,
       path: createTreeEdgePath(bottomCenterPoint(parentCard), topCenterPoint(card), lineShape),
-      kind: "manager",
-      status: "current",
+      kind: relationship?.relation ?? "manager",
+      status: relationship?.status ?? "current",
       sourceId: card.parentId,
       targetId: card.personId,
     });

@@ -20,7 +20,7 @@ const people = {
 };
 
 const relationships = [
-  org.reports("ceo", ["engineering", "design"]),
+  org.manager("ceo", ["engineering", "design"]),
 ];
 
 export function TeamChart() {
@@ -41,8 +41,8 @@ const graph: OrgChartGraph<Person> = {
   people,
   root: "ceo",
   reportingLinks: [
-    { id: "ceo-engineering", managerId: "ceo", reportId: "engineering", order: 1 },
-    { id: "ceo-design", managerId: "ceo", reportId: "design", order: 2 },
+    { id: "ceo-engineering", managerId: "ceo", reportId: "engineering", relation: "manager", status: "current", order: 1 },
+    { id: "ceo-design", managerId: "ceo", reportId: "design", relation: "direct", status: "former", order: 2 },
   ],
 };
 
@@ -96,11 +96,14 @@ The card receives accessibility props, keyboard handlers, stable `data-*` attrib
 ## Relationship Helper
 
 ```ts
-org.reports("ceo", ["vp-eng", "vp-sales"], {
+org.manager("ceo", ["vp-eng", "vp-sales"], {
   relation: "manager",
   status: "current",
   order: 0,
 });
+
+org.report("vp-eng", "staff-engineer");
+org.reports("ceo", ["vp-eng", "vp-sales"]);
 ```
 
 `OrgChart` models people and reporting lines. Titles, teams, permissions, and actions belong on your person records or custom card props.

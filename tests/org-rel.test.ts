@@ -12,3 +12,8 @@ test("creates reporting helper rows", () => {
     order: 1,
   });
 });
+
+test("supports preferred manager/report aliases", () => {
+  expect(org.manager("ceo", ["eng", "sales"])).toEqual(org.reports("ceo", ["eng", "sales"]));
+  expect(org.report("ceo", "eng")).toEqual(org.reports("ceo", "eng"));
+});

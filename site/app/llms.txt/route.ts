@@ -44,9 +44,9 @@ Unknown partner placeholders are display/layout facts, not real spouse bars. A p
 
 ## OrgChart
 
-Use \`OrgChart\` for rooted manager/report hierarchies. Recommended production input is \`graph\` with \`people\`, \`root\`, and \`reportingLinks\`. Simple examples can use \`people\`, \`root\`, and \`relationships\` with \`org.reports(managerId, reportIds, options?)\`.
+Use \`OrgChart\` for rooted manager/report hierarchies. Recommended production input is \`graph\` with \`people\`, \`root\`, and \`reportingLinks\`. Simple examples can use \`people\`, \`root\`, and \`relationships\` with \`org.manager(managerId, reportIds, options?)\`, \`org.report(managerId, reportId, options?)\`, or \`org.reports(managerId, reportIds, options?)\`.
 
-Org graph normalization groups \`reportingLinks\` by \`managerId\`, \`relation\`, \`status\`, and \`order\`. Links that share those values become one rendered reporting relationship.
+Org graph normalization groups \`reportingLinks\` by \`managerId\`, \`relation\`, \`status\`, and \`order\`. Links that share those values become one reporting relationship, while each rendered edge keeps its app-owned link \`id\`.
 
 Org chart options include \`collapsed\`, \`maxDepth\`, \`selected\`, \`onPersonClick\`, custom \`card\`, \`renderCard\`, \`cardProps\`, viewport props, \`spacing\`, \`lineShape\`, and styling props.
 
@@ -74,7 +74,7 @@ Key selectors include \`[data-tree-surface]\`, \`[data-tree-canvas]\`, \`[data-t
 
 ## Public Helpers
 
-Exports include \`FamilyTree\`, \`OrgChart\`, \`DefaultFamilyCard\`, \`StyledFamilyCard\`, \`DefaultOrgCard\`, \`TreeProvider\`, \`TreeCanvas\`, \`TreeEdges\`, \`TreeNodeLayer\`, \`TreeSurface\`, \`useTreeLayout\`, \`rel\`, \`org\`, \`graphToFamilyRelationships\`, \`graphToOrgReportingRelationships\`, \`getFamilyPartnershipGroupIds\`, \`getFamilyChildBearingGroupIds\`, \`buildFamilyTreeLayout\`, \`buildOrgChartLayout\`, \`buildLayeredTreeLayout\`, \`createFamilyIndex\`, \`collectFamilyNeighborhood\`, \`defaultFamilyNeighborhoodLimits\`, \`createFamilyLayoutService\`, \`layoutFamilyTree\`, \`createUnionParentLinks\`, \`defaultFamilyLayoutOptions\`, \`resolveFamilyLayoutOptions\`, \`createOrgChartIndex\`, \`collectOrgChartSubtree\`, \`treeStylePresets\`, and \`getTreeStyleName\`.
+Exports include \`FamilyTree\`, \`OrgChart\`, \`DefaultFamilyCard\`, \`StyledFamilyCard\`, \`DefaultOrgCard\`, \`TreeProvider\`, \`TreeCanvas\`, \`TreeEdges\`, \`TreeNodeLayer\`, \`TreeSurface\`, \`useTreeLayout\`, \`rel\`, \`org\` with \`org.manager\`, \`org.report\`, and \`org.reports\`, \`graphToFamilyRelationships\`, \`graphToOrgReportingRelationships\`, \`getFamilyPartnershipGroupIds\`, \`getFamilyChildBearingGroupIds\`, \`buildFamilyTreeLayout\`, \`buildOrgChartLayout\`, \`buildLayeredTreeLayout\`, \`createFamilyIndex\`, \`collectFamilyNeighborhood\`, \`defaultFamilyNeighborhoodLimits\`, \`createFamilyLayoutService\`, \`layoutFamilyTree\`, \`createUnionParentLinks\`, \`defaultFamilyLayoutOptions\`, \`resolveFamilyLayoutOptions\`, \`createOrgChartIndex\`, \`collectOrgChartSubtree\`, \`treeStylePresets\`, and \`getTreeStyleName\`.
 
 ## Docs
 

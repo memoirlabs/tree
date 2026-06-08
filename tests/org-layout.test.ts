@@ -79,9 +79,33 @@ test("builds org layout from explicit reporting graph links", () => {
     ["lead"],
   ]);
   expect(layout.cards.map((card) => card.personId)).toEqual(["ceo", "design", "eng", "lead"]);
-  expect(layout.edges.map((edge) => edge.id)).toEqual([
-    "reporting-ceo-design",
-    "reporting-ceo-eng",
-    "reporting-eng-lead",
+  expect(layout.edges.map((edge) => edge.id)).toEqual(["ceo-design", "ceo-eng", "eng-lead"]);
+});
+
+test("preserves org relationship metadata on layout edges", () => {
+  const layout = buildOrgChartLayout({
+    graph: {
+      people,
+      root: "ceo",
+      reportingLinks: [
+        {
+          id: "former-ceo-eng",
+          managerId: "ceo",
+          reportId: "eng",
+          relation: "direct",
+          status: "former",
+        },
+      ],
+    },
+  });
+
+  expect(layout.edges).toEqual([
+    expect.objectContaining({
+      id: "former-ceo-eng",
+      kind: "direct",
+      status: "former",
+      sourceId: "ceo",
+      targetId: "eng",
+    }),
   ]);
 });

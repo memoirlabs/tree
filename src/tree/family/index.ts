@@ -1,5 +1,5 @@
 export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./FamilyTree";
-export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./TreePrimitives";
+export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./FamilyTreePrimitives";
 export { rel } from "./family-rel";
 export { graphToFamilyRelationships } from "./family-graph";
 export { getFamilyChildBearingGroupIds, getFamilyPartnershipGroupIds } from "./family-graph-helpers";
@@ -62,7 +62,7 @@ export type {
   TreePrimitiveContext,
   TreePrimitiveType,
   TreeProviderProps,
-} from "./TreePrimitives";
+} from "./FamilyTreePrimitives";
 export type { FamilyGenerationLayer, FamilyIndex, FamilyNeighborhood, FamilyRelative } from "./family-indexing";
 export type {
   BuildFamilyTreeLayoutInput,

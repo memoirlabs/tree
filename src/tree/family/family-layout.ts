@@ -2,12 +2,8 @@ import { buildLayeredTreeLayout, roundTreeCoordinate } from "../../layout-engine
 import { routeFamilyEdges } from "./family-edge-routing";
 import { normalizeFamilyInput } from "./family-graph";
 import { collectFamilyNeighborhood, createFamilyIndex } from "./family-indexing";
-import {
-  createFamilyLayerBoxes,
-  createFamilyLayoutCards,
-  createFamilyLayoutLayers,
-  createFamilyRelativeRows,
-} from "./family-layered-layout";
+import { createFamilyLayerBoxes, createFamilyLayoutCards } from "./family-layered-layout";
+import { createFamilyLayoutLayers, createFamilyRelativeRows } from "./family-row-planning";
 import type { FamilyRelative } from "./family-indexing";
 import type { BuildFamilyTreeLayoutInput, FamilyTreeLayoutResult } from "./layout-types";
 import type { ComputedRelation, FamilyTreeSize, FamilyTreeSpacing, PersonId } from "./types";

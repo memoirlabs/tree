@@ -10,14 +10,25 @@ import {
   FamilyTree,
   OrgChart,
   buildFamilyTreeLayout,
+  buildOrgChartLayout,
   buildLayeredTreeLayout,
+  collectFamilyNeighborhood,
+  collectOrgChartSubtree,
+  createFamilyIndex,
+  createFamilyLayoutService,
+  createOrgChartIndex,
+  createUnionParentLinks,
+  defaultFamilyLayoutOptions,
+  defaultFamilyNeighborhoodLimits,
   getFamilyChildBearingGroupIds,
   getFamilyPartnershipGroupIds,
   getTreeStyleName,
   graphToFamilyRelationships,
   graphToOrgReportingRelationships,
+  layoutFamilyTree,
   org,
   rel,
+  resolveFamilyLayoutOptions,
   treeStylePresets,
 } from "@memoir/tree";
 import type {
@@ -234,7 +245,7 @@ interface OrgReportingLink {
 }
 ```
 
-Graph normalization groups `reportingLinks` by `managerId`, `relation`, `status`, and `order`. Links that share those values become one rendered reporting relationship.
+Graph normalization groups `reportingLinks` by `managerId`, `relation`, `status`, and `order`. Links that share those values become one reporting relationship, while each rendered edge keeps its app-owned link `id`.
 
 Common optional props:
 
@@ -263,12 +274,14 @@ rel.children(["alex", "jordan"], ["riley"]);
 rel.partner("alex", "jordan", { relation: "spouse" });
 rel.guardians("riley", ["morgan"]);
 
+org.manager("ceo", ["vp-eng", "vp-sales"]);
+org.report("vp-eng", "staff-engineer");
 org.reports("ceo", ["vp-eng", "vp-sales"]);
 ```
 
 `rel.parents()` and `rel.children()` default to biological parentage. `rel.partner()` defaults to `relation: "partner"` and `status: "current"`. `rel.guardians()` defaults to `relation: "guardian"`. These are simple-mode helpers; prefer graph mode for production family-tree apps that need parent groups, multiple unions, per-parent lineage, or guardianship.
 
-`org.reports()` defaults to `relation: "manager"` and `status: "current"`.
+`org.manager()`, `org.report()`, and `org.reports()` create reporting relationships. They default to `relation: "manager"` and `status: "current"`.
 
 Family relations:
 
@@ -357,7 +370,7 @@ const layout = buildLayeredTreeLayout({
 
 ## Lower-Level Primitives
 
-`TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, and `useTreeLayout()` expose the family renderer layers for custom composition. They are family primitives, not generic graph primitives.
+`TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, and `useTreeLayout()` expose the family renderer layers for custom composition. They are family primitives, not generic graph primitives. Import them from `@memoir/tree`.
 
 Use `FamilyTree` and `OrgChart` unless you need to own the family render layers directly.
 

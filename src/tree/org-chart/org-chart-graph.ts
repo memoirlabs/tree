@@ -7,6 +7,7 @@ export interface NormalizedOrgChartInput<Person> {
 }
 
 const reportingRelationshipId = (managerId: PersonId, index: number) => `reporting-${managerId}-${index}`;
+const reportingLinkId = (managerId: PersonId, reportId: PersonId) => `reporting-${managerId}-${reportId}`;
 
 export function graphToOrgReportingRelationships<Person>(graph: OrgChartGraph<Person>): OrgReportingRelationship[] {
   const grouped = new Map<string, OrgReportingRelationship>();
@@ -15,10 +16,14 @@ export function graphToOrgReportingRelationships<Person>(graph: OrgChartGraph<Pe
   graph.reportingLinks.forEach((link, index) => {
     const relation = link.relation ?? "manager";
     const status = link.status ?? "current";
+    const linkId = link.id ?? reportingLinkId(link.managerId, link.reportId);
     const key = `${link.managerId}:${relation}:${status}:${link.order ?? ""}`;
     const existing = grouped.get(key);
     if (existing) {
-      if (!existing.reportIds.includes(link.reportId)) existing.reportIds.push(link.reportId);
+      if (!existing.reportIds.includes(link.reportId)) {
+        existing.reportIds.push(link.reportId);
+        existing.reportingLinkIds = [...(existing.reportingLinkIds ?? []), linkId];
+      }
       return;
     }
 
@@ -27,6 +32,7 @@ export function graphToOrgReportingRelationships<Person>(graph: OrgChartGraph<Pe
       type: "reporting",
       managerId: link.managerId,
       reportIds: [link.reportId],
+      reportingLinkIds: [linkId],
       relation,
       status,
       order: link.order,

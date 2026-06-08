@@ -2,7 +2,7 @@
 
 import type { CSSProperties, JSX } from "react";
 
-import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "./TreePrimitives";
+import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "./FamilyTreePrimitives";
 import type { FamilyCardProps, FamilyTreeProps, PersonId } from "./types";
 
 export type StyledFamilyCardRadius = CSSProperties["borderRadius"] | "square" | "soft" | "round" | "pill";

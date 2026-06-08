@@ -35,6 +35,7 @@ export interface OrgReportingRelationship {
   type: "reporting";
   managerId: PersonId;
   reportIds: PersonId[];
+  reportingLinkIds?: string[];
   relation?: OrgReportingRelation;
   status?: OrgReportingStatus;
   order?: number;

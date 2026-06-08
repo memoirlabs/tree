@@ -8,6 +8,16 @@ export interface OrgReportsOptions {
 }
 
 export interface OrgRelationshipHelpers {
+  manager(
+    managerId: PersonId,
+    reportIds: PersonId | PersonId[],
+    options?: OrgReportsOptions,
+  ): OrgReportingRelationship;
+  report(
+    managerId: PersonId,
+    reportId: PersonId,
+    options?: OrgReportsOptions,
+  ): OrgReportingRelationship;
   reports(
     managerId: PersonId,
     reportIds: PersonId | PersonId[],
@@ -17,20 +27,22 @@ export interface OrgRelationshipHelpers {
 
 const arrayOf = (value: PersonId | PersonId[]): PersonId[] => (Array.isArray(value) ? value : [value]);
 
+const createReportingRelationship = (
+  managerId: PersonId,
+  reportIds: PersonId | PersonId[],
+  options: OrgReportsOptions = {},
+): OrgReportingRelationship => ({
+  type: "reporting",
+  managerId,
+  reportIds: arrayOf(reportIds),
+  relation: options.relation ?? "manager",
+  status: options.status ?? "current",
+  ...(options.id !== undefined ? { id: options.id } : {}),
+  ...(options.order !== undefined ? { order: options.order } : {}),
+});
+
 export const org: OrgRelationshipHelpers = {
-  reports(
-    managerId: PersonId,
-    reportIds: PersonId | PersonId[],
-    options: OrgReportsOptions = {},
-  ): OrgReportingRelationship {
-    return {
-      type: "reporting",
-      managerId,
-      reportIds: arrayOf(reportIds),
-      relation: options.relation ?? "manager",
-      status: options.status ?? "current",
-      ...(options.id !== undefined ? { id: options.id } : {}),
-      ...(options.order !== undefined ? { order: options.order } : {}),
-    };
-  },
+  manager: createReportingRelationship,
+  report: createReportingRelationship,
+  reports: createReportingRelationship,
 };

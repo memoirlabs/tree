@@ -221,7 +221,7 @@ const people = {
 };
 
 const relationships = [
-  org.reports("ceo", ["eng", "design"]),
+  org.manager("ceo", ["eng", "design"]),
 ];
 
 export function TeamChart() {
@@ -238,8 +238,8 @@ const graph: OrgChartGraph<Person> = {
   people,
   root: "ceo",
   reportingLinks: [
-    { id: "ceo-eng", managerId: "ceo", reportId: "eng", order: 1 },
-    { id: "ceo-design", managerId: "ceo", reportId: "design", order: 2 },
+    { id: "ceo-eng", managerId: "ceo", reportId: "eng", relation: "manager", status: "current", order: 1 },
+    { id: "ceo-design", managerId: "ceo", reportId: "design", relation: "direct", status: "former", order: 2 },
   ],
 };
 
@@ -367,7 +367,7 @@ Use `buildLayeredTreeLayout()` only when you need the small shared measured-box 
 ## Public Surface
 
 - Components: `FamilyTree`, `OrgChart`, `DefaultFamilyCard`, `StyledFamilyCard`, `DefaultOrgCard`
-- Relationship helpers: `rel`, `org`
+- Relationship helpers: `rel`, `org` with `org.manager`, `org.report`, and `org.reports`
 - Graph helpers: `graphToFamilyRelationships`, `graphToOrgReportingRelationships`
 - Family helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`, `buildFamilyTreeLayout`
 - Advanced family helpers: `createFamilyLayoutService`, `layoutFamilyTree`, `createUnionParentLinks`, `defaultFamilyLayoutOptions`, `resolveFamilyLayoutOptions`, `getFamilyPartnershipGroupIds`, `getFamilyChildBearingGroupIds`

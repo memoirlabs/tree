@@ -166,7 +166,7 @@ app/
     org-card.tsx
 ```
 
-Use `org.reports` in the data module and render `OrgChart` from the page. Keep titles, teams, permissions, and actions on your person records or card props.
+Use `org.manager` in the data module and render `OrgChart` from the page. Keep titles, teams, permissions, and actions on your person records or card props.
 
 ```ts
 import { org } from "@memoir/tree";
@@ -177,7 +177,7 @@ export const people = {
 };
 
 export const relationships = [
-  org.reports("ceo", ["design"]),
+  org.manager("ceo", ["design"]),
 ];
 ```
 
@@ -199,7 +199,7 @@ export const graph = {
   people,
   root: "ceo",
   reportingLinks: [
-    { id: "ceo-design", managerId: "ceo", reportId: "design", order: 1 },
+    { id: "ceo-design", managerId: "ceo", reportId: "design", relation: "manager", status: "current", order: 1 },
   ],
 };
 ```

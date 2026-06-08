@@ -1,17 +1,41 @@
-# @memoir/tree v0.5.1
+# @memoir/tree v0.5.2
 
-This patch tightens the `0.5.0` family layout release before the app consumes it.
+This patch hardens the `0.5.x` tree package before the Memoir app consumes it.
 
 ## What Changed
 
-- Keeps direct `children` and `grandchildren` neighborhood fields semantically direct when lateral family expansion is enabled.
-- Keeps lateral relatives in their own fields: `auntsUncles`, `cousins`, and `niecesNephews`.
-- Preserves the `0.5.0` layout behavior where visible lateral branches can render once `lateralFamilyGenerations` is enabled.
-- Adds regression coverage so sibling children and cousin branches do not leak into direct descendant metadata.
+- Keeps the public root API surface intact and adds regression coverage for the exports the app imports from `@memoir/tree`.
+- Adds a compatibility shim for the old family primitive module path while moving the implementation to `FamilyTreePrimitives`.
+- Splits family row planning from measured layered layout so relationship grouping, anchor selection, and card measurement live in clearer modules.
+- Preserves app-owned org reporting link IDs on rendered edges.
+- Preserves org edge `relation` and `status` through graph normalization, indexing, and layout.
+- Adds cleaner org helper aliases: `org.manager(...)` and `org.report(...)`, while keeping `org.reports(...)`.
+- Adds indexed org relationship lookups so layout traversal does not repeatedly scan every reporting relationship.
+- Updates README, site docs, and generated LLM guidance to match the new helper syntax and graph metadata behavior.
 
-## Why It Matters
+## API Compatibility
 
-Memoir app code uses layout metadata to drive add-member actions. Direct descendants and lateral relatives must remain separate even when they share a rendered row. This patch makes that contract explicit and tested.
+Existing root imports continue to work:
+
+```ts
+import {
+  FamilyTree,
+  OrgChart,
+  TreeCanvas,
+  TreeEdges,
+  TreeNodeLayer,
+  TreeProvider,
+  buildFamilyTreeLayout,
+  buildOrgChartLayout,
+  createFamilyLayoutService,
+  createUnionParentLinks,
+  layoutFamilyTree,
+  rel,
+  org,
+} from "@memoir/tree";
+```
+
+The family lower-level layout service still supports union-owned children, multiple unions for one person, synthetic repair for ungrouped parent links, and add-child flows from a selected union context.
 
 ## Verification
 
@@ -19,5 +43,7 @@ Memoir app code uses layout metadata to drive add-member actions. Direct descend
 - `bun test`
 - `bun run lint`
 - `bun run build`
+- `bun run --cwd site ci`
+- `bun run npm:pack`
 
-Compare changes: https://github.com/memoirlabs/tree/compare/v0.5.0...v0.5.1
+Compare changes: https://github.com/memoirlabs/tree/compare/v0.5.1...v0.5.2

@@ -24,6 +24,10 @@ test("collects a rooted org subtree", () => {
     depth: 2,
     parentId: "eng",
   });
+  expect(index.relationshipByReport.get("lead")).toMatchObject({
+    managerId: "eng",
+    reportIds: ["lead"],
+  });
 });
 
 test("rejects multiple managers for one report", () => {

@@ -5,6 +5,9 @@ export interface OrgChartIndex<Person> {
   relationships: OrgReportingRelationship[];
   reportsByManager: Map<PersonId, PersonId[]>;
   managerByReport: Map<PersonId, PersonId>;
+  relationshipByReport: Map<PersonId, OrgReportingRelationship>;
+  relationshipOrderByPerson: Map<PersonId, number>;
+  reportingLinkIdByReport: Map<PersonId, string>;
 }
 
 export interface OrgChartRelative<Person> {
@@ -38,18 +41,33 @@ export function createOrgChartIndex<Person>(
 ): OrgChartIndex<Person> {
   const reportsByManager = new Map<PersonId, PersonId[]>();
   const managerByReport = new Map<PersonId, PersonId>();
+  const relationshipByReport = new Map<PersonId, OrgReportingRelationship>();
+  const relationshipOrderByPerson = new Map<PersonId, number>();
+  const reportingLinkIdByReport = new Map<PersonId, string>();
+
+  const setLowestOrder = (personId: PersonId, order: number | undefined) => {
+    if (order === undefined) return;
+    const existing = relationshipOrderByPerson.get(personId);
+    if (existing === undefined || order < existing) relationshipOrderByPerson.set(personId, order);
+  };
 
   for (const relationship of relationships) {
     const existingReports = reportsByManager.get(relationship.managerId) ?? [];
     reportsByManager.set(relationship.managerId, compactIds([...existingReports, ...relationship.reportIds]));
+    setLowestOrder(relationship.managerId, relationship.order);
 
-    for (const reportId of relationship.reportIds) {
+    relationship.reportIds.forEach((reportId, index) => {
       const existingManager = managerByReport.get(reportId);
       if (existingManager && existingManager !== relationship.managerId) {
         throw new Error(`OrgChart report "${reportId}" cannot have multiple managers.`);
       }
       managerByReport.set(reportId, relationship.managerId);
-    }
+      relationshipByReport.set(reportId, relationship);
+      setLowestOrder(reportId, relationship.order);
+
+      const reportingLinkId = relationship.reportingLinkIds?.[index];
+      if (reportingLinkId) reportingLinkIdByReport.set(reportId, reportingLinkId);
+    });
   }
 
   return {
@@ -57,17 +75,14 @@ export function createOrgChartIndex<Person>(
     relationships,
     reportsByManager,
     managerByReport,
+    relationshipByReport,
+    relationshipOrderByPerson,
+    reportingLinkIdByReport,
   };
 }
 
 const relationshipOrderForReport = <Person>(index: OrgChartIndex<Person>, personId: PersonId) => {
-  let lowest = Number.POSITIVE_INFINITY;
-  for (const relationship of index.relationships) {
-    if (relationship.managerId === personId || relationship.reportIds.includes(personId)) {
-      if (relationship.order !== undefined && relationship.order < lowest) lowest = relationship.order;
-    }
-  }
-  return lowest;
+  return index.relationshipOrderByPerson.get(personId) ?? Number.POSITIVE_INFINITY;
 };
 
 export function collectOrgChartSubtree<Person>(
