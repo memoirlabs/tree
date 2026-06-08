@@ -23,6 +23,60 @@ const pushMap = <Key, Value>(map: Map<Key, Value[]>, key: Key, value: Value) => 
   }
 };
 
+const warning = (code: FamilyLayoutWarning["code"], message: string, ids?: string[]): FamilyLayoutWarning => ({
+  code,
+  message,
+  ids,
+});
+
+const personKey = (personId: PersonId) => `person:${personId}`;
+const unionKey = (unionId: UnionId) => `union:${unionId}`;
+const nodeIdFromKey = (key: string) => key.slice(key.indexOf(":") + 1);
+
+function detectFamilyCycles(unions: Map<UnionId, NormalizedFamilyUnion>): FamilyLayoutWarning[] {
+  const adjacency = new Map<string, string[]>();
+  for (const union of unions.values()) {
+    const unionNode = unionKey(union.id);
+    for (const partner of union.partners) {
+      const partnerNode = personKey(partner);
+      adjacency.set(partnerNode, [...(adjacency.get(partnerNode) ?? []), unionNode]);
+    }
+    for (const child of union.children) {
+      adjacency.set(unionNode, [...(adjacency.get(unionNode) ?? []), personKey(child)]);
+    }
+  }
+
+  const state = new Map<string, "visiting" | "visited">();
+  const path: string[] = [];
+  const cycleKeys = new Set<string>();
+  const warnings: FamilyLayoutWarning[] = [];
+
+  const visit = (key: string) => {
+    const currentState = state.get(key);
+    if (currentState === "visited") return;
+    if (currentState === "visiting") {
+      const cycleStart = path.indexOf(key);
+      const cyclePath = cycleStart >= 0 ? [...path.slice(cycleStart), key] : [...path, key];
+      const ids = cyclePath.map(nodeIdFromKey);
+      const stableCycleKey = Array.from(new Set(ids)).toSorted().join("|");
+      if (!cycleKeys.has(stableCycleKey)) {
+        cycleKeys.add(stableCycleKey);
+        warnings.push(warning("cycle-detected", `Cycle detected in family graph: ${ids.join(" -> ")}.`, ids));
+      }
+      return;
+    }
+
+    state.set(key, "visiting");
+    path.push(key);
+    for (const next of adjacency.get(key) ?? []) visit(next);
+    path.pop();
+    state.set(key, "visited");
+  };
+
+  for (const key of adjacency.keys()) visit(key);
+  return warnings;
+}
+
 export function buildFamilyLayoutGraph<Person>(
   normalized: NormalizedFamilyLayoutInput<Person>,
 ): InternalFamilyGraph<Person> {
@@ -60,6 +114,6 @@ export function buildFamilyLayoutGraph<Person>(
     childrenByUnion,
     parentLinksByChild,
     parentLinksByUnion,
-    warnings: normalized.warnings,
+    warnings: [...normalized.warnings, ...detectFamilyCycles(normalized.unions)],
   };
 }

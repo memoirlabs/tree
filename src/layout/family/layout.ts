@@ -1,7 +1,7 @@
 import { roundTreeCoordinate } from "../../layout-engine";
 import { buildFamilyLayoutGraph } from "./graph";
 import { normalizeFamilyLayoutInput } from "./normalize";
-import { assignFamilyRanks } from "./rank";
+import { buildFamilyLayoutPlan } from "./plan";
 import type {
   FamilyLayoutBounds,
   FamilyLayoutEdge,
@@ -11,13 +11,11 @@ import type {
   FamilyLayoutPoint,
   FamilyLayoutResult,
   FamilyNodeId,
-  FamilyParentLinkKind,
   FamilyPersonLayoutNode,
   FamilyUnionLayoutNode,
-  PersonId,
 } from "./types";
 import { resolveFamilyLayoutOptions } from "./types";
-import type { InternalFamilyGraph } from "./graph";
+import type { FamilyLayoutPlan, FamilyLayoutPlanNode } from "./plan";
 
 type PlacedNode<Person> = FamilyLayoutNode<Person>;
 
@@ -27,104 +25,58 @@ const centerY = (node: { y: number; height: number }) => node.y + node.height / 
 const stableOrder = (a: { id: string; order: number }, b: { id: string; order: number }) =>
   a.order - b.order || a.id.localeCompare(b.id);
 
-function orderForNode<Person>(graph: InternalFamilyGraph<Person>, id: FamilyNodeId): number {
-  const union = graph.unions.get(id);
-  if (union) return union.order;
-
-  const parentUnionOrders = (graph.unionsByChild.get(id) ?? [])
-    .map((unionId) => graph.unions.get(unionId)?.order)
-    .filter((order): order is number => order !== undefined);
-  if (parentUnionOrders.length > 0) return Math.min(...parentUnionOrders);
-
-  const childUnionOrders = (graph.unionsByPartner.get(id) ?? [])
-    .map((unionId) => graph.unions.get(unionId)?.order)
-    .filter((order): order is number => order !== undefined);
-  if (childUnionOrders.length > 0) return Math.min(...childUnionOrders);
-
-  return Number.POSITIVE_INFINITY;
-}
-
-function buildRankLayers<Person>(
-  graph: InternalFamilyGraph<Person>,
-  ranks: Map<FamilyNodeId, number>,
-): Map<number, FamilyNodeId[]> {
-  const layers = new Map<number, FamilyNodeId[]>();
-  const add = (rank: number, id: FamilyNodeId) => {
-    const existing = layers.get(rank);
-    if (existing) {
-      existing.push(id);
-    } else {
-      layers.set(rank, [id]);
-    }
-  };
-
-  for (const personId of graph.people.keys()) add(ranks.get(personId) ?? 0, personId);
-  for (const unionId of graph.unions.keys()) add(ranks.get(unionId) ?? 0, unionId);
-
-  for (const [rank, ids] of layers) {
-    layers.set(
-      rank,
-      ids.toSorted((a, b) => {
-        return orderForNode(graph, a) - orderForNode(graph, b) || a.localeCompare(b);
-      }),
-    );
-  }
-
-  return layers;
-}
-
 function initialPlace<Person>(
-  graph: InternalFamilyGraph<Person>,
-  ranks: Map<FamilyNodeId, number>,
+  plan: FamilyLayoutPlan<Person>,
   options: FamilyLayoutOptions,
 ): PlacedNode<Person>[] {
-  const layers = buildRankLayers(graph, ranks);
   const nodes: PlacedNode<Person>[] = [];
+  const planNodesById = new Map<FamilyNodeId, FamilyLayoutPlanNode<Person>>(
+    plan.nodes.map((node) => [node.id, node]),
+  );
 
-  for (const rank of Array.from(layers.keys()).toSorted((a, b) => a - b)) {
-    const ids = layers.get(rank) ?? [];
+  for (const layer of plan.layers) {
     let cursor = 0;
-    for (const id of ids) {
-      const person = graph.people.get(id);
-      if (person) {
+    for (const id of layer.nodeIds) {
+      const planNode = planNodesById.get(id);
+      if (!planNode) continue;
+      if (planNode.kind === "person") {
+        const width = planNode.hidden ? 0 : options.personSize.width;
+        const height = planNode.hidden ? 0 : options.personSize.height;
         nodes.push({
           kind: "person",
           id,
-          data: person.data,
+          data: planNode.data,
           x: cursor,
-          y: rank * options.spacing.rank,
-          width: options.personSize.width,
-          height: options.personSize.height,
-          rank,
-          order: orderForNode(graph, id),
-          unions: [
-            ...new Set([...(graph.unionsByPartner.get(id) ?? []), ...(graph.unionsByChild.get(id) ?? [])]),
-          ],
-          parentUnions: graph.unionsByChild.get(id) ?? [],
-          childUnions: graph.unionsByPartner.get(id) ?? [],
-          synthetic: person.synthetic || undefined,
+          y: layer.rank * options.spacing.rank,
+          width,
+          height,
+          rank: layer.rank,
+          order: planNode.order,
+          unions: planNode.unions,
+          parentUnions: planNode.parentUnions,
+          childUnions: planNode.childUnions,
+          synthetic: planNode.synthetic,
+          hidden: planNode.hidden,
         });
-        cursor += options.personSize.width + options.spacing.person;
+        cursor += width + options.spacing.person;
         continue;
       }
 
-      const union = graph.unions.get(id);
-      if (!union) continue;
       nodes.push({
         kind: "union",
         id,
         x: cursor,
-        y: rank * options.spacing.rank,
+        y: layer.rank * options.spacing.rank,
         width: options.unionSize.width,
         height: options.unionSize.height,
-        rank,
-        order: union.order,
-        partners: union.partners,
-        children: union.children,
-        kindLabel: union.kind,
-        status: union.status,
-        synthetic: union.synthetic || undefined,
-        hidden: true,
+        rank: layer.rank,
+        order: planNode.order,
+        partners: planNode.partners,
+        children: planNode.children,
+        kindLabel: planNode.kindLabel,
+        status: planNode.status,
+        synthetic: planNode.synthetic,
+        hidden: planNode.hidden,
       });
       cursor += options.unionSize.width + options.spacing.union;
     }
@@ -236,73 +188,53 @@ function normalizeCoordinates<Person>(
 }
 
 function routeEdges<Person>(
-  graph: InternalFamilyGraph<Person>,
+  plan: FamilyLayoutPlan<Person>,
   nodes: PlacedNode<Person>[],
 ): FamilyLayoutEdge[] {
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const edges: FamilyLayoutEdge[] = [];
 
-  for (const union of graph.unions.values()) {
-    const unionNode = byId.get(union.id);
-    if (!unionNode) continue;
+  for (const edge of plan.edges) {
+    const fromNode = byId.get(edge.from);
+    const toNode = byId.get(edge.to);
+    if (!fromNode || !toNode) continue;
 
-    for (const partnerId of union.partners) {
-      const partner = byId.get(partnerId);
-      if (!partner) continue;
+    if (edge.kind === "partner-union") {
+      const partner = fromNode;
+      const unionNode = toNode;
       const points = [
         { x: centerX(partner), y: partner.y + partner.height },
         { x: centerX(partner), y: centerY(unionNode) },
         { x: centerX(unionNode), y: centerY(unionNode) },
       ];
       edges.push({
-        id: `partner-union:${partnerId}:${union.id}`,
-        kind: "partner-union",
-        from: partnerId,
-        to: union.id,
+        ...edge,
         points,
         path: pointsToPath(points),
-        status: union.status,
-        synthetic: union.synthetic || undefined,
       });
+      continue;
     }
 
-    for (const childId of union.children) {
-      const child = byId.get(childId);
-      if (!child) continue;
-      const relation = relationForUnionChild(graph.parentLinksByUnion.get(union.id) ?? [], childId);
-      const startY = unionNode.y + unionNode.height;
-      const endY = child.y;
-      const midY = roundTreeCoordinate(startY + (endY - startY) / 2);
-      const points = [
-        { x: centerX(unionNode), y: startY },
-        { x: centerX(unionNode), y: midY },
-        { x: centerX(child), y: midY },
-        { x: centerX(child), y: endY },
-      ];
-      edges.push({
-        id: `union-child:${union.id}:${childId}`,
-        kind: "union-child",
-        from: union.id,
-        to: childId,
-        points,
-        path: pointsToPath(points),
-        relation,
-        status: union.status,
-        synthetic: union.synthetic || undefined,
-      });
-    }
+    const unionNode = fromNode;
+    const child = toNode;
+    if (!unionNode) continue;
+    const startY = unionNode.y + unionNode.height;
+    const endY = child.y;
+    const midY = roundTreeCoordinate(startY + (endY - startY) / 2);
+    const points = [
+      { x: centerX(unionNode), y: startY },
+      { x: centerX(unionNode), y: midY },
+      { x: centerX(child), y: midY },
+      { x: centerX(child), y: endY },
+    ];
+    edges.push({
+      ...edge,
+      points,
+      path: pointsToPath(points),
+    });
   }
 
   return edges;
-}
-
-function relationForUnionChild(links: Array<{ child: PersonId; kind?: FamilyParentLinkKind }>, childId: PersonId) {
-  const kinds = new Set(
-    links.filter((link) => link.child === childId).map((link) => link.kind ?? "unknown"),
-  );
-  if (kinds.size === 0) return undefined;
-  if (kinds.size === 1) return Array.from(kinds)[0];
-  return "mixed";
 }
 
 function pointsToPath(points: FamilyLayoutPoint[]): string {
@@ -355,11 +287,11 @@ export function layoutFamilyTree<Person>(input: FamilyLayoutInput<Person>): Fami
   const normalized = normalizeFamilyLayoutInput(input, options);
   const graph = buildFamilyLayoutGraph(normalized);
   const center = input.center ?? input.root ?? normalized.center ?? normalized.root;
-  const rankResult = assignFamilyRanks(graph, center);
-  const nodes = initialPlace(graph, rankResult.ranks, options);
+  const plan = buildFamilyLayoutPlan(graph, center);
+  const nodes = initialPlace(plan, options);
   optimizeNodePositions(nodes, options);
   normalizeCoordinates(nodes, center, options);
-  const edges = routeEdges(graph, nodes);
+  const edges = routeEdges(plan, nodes);
   const people = nodes.filter((node): node is FamilyPersonLayoutNode<Person> => node.kind === "person");
   const unions = nodes.filter((node): node is FamilyUnionLayoutNode => node.kind === "union");
 
@@ -369,6 +301,6 @@ export function layoutFamilyTree<Person>(input: FamilyLayoutInput<Person>): Fami
     unions,
     edges,
     bounds: computeBounds(nodes),
-    warnings: [...graph.warnings, ...rankResult.warnings],
+    warnings: [...graph.warnings, ...plan.warnings],
   };
 }

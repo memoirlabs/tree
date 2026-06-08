@@ -12,6 +12,7 @@ export interface NormalizedFamilyPerson<Person = unknown> {
   id: PersonId;
   data: Person;
   synthetic: boolean;
+  hidden: boolean;
 }
 
 export interface NormalizedFamilyUnion {
@@ -48,6 +49,7 @@ function createSyntheticPerson<Person>(id: PersonId, options: FamilyLayoutOption
     id,
     data: { label: options.unknownPerson.label } as Person,
     synthetic: true,
+    hidden: !options.unknownPerson.enabled,
   };
 }
 
@@ -88,7 +90,7 @@ export function normalizeFamilyLayoutInput<Person>(
       warnings.push(warning("duplicate-person", `Duplicate person id ignored: ${id}.`, [id]));
       continue;
     }
-    people.set(id, { id, data, synthetic: false });
+    people.set(id, { id, data, synthetic: false, hidden: false });
   }
 
   for (const union of input.unions ?? []) {

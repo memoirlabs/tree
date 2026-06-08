@@ -1,6 +1,12 @@
-export { layoutFamilyTree } from "./family";
+export { buildFamilyLayoutPlan, layoutFamilyTree } from "./family";
 
 export type {
+  FamilyLayoutPlan,
+  FamilyLayoutPlanEdge,
+  FamilyLayoutPlanLayer,
+  FamilyLayoutPlanNode,
+  FamilyPersonPlanNode,
+  FamilyUnionPlanNode,
   FamilyLayoutBounds,
   FamilyLayoutEdge,
   FamilyLayoutInput,
