@@ -7,4 +7,4 @@ Compare changes: [v0.5.2...HEAD](https://github.com/memoirlabs/tree/compare/v0.5
 Total commits: 1
 ## Fixes
 
-- fix family spouse parent neighborhood ([`9b00406`](https://github.com/memoirlabs/tree/commit/9b00406c5fcaa868e9d5d057698d68271462b0f9), Henryoman, 2026-06-08)
+- fix family spouse parent neighborhood ([`7952ec8`](https://github.com/memoirlabs/tree/commit/7952ec8bba17149518bf474e2e517c2216244c1d), Henryoman, 2026-06-08)
