@@ -154,7 +154,7 @@ interface FamilyGuardianshipLink {
 }
 ```
 
-Graph normalization groups `parentChildLinks` by `groupId`, `relation`, `status`, and `order`. Links that share those values become one rendered parentage relationship with a deterministic rendered ID. Links with different relation kinds, such as biological plus step within one partnership group, remain separate so each edge can keep its own kind.
+Graph normalization groups `parentChildLinks` by `groupId`, `relation`, `status`, and `order`. Links that share those values become one rendered parentage relationship with a deterministic rendered ID. Links with different relation kinds, such as biological plus step within one partnership group, remain separate so each edge can keep its own kind. Parentage does not imply a spouse, partner, or co-parent relationship; visible relationship bars come from `partnershipGroups`.
 
 In graph mode, grouped child edges expose the relationship `groupId` as their source ID. That keeps the rendered edge associated with the parent group in your app state instead of arbitrarily assigning it to one parent.
 
@@ -171,9 +171,9 @@ Common optional props:
 - `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
-Family layout is subject-centered and renders a bounded neighborhood: ancestor generations, the subject row with siblings and partners, and descendant generations. Lateral branches such as parent siblings, cousins, and nieces/nephews render only when `lateralFamilyGenerations` is above `0`. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair.
+Family layout is subject-centered and renders a bounded neighborhood: ancestor generations, the subject row with siblings and partners, and descendant generations. Lateral branches such as parent siblings, cousins, and nieces/nephews render only when `lateralFamilyGenerations` is above `0`. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair. A person renders at most once; direct roles such as parent, guardian, child, partner, and co-parent outrank lower-priority sibling and lateral paths.
 
-Two-parent child groups join at the visible midpoint between parent cards. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row.
+Two-parent child groups join from the parent cards into a child bus. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row. The routing does not synthesize a relationship bar between two parents unless an explicit partnership group is visible.
 
 Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
 

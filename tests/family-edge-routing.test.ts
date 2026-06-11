@@ -114,6 +114,35 @@ test("routes two-parent child groups below the parent cards", () => {
   expect(firstLineY(childGroupEdge?.path ?? "")).toBeGreaterThan((parentCenterY + childTop) / 2);
 });
 
+test("does not draw a relationship bar for two-parent parentage without an explicit partnership", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "parentA",
+    people,
+    relationships: [rel.children(["parentA", "parentB"], ["childA"])],
+    measurements: {
+      childA: { width: 88, height: 64 },
+      parentA: { width: 88, height: 64 },
+      parentB: { width: 88, height: 64 },
+    },
+    spacing: {
+      column: 20,
+      padding: 32,
+      row: 40,
+    },
+  });
+
+  const parentBottom = Math.max(
+    ...layout.cards
+      .filter((card) => card.personId === "parentA" || card.personId === "parentB")
+      .map((card) => card.y + card.height),
+  );
+  const parentageEdges = layout.edges.filter((edge) => edge.kind === "biological");
+
+  expect(parentageEdges.some((edge) => edge.id.endsWith("-bar"))).toBe(false);
+  expect(parentageEdges).toHaveLength(1);
+  expect(firstMoveY(parentageEdges[0]?.path ?? "")).toBe(parentBottom);
+});
+
 test("routes right-shifted single children below the parent cards", () => {
   const cards: FamilyTreeLayoutCard<{ name: string }>[] = [
     {
@@ -149,7 +178,7 @@ test("routes right-shifted single children below the parent cards", () => {
     (layoutEdge) => layoutEdge.targetId === "childA",
   );
 
-  expect(edge?.path).toBe("M 110 40 L 110 110 L 290 110 L 290 140");
+  expect(edge?.path).toBe("M 50 80 L 50 110 M 170 80 L 170 110 M 50 110 L 290 110 M 290 110 L 290 140");
   expect(firstLineY(edge?.path ?? "")).toBeGreaterThan(80);
 });
 
@@ -319,6 +348,7 @@ test("connects an unknown placeholder when it is actually a parent", () => {
     ],
   });
 
-  expect(layout.edges.some((edge) => edge.sourceId === "parentA" && edge.targetId === "parentB")).toBe(true);
+  expect(layout.edges.some((edge) => edge.sourceId === "parentA" && edge.targetId === "parentB")).toBe(false);
   expect(layout.edges.filter((edge) => edge.targetId === "childA")).toHaveLength(1);
+  expect(layout.edges.find((edge) => edge.targetId === "childA")?.path).toContain(" M ");
 });

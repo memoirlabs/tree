@@ -35,11 +35,19 @@ const createSubjectRow = <Person>(
   >,
 ) => {
   const partners = orderSubjectPartners(neighborhood);
+  const subjectClusterIds = new Set([
+    neighborhood.self.personId,
+    ...partners.map((partner) => partner.personId),
+  ]);
   const splitIndex = Math.floor(partners.length / 2);
-  return uniqueRelatives([
+  const lateral = uniqueRelatives([
     ...neighborhood.siblings,
     ...neighborhood.cousins,
     ...neighborhood.halfSiblings,
+  ]).filter((relative) => !subjectClusterIds.has(relative.personId));
+
+  return uniqueRelatives([
+    ...lateral,
     ...partners.slice(0, splitIndex),
     neighborhood.self,
     ...partners.slice(splitIndex),
@@ -113,6 +121,11 @@ const createSubjectRowItems = <Person>(
   anchorIds: string[],
 ): FamilyRowItem<Person>[] => {
   const partners = orderSubjectPartners(neighborhood);
+  const subjectClusterIds = new Set([
+    neighborhood.self.personId,
+    ...partners.map((partner) => partner.personId),
+  ]);
+
   const splitIndex = Math.floor(partners.length / 2);
   const subjectCluster = [
     ...partners.slice(0, splitIndex),
@@ -120,11 +133,14 @@ const createSubjectRowItems = <Person>(
     ...partners.slice(splitIndex),
   ];
 
+  const lateralWithoutSubjectCluster = (relatives: FamilyRelative<Person>[]) =>
+    uniqueRelatives(relatives).filter((relative) => !subjectClusterIds.has(relative.personId));
+
   return [
-    ...singleRelativeItems(uniqueRelatives(neighborhood.siblings)),
-    ...singleRelativeItems(uniqueRelatives(neighborhood.cousins)),
+    ...singleRelativeItems(lateralWithoutSubjectCluster(neighborhood.siblings)),
+    ...singleRelativeItems(lateralWithoutSubjectCluster(neighborhood.cousins)),
     { id: rowItemId(relativeIds(subjectCluster)), relatives: subjectCluster, anchorIds },
-    ...singleRelativeItems(uniqueRelatives(neighborhood.halfSiblings)),
+    ...singleRelativeItems(lateralWithoutSubjectCluster(neighborhood.halfSiblings)),
   ];
 };
 

@@ -73,7 +73,7 @@ export function FamilyPanel() {
 }
 ```
 
-Children attach to the correct union through `groupId`. A child with links from Alex and Jordan using `groupId: "alex-jordan"` renders from that parent group, not from one arbitrary parent card.
+Children attach to the correct union through `groupId`. A child with links from Alex and Jordan using `groupId: "alex-jordan"` renders from that parent group, not from one arbitrary parent card. Parentage by itself does not imply that the parents are spouses or partners; draw a spouse, partner, or co-parent bar only by adding the corresponding `partnershipGroups` record.
 
 ## Add Family Members
 
@@ -167,6 +167,8 @@ parentChildLinks: [
 ```
 
 Links with the same `groupId`, `relation`, `status`, and `order` are grouped into one rendered parentage relationship. Links with different lineage kinds, such as biological plus step, stay distinct.
+
+For one rendered tree, each person appears once. If graph traversal reaches the same person through multiple paths, direct roles win over lateral roles: self, parents/guardians, children, partners/coparents, siblings, then broader lateral relatives. That prevents a parent or partner from also rendering as a sibling just because another parentage path can reach them.
 
 Guardianship is separate from parentage:
 

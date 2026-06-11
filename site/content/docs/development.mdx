@@ -240,6 +240,8 @@ When family lines do not connect where you expect:
 - Prefer graph mode for blended families.
 - Check that both parents in a two-parent child group use the same `groupId`.
 - Keep `groupId` stable across edits.
+- Remember that parentage does not create a spouse or partner bar. Add a `partnershipGroups` record only when that relationship should be visible.
+- A rendered tree shows each person once. If someone appears duplicated, check whether a direct role is also being modeled as a lateral relative in your source data.
 - Check relation kinds. Biological plus step/adoptive links in the same group intentionally render as distinct edge kinds.
 - Use `order` on partnership groups and parent-child links when several unions should render in a specific left-to-right order.
 - Confirm every referenced person ID exists in `people`; missing cards are skipped by layout and routing.

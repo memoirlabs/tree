@@ -262,21 +262,14 @@ export function routeFamilyEdges<Person>(
           if (pair) {
             const key = partnershipKey(parentAId, parentBId);
             const hasInterveningCard = hasCardBetweenPair(pair, cards);
-            if (!hasInterveningCard && !drawnParentBars.has(key)) {
-              drawParentBar(
-                pair,
-                `${relationship.id ?? `parentage-${relationshipIndex}`}-bar`,
-                relationship.relation ?? "biological",
-                relationship.status,
-              );
-            }
+            const hasPartnershipBar = drawnParentBars.has(key);
             addParentageGroupEdge({
               children: relationship.children
                 .map((childId) => cardsById.get(childId))
                 .filter((childCard): childCard is FamilyTreeLayoutCard<Person> => Boolean(childCard)),
               id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${parentAId}-${parentBId}-${relationship.relation ?? "biological"}`,
               kind: relationship.relation ?? "biological",
-              parentCards: hasInterveningCard ? pair : undefined,
+              parentCards: hasInterveningCard || !hasPartnershipBar ? pair : undefined,
               parents: [parentAId, parentBId],
               sourceId: relationship.groupId,
               start: parentageJoinPoint(pair),

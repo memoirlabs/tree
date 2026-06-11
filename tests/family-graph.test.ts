@@ -48,6 +48,51 @@ test("graph mode renders a simple two-parent family", () => {
   });
 });
 
+test("graph mode renders a direct parent only as parent, not sibling", () => {
+  const graph: FamilyGraph = {
+    subject: "child",
+    people: {
+      child: { name: "Child" },
+      parentA: { name: "Parent A" },
+      parentB: { name: "Parent B" },
+    },
+    partnershipGroups: [],
+    parentChildLinks: [
+      { groupId: "parents", parentId: "parentA", childId: "child" },
+      { groupId: "parents", parentId: "parentB", childId: "child" },
+      { groupId: "grandparent-line", parentId: "parentB", childId: "parentA" },
+    ],
+  };
+
+  const layout = buildFamilyTreeLayout({ graph });
+  const parentCards = layout.cards.filter((card) => card.personId === "parentA");
+
+  expect(parentCards).toHaveLength(1);
+  expect(parentCards[0]?.relation.label).toBe("parent");
+});
+
+test("graph mode renders a partner only as partner when inferred parentage also makes them sibling", () => {
+  const graph: FamilyGraph = {
+    subject: "root",
+    people: {
+      root: { name: "Root" },
+      partner: { name: "Partner" },
+      inferredParent: { name: "Parent" },
+    },
+    partnershipGroups: [{ id: "couple", partners: ["root", "partner"], relation: "spouse" }],
+    parentChildLinks: [
+      { groupId: "shared-parent", parentId: "inferredParent", childId: "root" },
+      { groupId: "shared-parent", parentId: "inferredParent", childId: "partner" },
+    ],
+  };
+
+  const layout = buildFamilyTreeLayout({ graph });
+  const partnerCards = layout.cards.filter((card) => card.personId === "partner");
+
+  expect(partnerCards).toHaveLength(1);
+  expect(partnerCards[0]?.relation.label).toBe("partner");
+});
+
 test("graph mode routes siblings through a shared top bus", () => {
   const layout = buildFamilyTreeLayout({
     graph: {

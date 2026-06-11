@@ -144,7 +144,7 @@ setGraph((current) => ({
 }));
 ```
 
-The child edge now comes out of the `alex-morgan` union, not from Alex alone and not from the wrong partner group.
+The child edge now comes out of the `alex-morgan` union, not from Alex alone and not from the wrong partner group. Parentage does not create a spouse or partner relationship by itself; use `partnershipGroups` only when the relationship should render as a visible spouse, partner, co-parent, or unknown-parent group.
 
 ## Parent-Child Links
 
@@ -157,9 +157,11 @@ parentChildLinks: [
 ];
 ```
 
-Tree groups those links into one rendered parentage relationship and routes it from the visible parent pair. The rendered edge exposes the shared `groupId` as its source ID, which keeps editor diffs tied to the union in your app state.
+Tree groups those links into one rendered parentage relationship and routes it from the visible parent pair. The rendered edge exposes the shared `groupId` as its source ID, which keeps editor diffs tied to the union in your app state. A two-parent parentage group does not draw a spouse-style bar unless there is an explicit visible partnership group for those parents.
 
 Equivalent link reordering does not change rendered relationship IDs. Stable `id`, `groupId`, and `order` values are what make JSON diffs and re-renders predictable.
+
+Each rendered tree shows a person at most once. If the same person is reachable through several paths, Tree assigns one primary visible role before layout: direct roles such as parent, guardian, child, partner, or co-parent outrank sibling, cousin, and other lateral roles.
 
 ## Per-Parent Lineage
 

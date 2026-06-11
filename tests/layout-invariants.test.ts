@@ -142,6 +142,7 @@ test("family stress layout satisfies core geometric invariants", () => {
     spacing: { row: 96, column: 44, padding: 48 },
   });
 
+  expect(new Set(layout.cards.map((card) => card.personId)).size).toBe(layout.cards.length);
   expectLayoutInvariants(layout);
 });
 

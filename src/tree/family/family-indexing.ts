@@ -475,6 +475,7 @@ export function collectFamilyNeighborhood<Person>(
 
   const childIds = compactIds([...getChildren(index, subject), ...getGuardianChildren(index, subject)]);
   const childSet = new Set(childIds);
+
   const coparentIds = compactIds(
     childIds.flatMap((childId) =>
       parentageForChild(index, childId).flatMap((relationship) =>
@@ -485,10 +486,19 @@ export function collectFamilyNeighborhood<Person>(
 
   const explicitPartnerIds = getExplicitPartners(index, subject);
   const coparentOnlyIds = coparentIds.filter((coparentId) => !explicitPartnerIds.includes(coparentId));
+  const partnerLikeIds = compactIds([...explicitPartnerIds, ...coparentOnlyIds]);
+
+  const directRoleIds = new Set<PersonId>([
+    subject,
+    ...parentIds,
+    ...guardianOnlyIds,
+    ...childIds,
+    ...partnerLikeIds,
+  ]);
 
   const candidateSiblingIds = compactIds(
     parentIds.flatMap((parentId) => getChildren(index, parentId).filter((childId) => childId !== subject)),
-  );
+  ).filter((personId) => !directRoleIds.has(personId));
   const siblings: PersonId[] = [];
   const halfSiblings: PersonId[] = [];
 
@@ -513,24 +523,24 @@ export function collectFamilyNeighborhood<Person>(
         ),
       ).filter(
         (candidateId) =>
-          candidateId !== subject && !parentIds.includes(candidateId) && !guardianOnlyIds.includes(candidateId),
+          !directRoleIds.has(candidateId) &&
+          !siblings.includes(candidateId) &&
+          !halfSiblings.includes(candidateId),
       )
     : [];
   const cousinIds = shouldCollectImmediateLateral
     ? compactIds(auntUncleIds.flatMap((personId) => getChildLikeIds(index, personId))).filter(
         (candidateId) =>
-          candidateId !== subject &&
-          !childIds.includes(candidateId) &&
+          !directRoleIds.has(candidateId) &&
           !siblings.includes(candidateId) &&
           !halfSiblings.includes(candidateId),
       )
     : [];
   const nieceNephewIds = shouldCollectImmediateLateral
     ? compactIds([...siblings, ...halfSiblings].flatMap((personId) => getChildLikeIds(index, personId))).filter(
-        (candidateId) => candidateId !== subject && !childIds.includes(candidateId),
+        (candidateId) => !directRoleIds.has(candidateId),
       )
     : [];
-  const partnerLikeIds = compactIds([...explicitPartnerIds, ...coparentOnlyIds]);
   const lateralIds = compactIds([...siblings, ...halfSiblings, ...partnerLikeIds]);
   const lateralParentIds =
     resolvedLimits.lateralFamilyGenerations === 0
