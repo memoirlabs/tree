@@ -105,6 +105,49 @@ test("emits visible relationship edges", () => {
   expect(layout.edges.every((edge) => edge.path.startsWith("M "))).toBe(true);
 });
 
+test("uses roomier default family spacing without changing padding", () => {
+  const singleCardLayout = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships: [],
+    measurements: {
+      henry: { width: 100, height: 60 },
+    },
+  });
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships: [
+      rel.parents("henry", ["carol", "james"]),
+      rel.partner("henry", "emma"),
+      rel.children(["henry", "emma"], ["ava"]),
+    ],
+    measurements: {
+      ava: { width: 100, height: 60 },
+      carol: { width: 100, height: 60 },
+      emma: { width: 100, height: 60 },
+      henry: { width: 100, height: 60 },
+      james: { width: 100, height: 60 },
+    },
+  });
+
+  const card = (personId: string) => layout.cards.find((candidate) => candidate.personId === personId);
+  const gapBetween = (leftId: string, rightId: string) => {
+    const left = card(leftId);
+    const right = card(rightId);
+    expect(left).toBeDefined();
+    expect(right).toBeDefined();
+    return (right?.x ?? 0) - ((left?.x ?? 0) + (left?.width ?? 0));
+  };
+
+  expect(Math.min(...singleCardLayout.cards.map((layoutCard) => layoutCard.x))).toBe(24);
+  expect(Math.min(...singleCardLayout.cards.map((layoutCard) => layoutCard.y))).toBe(24);
+  expect(Math.min(...layout.cards.map((layoutCard) => layoutCard.y))).toBe(24);
+  expect(gapBetween("carol", "james")).toBe(40);
+  expect(gapBetween("henry", "emma")).toBe(40);
+  expect((card("henry")?.y ?? 0) - ((card("carol")?.y ?? 0) + (card("carol")?.height ?? 0))).toBe(104);
+});
+
 test("computes final family bounds from shifted cards", () => {
   const padding = 36;
   const layout = buildFamilyTreeLayout({

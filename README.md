@@ -297,10 +297,10 @@ Large families can become wide. Use `limits` to control the visible neighborhood
 
 Default family layout keeps lateral expansion off. Set `lateralFamilyGenerations` above `0` when you want the renderer to include immediate lateral branches that already exist in the graph, such as parent siblings, cousins, and nieces/nephews. Those groups have explicit caps through `auntsUncles`, `cousins`, and `niecesNephews`; set any cap to `null` to disable it.
 
-Default spacing is compact:
+Default family spacing leaves room for union-centered edges while keeping canvas padding small:
 
 ```ts
-{ row: 80, column: 24, padding: 24 }
+{ row: 104, column: 40, padding: 24 }
 ```
 
 Override spacing only when your card design needs a different density:

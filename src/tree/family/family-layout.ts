@@ -15,8 +15,8 @@ const defaultEstimatedCardSize: FamilyTreeSize = {
 };
 
 const defaultSpacing: FamilyTreeSpacing = {
-  row: 80,
-  column: 24,
+  row: 104,
+  column: 40,
   padding: 24,
 };
 
@@ -194,7 +194,7 @@ export function buildFamilyTreeLayout<Person>({
     .filter((row) => row.length > 0);
 
   const placementByPerson = createPlacementByPerson(neighborhood.relationships);
-  const personGap = Math.min(spacing.column, 24);
+  const personGap = Math.min(spacing.column, 40);
   const layers = createFamilyLayoutLayers(neighborhood, visibleRows);
   const layeredLayout = buildLayeredTreeLayout({
     layers: createFamilyLayerBoxes(layers, measurements, estimatedCardSize, personGap),

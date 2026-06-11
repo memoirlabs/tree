@@ -329,10 +329,10 @@ The layout prevents same-row card overlap and keeps child groups near their visi
 
 Default limits are 2 ancestor generations, 2 descendant generations, no lateral family expansion, 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. Set a cap to `null` to disable that cap.
 
-Default spacing is compact:
+Default family spacing leaves room for union-centered edges while keeping canvas padding small:
 
 ```ts
-{ row: 80, column: 24, padding: 24 }
+{ row: 104, column: 40, padding: 24 }
 ```
 
 Override `spacing` only when your cards need a different density:

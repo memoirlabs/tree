@@ -227,10 +227,10 @@ Two-parent child groups join from the parent cards into a child bus. Multi-child
 
 Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
 
-Default family spacing:
+Default family spacing leaves room for union-centered parentage edges while keeping canvas padding small:
 
 ```ts
-{ row: 80, column: 24, padding: 24 }
+{ row: 104, column: 40, padding: 24 }
 ```
 
 Default family limits are:

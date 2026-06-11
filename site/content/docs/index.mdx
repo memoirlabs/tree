@@ -100,7 +100,13 @@ export function Page() {
 
 ## Defaults
 
-Family trees and org charts use compact default spacing:
+Family trees use roomier default spacing so child edges can read from the middle of visible unions:
+
+```ts
+{ row: 104, column: 40, padding: 24 }
+```
+
+Org charts keep a compact default:
 
 ```ts
 { row: 80, column: 24, padding: 24 }
