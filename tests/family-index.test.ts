@@ -123,6 +123,29 @@ test("collects nearby lateral family parents for half-siblings", () => {
   expect(neighborhood?.parents.find((relative) => relative.personId === "halfSiblingParent")?.relation.side).toBe("other");
 });
 
+test("does not promote a direct partner into lateral parent rows", () => {
+  const index = createFamilyIndex(
+    {
+      self: { id: "self" },
+      parent: { id: "parent" },
+      partner: { id: "partner" },
+      halfSibling: { id: "halfSibling" },
+      child: { id: "child" },
+    },
+    [
+      rel.parents("self", ["parent"]),
+      rel.parents("halfSibling", ["parent", "partner"]),
+      rel.partner("self", "partner"),
+      rel.children(["self", "partner"], ["child"]),
+    ],
+  );
+  const neighborhood = collectFamilyNeighborhood(index, "self", { lateralFamilyGenerations: 1 });
+
+  expect(neighborhood?.parents.map((relative) => relative.personId)).toEqual(["parent"]);
+  expect(neighborhood?.partners.map((relative) => relative.personId)).toEqual(["partner"]);
+  expect(neighborhood?.halfSiblings.map((relative) => relative.personId)).toEqual(["halfSibling"]);
+});
+
 test("collects immediate lateral branches when intermediate relatives exist", () => {
   const index = createFamilyIndex(
     {

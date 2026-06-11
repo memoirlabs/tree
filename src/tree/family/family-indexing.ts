@@ -546,19 +546,13 @@ export function collectFamilyNeighborhood<Person>(
     resolvedLimits.lateralFamilyGenerations === 0
       ? []
       : compactIds([...siblings, ...halfSiblings].flatMap((personId) => getParentLikeIds(index, personId))).filter(
-          (personId) => !parentIds.includes(personId) && !guardianOnlyIds.includes(personId),
+          (personId) => !directRoleIds.has(personId),
         );
   const partnerParentIds =
     resolvedLimits.lateralFamilyGenerations === 0
       ? []
       : compactIds(partnerLikeIds.flatMap((personId) => getParentLikeIds(index, personId)))
-          .filter(
-            (personId) =>
-              personId !== subject &&
-              !parentIds.includes(personId) &&
-              !guardianOnlyIds.includes(personId) &&
-              !lateralIds.includes(personId),
-          );
+          .filter((personId) => !directRoleIds.has(personId) && !lateralIds.includes(personId));
   const ancestorGenerations = collectAncestorGenerations(
     index,
     subject,

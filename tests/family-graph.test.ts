@@ -93,6 +93,39 @@ test("graph mode renders a partner only as partner when inferred parentage also 
   expect(partnerCards[0]?.relation.label).toBe("partner");
 });
 
+test("graph mode renders an explicit partner once when lateral parentage also reaches them", () => {
+  const graph: FamilyGraph = {
+    subject: "root",
+    people: {
+      root: { name: "Root" },
+      parent: { name: "Parent" },
+      partner: { name: "Partner" },
+      halfSibling: { name: "Half Sibling" },
+      child: { name: "Child" },
+    },
+    partnershipGroups: [{ id: "root-partner", partners: ["root", "partner"], relation: "partner" }],
+    parentChildLinks: [
+      { groupId: "root-parentage", parentId: "parent", childId: "root" },
+      { groupId: "half-sibling-parentage", parentId: "parent", childId: "halfSibling" },
+      { groupId: "half-sibling-parentage", parentId: "partner", childId: "halfSibling" },
+      { groupId: "root-partner", parentId: "root", childId: "child" },
+      { groupId: "root-partner", parentId: "partner", childId: "child" },
+    ],
+  };
+
+  const layout = buildFamilyTreeLayout({
+    graph,
+    limits: { lateralFamilyGenerations: 1 },
+  });
+  const personIds = layout.cards.map((card) => card.personId);
+  const partnerCards = layout.cards.filter((card) => card.personId === "partner");
+
+  expect(new Set(personIds).size).toBe(personIds.length);
+  expect(partnerCards).toHaveLength(1);
+  expect(partnerCards[0]?.relation.label).toBe("partner");
+  expect(layout.cards.find((card) => card.personId === "halfSibling")?.relation.label).toBe("half-sibling");
+});
+
 test("graph mode routes siblings through a shared top bus", () => {
   const layout = buildFamilyTreeLayout({
     graph: {

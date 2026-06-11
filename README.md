@@ -368,17 +368,22 @@ Use `buildLayeredTreeLayout()` only when you need the small shared measured-box 
 
 ## Public Surface
 
+All supported root exports are documented in the site API reference.
+
 - Components: `FamilyTree`, `OrgChart`, `DefaultFamilyCard`, `StyledFamilyCard`, `DefaultOrgCard`
-- Relationship helpers: `rel`, `org` with `org.manager`, `org.report`, and `org.reports`
-- Graph helpers: `graphToFamilyRelationships`, `graphToOrgReportingRelationships`
-- Family helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`, `buildFamilyTreeLayout`
-- Advanced family helpers: `createFamilyLayoutService`, `layoutFamilyTree`, `createUnionParentLinks`, `defaultFamilyLayoutOptions`, `resolveFamilyLayoutOptions`, `getFamilyPartnershipGroupIds`, `getFamilyChildBearingGroupIds`, `getFamilyChildPlacementGroupIds`
-- Org helpers: `createOrgChartIndex`, `collectOrgChartSubtree`, `buildOrgChartLayout`
-- Core layout helper: `buildLayeredTreeLayout`
 - Family primitives: `TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, `useTreeLayout`
-- Styling helpers: `treeStylePresets`, `getTreeStyleName`
-- Viewport/core: `TreeSurface`, `TreeApi`, `TreeInitialViewport`, `TreeViewport`
+- Relationship helpers: `rel`, `org`
+- Graph converters: `graphToFamilyRelationships`, `graphToOrgReportingRelationships`
+- Family model helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`
+- Family graph helpers: `getFamilyPartnershipGroupIds`, `getFamilyChildBearingGroupIds`, `getFamilyChildPlacementGroupIds`
+- React-free layout helpers: `buildFamilyTreeLayout`, `buildOrgChartLayout`, `buildLayeredTreeLayout`
+- Advanced family layout service: `createFamilyLayoutService`, `layoutFamilyTree`, `createUnionParentLinks`, `defaultFamilyLayoutOptions`, `resolveFamilyLayoutOptions`
+- Org model helpers: `createOrgChartIndex`, `collectOrgChartSubtree`
+- Core surface and styling helpers: `TreeSurface`, `treeStylePresets`, `getTreeStyleName`
+- Public types: graph types, relationship types, component prop types, card prop types, layout result types, primitive prop types, viewport types, styling types, and helper option types
 - Stylesheet: `@memoir/tree/styles.css`
+
+The package does not expose a generic graph editor API. The lower-level exports exist so apps can compose family render layers, run tests without React, or bridge older family layout data into the current graph model.
 
 ## Development
 

@@ -44,13 +44,63 @@ import type {
 import "@memoir/tree/styles.css";
 ```
 
-## Components
+## Components And Primitives
 
 - `FamilyTree`: subject-centered family neighborhood renderer.
 - `OrgChart`: rooted manager/report hierarchy renderer.
 - `DefaultFamilyCard`: small built-in family card.
 - `StyledFamilyCard`: configurable family card for quick demos and simple apps.
 - `DefaultOrgCard`: small built-in org card.
+- `TreeSurface`: shared viewport surface used by the domain renderers.
+- `TreeProvider`: family primitive provider for custom family render composition.
+- `TreeCanvas`: family primitive canvas layer.
+- `TreeEdges`: family primitive SVG edge layer.
+- `TreeNodeLayer`: family primitive card layer.
+- `useTreeLayout()`: reads the family primitive layout context.
+
+Use `FamilyTree` and `OrgChart` for normal product UIs. Use the family primitives only when you need to own the family render layers while keeping the package layout, edge routing, measurement, and viewport behavior.
+
+## Complete Root Export Reference
+
+The package's supported public API is the root module, `@memoir/tree`, plus the stylesheet import `@memoir/tree/styles.css`. The lists below cover the root exports.
+
+Runtime exports:
+
+- `FamilyTree`: React family tree component.
+- `OrgChart`: React org chart component.
+- `DefaultFamilyCard`: default family card implementation.
+- `StyledFamilyCard`: configurable family card implementation.
+- `DefaultOrgCard`: default org card implementation.
+- `TreeSurface`: shared viewport/pan/scroll surface.
+- `TreeProvider`: family primitive context provider.
+- `TreeCanvas`: family primitive canvas component.
+- `TreeEdges`: family primitive edge renderer.
+- `TreeNodeLayer`: family primitive node/card renderer.
+- `useTreeLayout`: hook for family primitive composition.
+- `rel`: family simple-mode relationship helpers.
+- `org`: org simple-mode reporting helpers.
+- `graphToFamilyRelationships`: converts `FamilyGraph` links into renderable family relationships.
+- `graphToOrgReportingRelationships`: converts `OrgChartGraph` links into renderable reporting relationships.
+- `createFamilyIndex`: indexes family relationships for lookup and neighborhood collection.
+- `collectFamilyNeighborhood`: derives a subject-centered family neighborhood from an index.
+- `defaultFamilyNeighborhoodLimits`: default family visible-neighborhood caps.
+- `getFamilyPartnershipGroupIds`: returns ordered partnership group IDs for a person.
+- `getFamilyChildBearingGroupIds`: returns ordered group IDs where a person already has child or guardian links.
+- `getFamilyChildPlacementGroupIds`: returns ordered group IDs where a person can place a child.
+- `buildFamilyTreeLayout`: React-free family card/edge layout builder.
+- `createFamilyLayoutService`: advanced family layout service for lower-level person/union input.
+- `layoutFamilyTree`: convenience wrapper around `createFamilyLayoutService().layout()`.
+- `createUnionParentLinks`: creates parent links from a selected union to a child.
+- `defaultFamilyLayoutOptions`: defaults for the advanced family layout service.
+- `resolveFamilyLayoutOptions`: merges partial advanced family layout options with defaults.
+- `createOrgChartIndex`: indexes org reporting relationships.
+- `collectOrgChartSubtree`: derives a rooted org subtree from an index.
+- `buildOrgChartLayout`: React-free org card/edge layout builder.
+- `buildLayeredTreeLayout`: shared measured-box layer layout helper.
+- `treeStylePresets`: built-in style preset names.
+- `getTreeStyleName`: resolves an optional theme to a concrete style preset.
+
+The root module also exports TypeScript types for every supported prop, graph, relationship, layout, primitive, helper, and viewport shape. The type groups at the end of this page list them by domain.
 
 ## Styling Exports
 
@@ -379,12 +429,142 @@ Use `FamilyTree` and `OrgChart` unless you need to own the family render layers 
 
 ## Types
 
-Common exports include:
+Core shared types:
 
-- `PersonId`, `PeopleById`
-- `FamilyTreeProps`, `FamilyCardProps`, `FamilyGraph`, `FamilyPartnershipGroup`, `FamilyParentChildLink`, `FamilyGuardianshipLink`, `FamilyRelationship`, `ComputedRelation`, `FamilyNeighborhoodLimits`
-- `FamilyLayoutInput`, `FamilyLayoutResult`, `FamilyLayoutNode`, `FamilyPersonLayoutNode`, `FamilyUnionLayoutNode`, `FamilyLayoutWarning`, `CreateUnionParentLinksOptions`
-- `OrgChartProps`, `OrgCardProps`, `OrgChartGraph`, `OrgReportingLink`, `OrgReportingRelationship`
-- `TreeApi`, `TreeViewport`, `TreeInteractionMode`, `TreeLineShape`
-- `TreeStylePreset`, `TreeThemeStyle`
-- `TreeLayeredBoxInput`, `TreeLayeredBox`, `TreeLayeredAnchorPointInput`
+- `PersonId`: string ID used for people.
+- `PeopleById<Person>`: person records keyed by `PersonId`.
+- `TreeBounds`: layout bounds with `width` and `height`.
+- `TreeCardSize`: card measurement with `width` and `height`.
+- `TreeSpacing`: shared row/column/padding spacing shape.
+- `TreeViewport`: viewport offset with `x` and `y`.
+- `TreeInitialViewport`: supported initial viewport modes.
+- `TreeApi`: imperative viewport API with `centerPerson`, `fitToSubject`, and `resetViewport`.
+- `TreeInteractionMode`: `"pan"`, `"pan-page-scroll"`, `"scroll"`, or `"none"`.
+- `TreeLineShape`: `"orthogonal"` or `"curved"` edge routing.
+- `TreeStylePreset`: `"memoir"` or `"system"`.
+- `TreeThemeStyle`: CSSProperties plus `--tree-*` variables.
+- `TreePersonHandler<Person>`: `(person, personId) => void` handler signature.
+- `TreeCardRootProps`: root DOM props passed to custom card roots.
+- `TreeRenderCard<Person, CardProps>`: render-function card type.
+- `TreeSurfaceProps`: props accepted by the shared surface component.
+- `TreeViewportProps`: shared viewport prop shape.
+- `TreeLayoutCardBase<Person>`: positioned card base used by layout results.
+- `TreeLayoutEdge`: SVG path edge with optional kind/status/source/target IDs.
+- `TreeLayoutResult<Person, Card>`: generic cards/edges/bounds result.
+
+Core layout primitive types:
+
+- `BuildLayeredTreeLayoutInput`: measured-box layered layout input.
+- `BuildLayeredTreeLayoutResult`: measured-box layered layout output.
+- `TreeLayeredAnchorPointInput`: named anchor point inside a layered box.
+- `TreeLayeredBoxInput`: measured input box for `buildLayeredTreeLayout`.
+- `TreeLayeredBox`: positioned box returned by `buildLayeredTreeLayout`.
+
+Family graph and relationship types:
+
+- `FamilyGraph<Person>`: graph-mode family input with people, subject, partnerships, parent-child links, and optional guardianship links.
+- `FamilyGraphPerson<Person>`: person wrapper type for graph-adjacent integrations.
+- `FamilyPartnershipGroup`: app-owned partnership/co-parent/unknown-parent group.
+- `FamilyParentChildLink`: app-owned parent-to-child lineage link.
+- `FamilyGuardianshipLink`: app-owned guardian-to-child link.
+- `FamilyRelationship`: simple-mode relationship union.
+- `FamilyParentageRelationship`: normalized/simple parentage relationship.
+- `FamilyPartnershipRelationship`: normalized/simple partnership relationship.
+- `FamilyGuardianshipRelationship`: normalized/simple guardianship relationship.
+- `ParentageRelation`: `"biological"`, `"adoptive"`, `"step"`, `"foster"`, or `"unknown"`.
+- `PartnershipRelation`: `"spouse"`, `"partner"`, `"coparent"`, or `"unknown"`.
+- `GuardianshipRelation`: `"guardian"`, `"foster"`, or `"unknown"`.
+- `FamilyRelationshipStatus`: `"current"`, `"former"`, `"divorced"`, `"separated"`, or `"unknown"`.
+- `ComputedRelation`: relation label, generation, and side assigned to a rendered family card.
+- `ComputedRelationLabel`: possible family card relation labels.
+- `ComputedRelationSide`: `"self"`, `"ancestor"`, `"descendant"`, `"sibling"`, `"partner"`, or `"other"`.
+- `FamilyPlacementMetadata`: relationship IDs associated with a rendered family card.
+
+Family component and neighborhood types:
+
+- `FamilyTreeProps<Person, CardExtraProps>`: `FamilyTree` props.
+- `FamilyCardProps<Person>`: props passed to custom family cards.
+- `FamilyTreeCardProps<Person, CardExtraProps>`: typed `cardProps` input for family cards.
+- `FamilyTreePersonHandler<Person>`: family person handler signature.
+- `FamilyTreeSize`: family card measurement shape.
+- `FamilyTreeSpacing`: family row/column/padding spacing shape.
+- `FamilyNeighborhoodLimits`: visible-family caps and generation limits.
+- `FamilyIndex<Person>`: indexed family relationships.
+- `FamilyRelative<Person>`: person plus computed relation and ordering.
+- `FamilyGenerationLayer<Person>`: ancestor or descendant generation layer.
+- `FamilyNeighborhood<Person>`: collected subject-centered family neighborhood.
+- `ParentageOptions`, `PartnershipOptions`, `GuardianshipOptions`: options accepted by `rel` helpers.
+- `RelationshipHelpers`: type of the `rel` helper object.
+
+Family React-free layout types:
+
+- `BuildFamilyTreeLayoutInput<Person>`: input for `buildFamilyTreeLayout`.
+- `FamilyTreeLayoutResult<Person>`: cards, edges, and bounds from `buildFamilyTreeLayout`.
+- `FamilyTreeLayoutCard<Person>`: positioned family card plus computed relation.
+- `FamilyTreeLayoutEdge`: rendered family edge path.
+- `FamilyTreeBounds`: family layout bounds.
+
+Advanced family layout service types:
+
+- `FamilyLayoutInput<Person, UnionData>`: lower-level person/union layout input.
+- `FamilyLayoutResult<Person, UnionData>`: lower-level layout result with nodes, edges, warnings, bounds, and derived graph.
+- `FamilyLayoutOptions`: complete advanced layout-service options.
+- `PartialFamilyLayoutOptions`: partial advanced layout-service options accepted by callers.
+- `FamilyLayoutNode<Person, UnionData>`: lower-level person or union node.
+- `FamilyPersonLayoutNode<Person>`: positioned lower-level person node.
+- `FamilyUnionLayoutNode<UnionData>`: positioned lower-level union node.
+- `FamilyLayoutEdge`: lower-level family edge.
+- `FamilyLayoutPoint`: point used by lower-level edge paths.
+- `FamilyLayoutBounds`: min/max/width/height bounds from the advanced layout service.
+- `FamilyLayoutWarning`: warning emitted while normalizing/layouting lower-level input.
+- `FamilyLayoutWarningCode`: warning code union.
+- `FamilyNodeId`: person or union ID accepted as lower-level center/root.
+- `UnionId`: lower-level union ID.
+- `FamilyUnion<UnionData>`: lower-level union input.
+- `FamilyUnionKind`: `"marriage"`, `"partnership"`, `"coparent"`, or `"unknown"`.
+- `FamilyUnionStatus`: alias of `FamilyRelationshipStatus`.
+- `FamilyParentLink`: lower-level parent/guardian-to-child link.
+- `FamilyParentLinkKind`: parentage or guardianship relation kind.
+- `CreateUnionParentLinksOptions`: options for `createUnionParentLinks`.
+- `NormalizedFamilyLayoutInput`, `NormalizedFamilyPerson`, `NormalizedFamilyUnion`: normalized lower-level service internals exposed for advanced integrations.
+
+Family primitive types:
+
+- `TreeProviderProps`: props for the family primitive provider.
+- `TreePrimitiveContext`: context value returned by the primitive hook.
+- `TreePrimitiveType`: primitive domain discriminator.
+- `TreeCanvasProps`: props for the primitive canvas layer.
+- `TreeEdgesProps`: props for the primitive edge layer.
+- `TreeNodeLayerProps`: props for the primitive card layer.
+- `FamilyTreeProviderProps`: family-specific primitive provider props.
+- `FamilyTreePrimitiveContext`: family-specific primitive context.
+
+Styled family card types:
+
+- `StyledFamilyCardProps`: props for `StyledFamilyCard`.
+- `StyledFamilyCardRadius`: accepted radius presets.
+- `StyledFamilyCardShadow`: accepted shadow presets.
+- `StyledFamilyCardAvatar`: accepted avatar display presets.
+
+Org graph, component, and layout types:
+
+- `OrgChartGraph<Person>`: graph-mode org input with people, root, and reporting links.
+- `OrgReportingLink`: app-owned manager-to-report link.
+- `OrgReportingRelationship`: simple/normalized reporting relationship.
+- `OrgReportingRelation`: `"manager"`, `"direct"`, or `"unknown"`.
+- `OrgReportingStatus`: `"current"`, `"former"`, or `"unknown"`.
+- `OrgReportsOptions`: options accepted by `org` helpers.
+- `OrgRelationshipHelpers`: type of the `org` helper object.
+- `OrgChartProps<Person, CardExtraProps>`: `OrgChart` props.
+- `OrgCardProps<Person>`: props passed to custom org cards.
+- `OrgRenderCardProps<Person>`: props passed to `renderCard`.
+- `OrgChartCardProps<Person, CardExtraProps>`: typed `cardProps` input for org cards.
+- `OrgChartPersonHandler<Person>`: org person handler signature.
+- `OrgChartSize`: org card measurement shape.
+- `OrgChartSpacing`: org row/column/padding spacing shape.
+- `OrgChartIndex<Person>`: indexed org reporting relationships.
+- `OrgChartRelative<Person>`: org person plus depth/parent metadata.
+- `BuildOrgChartLayoutInput<Person>`: input for `buildOrgChartLayout`.
+- `OrgChartLayoutResult<Person>`: cards, edges, and bounds from `buildOrgChartLayout`.
+- `OrgChartLayoutCard<Person>`: positioned org card plus depth/parent metadata.
+- `OrgChartLayoutEdge`: rendered org edge path.

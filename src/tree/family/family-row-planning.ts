@@ -1,5 +1,5 @@
 import type { FamilyNeighborhood, FamilyRelative } from "./family-indexing";
-import type { FamilyRelationship, PersonId } from "./types";
+import type { ComputedRelation, FamilyRelationship, PersonId } from "./types";
 
 export interface FamilyRowItem<Person> {
   id: string;
@@ -19,6 +19,49 @@ const uniqueRelatives = <Person>(relatives: FamilyRelative<Person>[]) => {
     seen.add(relative.personId);
     return true;
   });
+};
+
+const relationPriority = (relation: ComputedRelation) => {
+  if (relation.label === "self") return 0;
+  if ((relation.label === "parent" || relation.label === "guardian") && relation.side === "ancestor") return 1;
+  if (relation.label === "child" && relation.side === "descendant") return 2;
+  if (relation.label === "partner" || relation.label === "coparent") return 3;
+  if (relation.label === "sibling" || relation.label === "half-sibling") return 4;
+  if (relation.label === "grandparent" || relation.label === "grandchild") return 5;
+  if (relation.label === "aunt-uncle" || relation.label === "cousin" || relation.label === "niece-nephew") return 6;
+  if (relation.label === "ancestor" || relation.label === "descendant") return 7;
+  return 8;
+};
+
+const sameRelation = (a: ComputedRelation, b: ComputedRelation) =>
+  a.label === b.label && a.generation === b.generation && a.side === b.side;
+
+const createPreferredRelationByPerson = <Person>(rows: FamilyRelative<Person>[][]) => {
+  const preferred = new Map<PersonId, FamilyRelative<Person>>();
+  for (const relative of rows.flat()) {
+    const current = preferred.get(relative.personId);
+    if (!current || relationPriority(relative.relation) < relationPriority(current.relation)) {
+      preferred.set(relative.personId, relative);
+    }
+  }
+  return preferred;
+};
+
+const filterToPreferredVisibleRelatives = <Person>(rows: FamilyRelative<Person>[][]) => {
+  const preferred = createPreferredRelationByPerson(rows);
+  const consumed = new Set<PersonId>();
+
+  return rows
+    .map((row) =>
+      row.filter((relative) => {
+        const preferredRelative = preferred.get(relative.personId);
+        if (!preferredRelative || !sameRelation(relative.relation, preferredRelative.relation)) return false;
+        if (consumed.has(relative.personId)) return false;
+        consumed.add(relative.personId);
+        return true;
+      }),
+    )
+    .filter((row) => row.length > 0);
 };
 
 const rowItemId = (ids: PersonId[]) => `family-row:${ids.join("|")}`;
@@ -55,7 +98,7 @@ const createSubjectRow = <Person>(
 };
 
 export const createFamilyRelativeRows = <Person>(neighborhood: FamilyNeighborhood<Person>) =>
-  [
+  filterToPreferredVisibleRelatives([
     ...neighborhood.ancestorGenerations
       .toReversed()
       .map((layer) =>
@@ -65,7 +108,7 @@ export const createFamilyRelativeRows = <Person>(neighborhood: FamilyNeighborhoo
     ...neighborhood.descendantGenerations.map((layer) =>
       uniqueRelatives(layer.generation === 1 ? [...neighborhood.niecesNephews, ...layer.relatives] : layer.relatives),
     ),
-  ].filter((row) => row.length > 0);
+  ]);
 
 const createVisiblePersonOrder = <Person>(items: FamilyRowItem<Person>[]) =>
   new Map(
@@ -226,9 +269,12 @@ export const createFamilyLayoutLayers = <Person>(
   neighborhood: FamilyNeighborhood<Person>,
   visibleRows: FamilyRelative<Person>[][],
 ): FamilyRowItem<Person>[][] => {
-  const visibleIds = new Set(visibleRows.flatMap(relativeIds));
+  const preferredVisibleRelatives = createPreferredRelationByPerson(visibleRows);
   const visibleRelatives = (relatives: FamilyRelative<Person>[]) =>
-    uniqueRelatives(relatives).filter((relative) => visibleIds.has(relative.personId));
+    uniqueRelatives(relatives).filter((relative) => {
+      const visibleRelative = preferredVisibleRelatives.get(relative.personId);
+      return visibleRelative ? sameRelation(relative.relation, visibleRelative.relation) : false;
+    });
   const visibleNeighborhood = {
     ...neighborhood,
     ancestorGenerations: neighborhood.ancestorGenerations.map((layer) => ({
