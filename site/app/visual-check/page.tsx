@@ -10,7 +10,7 @@ import {
   type FamilyTreeLayoutResult,
   type OrgCardProps,
   type OrgChartGraph,
-} from "../../../src/index";
+} from "@memoir/tree";
 import type { HTMLAttributes } from "react";
 
 type Person = {

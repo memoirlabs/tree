@@ -3,7 +3,7 @@ import Image from "next/image";
 import { InstallCommand } from "@/components/install-command";
 import { SimpleFamilyTreeDemo } from "@/components/simple-family-tree-demo";
 import { highlightTsx } from "@/lib/highlight";
-import logo from "../../../public/logo-transparent.png";
+import logo from "../../public/logo-transparent.png";
 
 const exampleCode = `import { FamilyTree, rel } from "@memoir/tree";
 

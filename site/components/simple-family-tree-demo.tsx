@@ -1,7 +1,7 @@
 "use client";
 
-import { FamilyTree, rel } from "../../src/index";
-import type { FamilyCardProps } from "../../src/index";
+import { FamilyTree, rel } from "@memoir/tree";
+import type { FamilyCardProps } from "@memoir/tree";
 
 type DemoProfile = {
   id: string;

@@ -1,7 +1,7 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import Image from 'next/image';
 import { appName } from './shared';
-import logo from '../../public/logo-transparent.png';
+import logo from '../public/logo-transparent.png';
 
 export function baseOptions(): BaseLayoutProps {
   return {
