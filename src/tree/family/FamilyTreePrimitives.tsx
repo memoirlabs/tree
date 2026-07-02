@@ -261,28 +261,37 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
   cardProps,
 }: TreeNodeLayerProps<Person, CardExtraProps>): JSX.Element {
   const context = useTreeLayout<Person>();
+  const {
+    collapsedIds,
+    getPersonLabel,
+    onAddRelationship,
+    onPersonClick,
+    readOnly,
+    selected,
+    subject,
+  } = context;
 
   const handleFamilyClick = useCallback(
     (person: Person, personId: PersonId) => {
-      context.onPersonClick?.(person, personId);
+      onPersonClick?.(person, personId);
     },
-    [context],
+    [onPersonClick],
   );
   const handleFamilyKeyDown = useCallback(
     (event: KeyboardEvent<HTMLElement>, person: Person, personId: PersonId) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
-      context.onPersonClick?.(person, personId);
+      onPersonClick?.(person, personId);
     },
-    [context],
+    [onPersonClick],
   );
 
   const getCardProps = useCallback(
     (layoutCard: FamilyTreeLayoutCard<Person>) => {
-      const isSelected = context.selected === layoutCard.personId;
-      const isFocused = context.selected ? isSelected : layoutCard.personId === context.subject;
-      const personLabel = context.getPersonLabel?.(layoutCard.person, layoutCard.personId) ?? layoutCard.personId;
-      const relationLabel = isFocused && layoutCard.personId === context.subject ? "subject" : layoutCard.relation.label;
+      const isSelected = selected === layoutCard.personId;
+      const isFocused = selected ? isSelected : layoutCard.personId === subject;
+      const personLabel = getPersonLabel?.(layoutCard.person, layoutCard.personId) ?? layoutCard.personId;
+      const relationLabel = isFocused && layoutCard.personId === subject ? "subject" : layoutCard.relation.label;
       const treeCardProps: FamilyCardProps<Person> = {
         person: layoutCard.person,
         personId: layoutCard.personId,
@@ -290,13 +299,13 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
         placement: layoutCard.placement,
         selected: isSelected,
         focused: isFocused,
-        collapsed: context.collapsedIds.has(layoutCard.personId),
-        readOnly: context.readOnly,
+        collapsed: collapsedIds.has(layoutCard.personId),
+        readOnly,
         className: cardClassName,
         onAddRelationship:
-          context.readOnly || !context.onAddRelationship
+          readOnly || !onAddRelationship
             ? undefined
-            : () => context.onAddRelationship?.(layoutCard.person, layoutCard.personId),
+            : () => onAddRelationship(layoutCard.person, layoutCard.personId),
         "aria-selected": isSelected || undefined,
         "aria-label": `${personLabel}, ${relationLabel}`,
         "data-focused": isFocused ? "" : undefined,
@@ -307,12 +316,12 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
         "data-generation": layoutCard.relation.generation,
         "data-selected": isSelected ? "" : undefined,
         "data-side": layoutCard.relation.side,
-        onClick: context.onPersonClick ? () => handleFamilyClick(layoutCard.person, layoutCard.personId) : undefined,
-        onKeyDown: context.onPersonClick
+        onClick: onPersonClick ? () => handleFamilyClick(layoutCard.person, layoutCard.personId) : undefined,
+        onKeyDown: onPersonClick
           ? (event) => handleFamilyKeyDown(event, layoutCard.person, layoutCard.personId)
           : undefined,
-        role: context.onPersonClick ? "button" : undefined,
-        tabIndex: context.onPersonClick ? 0 : undefined,
+        role: onPersonClick ? "button" : undefined,
+        tabIndex: onPersonClick ? 0 : undefined,
       };
       const extraCardProps =
         typeof cardProps === "function" ? cardProps(layoutCard.person, treeCardProps) : cardProps;
@@ -321,7 +330,19 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
         ...treeCardProps,
       } as FamilyCardProps<Person> & CardExtraProps;
     },
-    [cardClassName, cardProps, context, handleFamilyClick, handleFamilyKeyDown],
+    [
+      cardClassName,
+      cardProps,
+      collapsedIds,
+      getPersonLabel,
+      handleFamilyClick,
+      handleFamilyKeyDown,
+      onAddRelationship,
+      onPersonClick,
+      readOnly,
+      selected,
+      subject,
+    ],
   );
 
   return (

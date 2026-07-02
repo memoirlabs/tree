@@ -39,6 +39,33 @@ function OrgCard({
   );
 }
 
+interface AppCardProps {
+  actionLabel: string;
+  tone: "memoir" | "quiet";
+}
+
+function AppOrgCard({
+  actionLabel,
+  collapsed: _collapsed,
+  depth,
+  focused: _focused,
+  parentId: _parentId,
+  person,
+  personId: _personId,
+  readOnly: _readOnly,
+  selected: _selected,
+  tone,
+  ...props
+}: OrgCardProps<Person> & AppCardProps) {
+  return (
+    <article {...props} data-tone={tone}>
+      <strong>{person.name}</strong>
+      <small>{person.title ?? depth}</small>
+      <button type="button">{actionLabel}</button>
+    </article>
+  );
+}
+
 describe("org chart", () => {
   test("renders org chart cards and edges", () => {
     const expected = buildOrgChartLayout({ root: "ceo", people, relationships });
@@ -89,6 +116,24 @@ describe("org chart", () => {
 
     expect(markup).toContain(`data-org-card`);
     expect(markup).toContain(`Casey`);
+  });
+
+  test("passes app-owned props through to custom org cards", () => {
+    const markup = renderToStaticMarkup(
+      <OrgChart<Person, AppCardProps>
+        card={AppOrgCard}
+        cardProps={(person) => ({
+          actionLabel: person.id === "ceo" ? "Lead" : "Open",
+          tone: person.id === "ceo" ? "memoir" : "quiet",
+        })}
+        people={people}
+        relationships={relationships}
+        root="ceo"
+      />,
+    );
+
+    expect(markup).toContain(`data-tone="memoir"`);
+    expect(markup).toContain(`>Lead</button>`);
   });
 
   test("renders from explicit org graph mode", () => {

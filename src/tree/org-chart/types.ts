@@ -4,7 +4,6 @@ import type {
   PersonId,
   TreeApi,
   TreeInitialViewport,
-  TreeCardProps,
   TreeCardSize,
   TreeInteractionMode,
   TreeLayoutCardBase,
@@ -104,10 +103,9 @@ export type OrgChartSize = TreeCardSize;
 
 export type OrgChartPersonHandler<Person> = TreePersonHandler<Person>;
 
-export type OrgChartCardProps<Person, CardExtraProps extends object> = TreeCardProps<
-  Person,
-  OrgCardProps<Person> & CardExtraProps
->;
+export type OrgChartCardProps<Person, CardExtraProps extends object> =
+  | CardExtraProps
+  | ((person: Person, props: OrgCardProps<Person>) => CardExtraProps);
 
 export interface OrgChartProps<Person, CardExtraProps extends object = Record<string, never>> {
   root?: PersonId;
@@ -116,7 +114,10 @@ export interface OrgChartProps<Person, CardExtraProps extends object = Record<st
   graph?: OrgChartGraph<Person>;
   ariaLabel?: string;
   card?: ComponentType<OrgCardProps<Person> & CardExtraProps>;
-  cardProps?: CardExtraProps | ((person: Person, props: OrgCardProps<Person>) => CardExtraProps);
+  cardProps?: OrgChartCardProps<Person, CardExtraProps>;
+  /**
+   * @deprecated Prefer `card`, which receives the same root props directly.
+   */
   renderCard?: (props: OrgRenderCardProps<Person>) => JSX.Element;
   className?: string;
   style?: CSSProperties;

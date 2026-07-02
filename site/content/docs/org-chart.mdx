@@ -77,19 +77,32 @@ function TeamCard({ depth, person, ...rootProps }: OrgCardProps<Person>) {
 
 The card receives accessibility props, keyboard handlers, stable `data-*` attributes, depth metadata, selection state, and the original person record. Spread the remaining props onto the card root.
 
-`renderCard` is also available when you prefer a render function. Spread `rootProps` onto the root element:
+Use `cardProps` for typed app-owned inputs:
 
 ```tsx
-<OrgChart
+type TeamCardExtras = {
+  href: string;
+  canEdit: boolean;
+};
+
+function LinkedTeamCard({ canEdit, href, person, ...rootProps }: OrgCardProps<Person> & TeamCardExtras) {
+  return (
+    <article {...rootProps}>
+      <a href={href}>{person.name}</a>
+      {canEdit ? <small>Editable</small> : null}
+    </article>
+  );
+}
+
+<OrgChart<Person, TeamCardExtras>
   people={people}
   root="ceo"
   relationships={relationships}
-  renderCard={({ person, rootProps }) => (
-    <article {...rootProps}>
-      <strong>{person.name}</strong>
-      <small>{person.title}</small>
-    </article>
-  )}
+  card={LinkedTeamCard}
+  cardProps={(person) => ({
+    href: `/people/${person.id}`,
+    canEdit: currentUserCanEdit,
+  })}
 />
 ```
 

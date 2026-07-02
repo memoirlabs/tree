@@ -302,7 +302,6 @@ Graph normalization groups `reportingLinks` by `managerId`, `relation`, `status`
 Common optional props:
 
 - `card`: custom React card component.
-- `renderCard`: render-function shortcut that receives `rootProps`.
 - `cardProps`: extra typed props for every custom card, or a function per person.
 - `selected`: app-owned selected person ID.
 - `collapsed`: person IDs whose reports should be hidden.
@@ -557,7 +556,7 @@ Org graph, component, and layout types:
 - `OrgRelationshipHelpers`: type of the `org` helper object.
 - `OrgChartProps<Person, CardExtraProps>`: `OrgChart` props.
 - `OrgCardProps<Person>`: props passed to custom org cards.
-- `OrgRenderCardProps<Person>`: props passed to `renderCard`.
+- `OrgRenderCardProps<Person>`: deprecated compatibility props for `renderCard`.
 - `OrgChartCardProps<Person, CardExtraProps>`: typed `cardProps` input for org cards.
 - `OrgChartPersonHandler<Person>`: org person handler signature.
 - `OrgChartSize`: org card measurement shape.

@@ -255,7 +255,7 @@ export function TeamChart() {
 Most apps should provide their own card component. Spread the supplied props onto the card root so ARIA props, keyboard handlers, click handlers, and stable data attributes reach the DOM.
 
 ```tsx
-import type { FamilyCardProps } from "@memoir/tree";
+import type { FamilyCardProps, OrgCardProps } from "@memoir/tree";
 
 function ProfileCard({ person, relation, ...rootProps }: FamilyCardProps<Person>) {
   return (
@@ -267,14 +267,61 @@ function ProfileCard({ person, relation, ...rootProps }: FamilyCardProps<Person>
 }
 
 <FamilyTree graph={graph} card={ProfileCard} />;
+
+function TeamCard({ depth, person, ...rootProps }: OrgCardProps<Person>) {
+  return (
+    <article {...rootProps}>
+      <strong>{person.name}</strong>
+      <small>{person.title ?? `level ${depth}`}</small>
+    </article>
+  );
+}
+
+<OrgChart people={people} root="ceo" relationships={relationships} card={TeamCard} />;
 ```
 
 Use `cardProps` for typed app-owned inputs:
 
 ```tsx
-<FamilyTree
+type CardExtras = {
+  href: string;
+  canEdit: boolean;
+};
+
+function LinkedProfileCard({ canEdit, href, person, relation, ...rootProps }: FamilyCardProps<Person> & CardExtras) {
+  return (
+    <article {...rootProps}>
+      <a href={href}>{person.name}</a>
+      <small>{relation.label}</small>
+      {canEdit ? <button type="button">Edit</button> : null}
+    </article>
+  );
+}
+
+function LinkedTeamCard({ canEdit, href, person, depth, ...rootProps }: OrgCardProps<Person> & CardExtras) {
+  return (
+    <article {...rootProps}>
+      <a href={href}>{person.name}</a>
+      <small>{person.title ?? `level ${depth}`}</small>
+      {canEdit ? <button type="button">Edit</button> : null}
+    </article>
+  );
+}
+
+<FamilyTree<Person, CardExtras>
   graph={graph}
-  card={ProfileCard}
+  card={LinkedProfileCard}
+  cardProps={(person) => ({
+    href: `/people/${person.id}`,
+    canEdit: currentUserCanEdit,
+  })}
+/>
+
+<OrgChart<Person, CardExtras>
+  people={people}
+  root="ceo"
+  relationships={relationships}
+  card={LinkedTeamCard}
   cardProps={(person) => ({
     href: `/people/${person.id}`,
     canEdit: currentUserCanEdit,
