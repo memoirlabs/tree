@@ -1,16 +1,14 @@
-# Memoir Tree Release v0.7.0
-Make family layout policy configurable for genealogy-focused trees.
-
+# Memoir Tree Release v0.7.1
 Generated on 2026-07-03.
-Includes commits after `v0.6.6`.
+Includes commits after `v0.7.0`.
 
-Compare changes: [v0.6.6...HEAD](https://github.com/memoirlabs/tree/compare/v0.6.6...HEAD)
+Compare changes: [v0.7.0...HEAD](https://github.com/memoirlabs/tree/compare/v0.7.0...HEAD)
 
 Total commits: 2
 ## Documentation
 
-- Refine descendant co-parent layout docs ([`da7e473`](https://github.com/memoirlabs/tree/commit/da7e473090e4d4647fa048116e161bf10319d947), Henryoman, 2026-07-02)
+- docs update 0.7.0 release announcement ([`3448e72`](https://github.com/memoirlabs/tree/commit/3448e72dd4a3b57ab39d5c444d3d583ae6d4e853), Henryoman, 2026-07-03)
 
 ## Other Changes
 
-- Make family layout policy configurable ([`fc47488`](https://github.com/memoirlabs/tree/commit/fc4748839afa087ac6390c292a7e3ffc2eb89394), Henryoman, 2026-07-03)
+- Default to visible descendant coparents ([`fc4fc21`](https://github.com/memoirlabs/tree/commit/fc4fc215dd39d09a60eeb3c74a41bdd203f3da4d), Henryoman, 2026-07-03)
