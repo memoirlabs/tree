@@ -145,7 +145,7 @@ test("routes right-shifted single children below the parent cards", () => {
     (layoutEdge) => layoutEdge.targetId === "childA",
   );
 
-  expect(edge?.path).toBe("M 100 40 L 120 40 M 110 40 L 110 140");
+  expect(edge?.path).toBe("M 100 40 L 120 40 M 110 40 L 110 110 L 290 110 L 290 140");
   expect(firstLineY(edge?.path ?? "")).toBe(40);
 });
 

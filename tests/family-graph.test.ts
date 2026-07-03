@@ -102,6 +102,7 @@ test("graph mode keeps child-bearing partnership partners visible with descendan
   const extra = layout.cards.find((card) => card.personId === "extra-junior-h3");
   const henry = layout.cards.find((card) => card.personId === "henry");
   const childFamilyEdge = layout.edges.find((edge) => edge.sourceId === "child-family" && edge.targetId === "extra-junior-h3");
+  const henryMiniEdge = layout.edges.find((edge) => edge.sourceId === "henry-alyssa" && edge.targetId === "mini-h3");
   const henryUnknownEdge = layout.edges.find(
     (edge) =>
       (edge.sourceId === "henry" && edge.targetId === "unknown-parent") ||
@@ -115,6 +116,7 @@ test("graph mode keeps child-bearing partnership partners visible with descendan
   expect(unknown?.relation.label).toBe("coparent");
   expect(unknown?.y).toBe(mini?.y);
   expect(extra?.y).toBeGreaterThan(unknown?.y ?? 0);
+  expect(henryMiniEdge?.path).toContain(`L ${mini!.x + mini!.width / 2} ${mini!.y}`);
   expect(childFamilyEdge?.path).toContain(
     `M ${mini!.x + mini!.width} ${mini!.y + mini!.height / 2} L ${unknown!.x} ${unknown!.y + unknown!.height / 2}`,
   );

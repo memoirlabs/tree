@@ -64,6 +64,7 @@ const createFamilyMultiParentPath = <Person>(
   parents: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>],
   children: FamilyTreeLayoutCard<Person>[],
   cards: FamilyTreeLayoutCard<Person>[],
+  lineShape: LayoutLineShape,
 ) => {
   const [first, second] = parents;
   const childPoints = children.map(topCenterPoint);
@@ -82,9 +83,12 @@ const createFamilyMultiParentPath = <Person>(
     const child = children[0];
     if (!child) return "";
     const childTop = topCenterPoint(child);
+    const childTopX = roundTreeCoordinate(childTop.x);
     return [
       `M ${firstRight} ${parentY} L ${secondLeft} ${parentY}`,
-      `M ${midpointX} ${parentY} L ${midpointX} ${roundTreeCoordinate(childTop.y)}`,
+      childTopX === midpointX
+        ? `M ${midpointX} ${parentY} L ${midpointX} ${roundTreeCoordinate(childTop.y)}`
+        : createFamilyDescendantPath({ x: midpointX, y: parentY, clearY: parentClearY }, childTop, lineShape),
     ].join(" ");
   }
 
@@ -229,7 +233,7 @@ export function routeFamilyEdges<Person>(
     if (parentCards) {
       edges.push({
         id,
-        path: createFamilyMultiParentPath(parentCards, children, cards),
+        path: createFamilyMultiParentPath(parentCards, children, cards, lineShape),
         kind,
         status,
         sourceId: sourceId ?? parents[0],
