@@ -15,6 +15,7 @@
     "lint": "oxlint"
   },
   "dependencies": {
+    "@memoir/tree": "0.7.1",
     "fumadocs-core": "16.10.7",
     "fumadocs-mdx": "15.0.13",
     "fumadocs-ui": "16.10.7",

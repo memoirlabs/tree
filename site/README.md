@@ -5,7 +5,7 @@ This is the single website for `@memoir/tree`, a lightweight React family-tree l
 - `/` is the library landing page with a simple rendered family tree demo.
 - `/docs` is the Fumadocs documentation.
 - `content/docs/` contains the MDX docs.
-- `components/simple-family-tree-demo.tsx` embeds the homepage example. Site imports use `@memoir/tree`; Next and TypeScript resolve that package name to the root `dist` output, and `bun run ci` builds the root package first.
+- `components/simple-family-tree-demo.tsx` embeds the homepage example. Site imports use the published `@memoir/tree` package version declared in `package.json`.
 - Keep docs aligned with root `README.md` and `AGENTS.md` whenever the API changes.
 
 Run development server:

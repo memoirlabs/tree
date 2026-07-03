@@ -6,11 +6,7 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   turbopack: {
-    root: path.resolve('..'),
-    resolveAlias: {
-      '@memoir/tree': '../dist/index.js',
-      '@memoir/tree/styles.css': '../dist/styles.css',
-    },
+    root: path.resolve('.'),
   },
 };
 

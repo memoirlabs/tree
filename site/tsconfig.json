@@ -15,8 +15,6 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@memoir/tree": ["../dist/index.d.ts"],
-      "@memoir/tree/styles.css": ["../dist/styles.css"],
       "@/*": ["./*"],
       "collections/*": ["./.source/*"]
     },
