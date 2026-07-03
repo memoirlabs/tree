@@ -331,7 +331,7 @@ Partnership groups and child groups participate in layout before SVG edges are r
 
 Two-parent child groups use the visible midpoint between parent cards. Multi-child groups split through a horizontal bus in the clear gap below the parent row and above the child row.
 
-The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Descendant rows omit a descendant's own co-parent by default; set `layoutPolicy.descendantCoparents` to `"include"` when that co-parent should be a visible row participant. Large blended families can become wide; use `limits` to control the visible neighborhood.
+The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Descendant rows include a descendant's own co-parent by default so child groups stay attached to the child-bearing union. Set `layoutPolicy.descendantCoparents` to `"omit"` when that co-parent should stay outside the rendered neighborhood. Large blended families can become wide; use `limits` to control the visible neighborhood.
 
 ```tsx
 <FamilyTree
@@ -362,14 +362,14 @@ Use `estimatedCardSize` when your custom cards are much smaller or larger than t
 
 Use `layoutMode="compact-family"` for compact subject-centered trees. It keeps the subject centered and places spouse/partner cards adjacent to the subject. Layout mode changes placement only; it does not hide cards.
 
-Use `layoutPolicy` for app-specific genealogy choices. By default, multiple subject partners are balanced around the subject and a descendant's co-parent is not promoted into the visible descendant row.
+Use `layoutPolicy` for app-specific genealogy choices. By default, multiple subject partners are balanced around the subject and a descendant's co-parent is promoted into the visible descendant row.
 
 ```tsx
 <FamilyTree
   graph={graph}
   layoutMode="compact-family"
   layoutPolicy={{
-    descendantCoparents: "include",
+    descendantCoparents: "omit",
     subjectPartnerPlacement: "after-subject",
   }}
 />

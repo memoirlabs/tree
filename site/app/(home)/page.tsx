@@ -5,7 +5,7 @@ import { SimpleFamilyTreeDemo } from "@/components/simple-family-tree-demo";
 import { highlightTsx } from "@/lib/highlight";
 import logo from "../../public/logo-transparent.png";
 
-const currentVersion = "0.6.3";
+const currentVersion = "0.7.1";
 
 const exampleCode = `import { FamilyTree, rel } from "@memoir/tree";
 

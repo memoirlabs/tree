@@ -9,7 +9,7 @@ export function GET() {
 
 ## Install
 
-Current npm release: \`@memoir/tree@0.6.3\` at https://www.npmjs.com/package/@memoir/tree/v/0.6.3.
+Current npm release: \`@memoir/tree@0.7.1\` at https://www.npmjs.com/package/@memoir/tree/v/0.7.1.
 
 \`\`\`bash
 bun add @memoir/tree
@@ -40,7 +40,7 @@ Default family spacing is \`{ row: 104, column: 40, padding: 24 }\`. The default
 
 Graph normalization groups \`parentChildLinks\` by \`groupId\`, \`relation\`, \`status\`, and \`order\`. Mixed lineage such as biological plus step/adoptive in one partnership group remains distinct so edge kinds stay accurate. If two parent links should render as one two-parent edge, use the same \`groupId\`, \`relation\`, \`status\`, and \`order\`.
 
-Two-parent child groups join at the visible midpoint between parent cards. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row. Descendant rows omit a descendant's own child-bearing partner or co-parent by default; set \`layoutPolicy.descendantCoparents\` to \`"include"\` when that co-parent should be visible in the row.
+Two-parent child groups join at the visible midpoint between parent cards. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row. Descendant rows include a descendant's own child-bearing partner or co-parent by default; set \`layoutPolicy.descendantCoparents\` to \`"omit"\` when that co-parent should stay outside the rendered neighborhood.
 
 Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with \`relation: "unknown"\` or \`status: "unknown"\` renders the visible placeholder card without drawing a horizontal partnership edge. Tree does not infer unknown or placeholder semantics from IDs, names, labels, or app-owned flags; pass \`shouldRenderPersonCard\` to keep a person as a connector-only parent. \`layoutMode="compact-family"\` keeps partners adjacent to the subject, but it does not hide cards. If that placeholder is also an actual co-parent, include it in the child \`parentChildLinks\` or \`rel.children([...parents], children)\` parent list so the parentage edge connects from both parents.
 
