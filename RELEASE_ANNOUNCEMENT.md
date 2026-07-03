@@ -1,20 +1,16 @@
-# Memoir Tree Release v0.5.7
-Generated on 2026-07-02.
-Includes commits after `v0.5.6`.
+# Memoir Tree Release v0.7.0
+Make family layout policy configurable for genealogy-focused trees.
 
-Compare changes: [v0.5.6...HEAD](https://github.com/memoirlabs/tree/compare/v0.5.6...HEAD)
+Generated on 2026-07-03.
+Includes commits after `v0.6.6`.
 
-Total commits: 5
-## Fixes
+Compare changes: [v0.6.6...HEAD](https://github.com/memoirlabs/tree/compare/v0.6.6...HEAD)
 
-- Fix root site deploy scripts ([`9db70f0`](https://github.com/memoirlabs/tree/commit/9db70f0e4e6419a46d586768712b9e69a8c80f8a), Henryoman, 2026-06-11)
-- Fix site production deploy install command ([`bb6fa10`](https://github.com/memoirlabs/tree/commit/bb6fa10f0623e8cb1e74e9cf51de505bdf61eff2), Henryoman, 2026-06-11)
-
+Total commits: 2
 ## Documentation
 
-- docs update 0.5.6 release announcement ([`cbe07ad`](https://github.com/memoirlabs/tree/commit/cbe07ad7984643237cd3f06ac770e93345a273b5), Henryoman, 2026-06-11)
+- Refine descendant co-parent layout docs ([`da7e473`](https://github.com/memoirlabs/tree/commit/da7e473090e4d4647fa048116e161bf10319d947), Henryoman, 2026-07-02)
 
 ## Other Changes
 
-- Prepare 0.5.7 cleanup release ([`8004ab4`](https://github.com/memoirlabs/tree/commit/8004ab49b5b996a0ebefa2df2568bf4c14a097c0), Henryoman, 2026-07-02)
-- Make site deploy self-contained ([`f1d31eb`](https://github.com/memoirlabs/tree/commit/f1d31eb7aa144bb42a6a9981e78ec9038d61558d), Henryoman, 2026-06-11)
+- Make family layout policy configurable ([`fc47488`](https://github.com/memoirlabs/tree/commit/fc4748839afa087ac6390c292a7e3ffc2eb89394), Henryoman, 2026-07-03)
