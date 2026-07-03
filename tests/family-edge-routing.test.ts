@@ -148,6 +148,44 @@ test("routes right-shifted single children below the parent cards", () => {
   expect(firstLineY(edge?.path ?? "")).toBe(40);
 });
 
+test("routes connector-only co-parent edges from the parent connector point", () => {
+  const cards: FamilyTreeLayoutCard<{ name: string }>[] = [
+    {
+      personId: "parentA",
+      person: { name: "Parent A" },
+      relation: { label: "parent", generation: -1, side: "ancestor" },
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 80,
+    },
+    {
+      personId: "parentB",
+      person: { name: "Parent B" },
+      relation: { label: "coparent", generation: 0, side: "partner" },
+      x: 160,
+      y: 0,
+      width: 0,
+      height: 0,
+      hiddenCard: true,
+    },
+    {
+      personId: "childA",
+      person: { name: "Child A" },
+      relation: { label: "child", generation: 1, side: "descendant" },
+      x: 200,
+      y: 140,
+      width: 100,
+      height: 80,
+    },
+  ];
+
+  const edges = routeFamilyEdges(cards, [rel.children(["parentA", "parentB"], ["childA"])]);
+  const edge = edges.find((layoutEdge) => layoutEdge.targetId === "childA");
+
+  expect(edge?.path).toBe("M 130 20 L 130 110 L 250 110 L 250 140");
+});
+
 test("draws explicit partnership bars before inferred parentage bars", () => {
   const childrenFirst = buildFamilyTreeLayout({
     subject: "childA",

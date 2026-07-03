@@ -21,14 +21,10 @@ const defaultSpacing: FamilyTreeSpacing = {
   padding: 24,
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
-
 const resolveEstimatedCardSize = (size: Partial<FamilyTreeSize> | undefined): FamilyTreeSize => ({
   width: size?.width ?? defaultEstimatedCardSize.width,
   height: size?.height ?? defaultEstimatedCardSize.height,
 });
-
-const hasBooleanFlag = (person: unknown, key: string) => isRecord(person) && person[key] === true;
 
 const collectHiddenCardIds = <Person>({
   people,
@@ -45,7 +41,7 @@ const collectHiddenCardIds = <Person>({
     const person = people[personId];
     if (person === undefined) continue;
     if (personId === subject) continue;
-    if (hasBooleanFlag(person, "hiddenCard") || shouldRenderPersonCard?.(person, personId) === false) {
+    if (shouldRenderPersonCard?.(person, personId) === false) {
       hiddenCardIds.add(personId);
     }
   }

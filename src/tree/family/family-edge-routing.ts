@@ -101,9 +101,11 @@ const createFamilyMultiParentPath = <Person>(
 const connectorStartPoint = <Person>(
   parents: FamilyTreeLayoutCard<Person>[],
 ) => {
-  const visibleParents = parents.filter(isVisibleCard);
-  if (visibleParents.length > 0) {
-    return bottomCenterPoint(visibleParents[0]!);
+  if (parents.length === 2) {
+    const [first, second] = parents;
+    if (first && second) {
+      return parentageJoinPoint(first.x <= second.x ? [first, second] : [second, first]);
+    }
   }
   const parentPoints = parents.map(centerPoint);
   return {

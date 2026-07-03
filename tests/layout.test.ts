@@ -278,7 +278,7 @@ test("uses configurable estimated family card size before measurement", () => {
   });
 });
 
-test("keeps hidden placeholder parents as connector-only layout cards", () => {
+test("does not infer connector-only cards from app-owned placeholder fields", () => {
   const layout = buildFamilyTreeLayout({
     subject: "henry",
     people: {
@@ -297,10 +297,10 @@ test("keeps hidden placeholder parents as connector-only layout cards", () => {
   const unknownParent = layout.cards.find((card) => card.personId === "unknownParent");
 
   expect(unknownParent).toMatchObject({
-    hiddenCard: true,
-    width: 0,
-    height: 0,
+    width: 88,
+    height: 64,
   });
+  expect(unknownParent?.hiddenCard).toBeUndefined();
   expect(layout.edges.filter((edge) => edge.targetId === "ava")).toHaveLength(1);
 });
 

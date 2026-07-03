@@ -73,12 +73,12 @@ export const personAnchorId = (personId: PersonId) => `family-person-anchor:${pe
 export const relativeIds = <Person>(relatives: FamilyRelative<Person>[]) =>
   relatives.map((relative) => relative.personId);
 
-const createSubjectRow = <Person>(
+const createSubjectRowPlan = <Person>(
   neighborhood: Pick<
     FamilyNeighborhood<Person>,
     "siblings" | "halfSiblings" | "cousins" | "self" | "partners" | "relationships"
   >,
-  layoutMode: FamilyTreeLayoutMode = "default",
+  layoutMode: FamilyTreeLayoutMode,
 ) => {
   const partners = orderSubjectPartners(neighborhood);
   const subjectClusterIds = new Set([
@@ -86,17 +86,43 @@ const createSubjectRow = <Person>(
     ...partners.map((partner) => partner.personId),
   ]);
   const splitIndex = layoutMode === "compact-family" ? 0 : Math.floor(partners.length / 2);
-  const lateral = uniqueRelatives([
-    ...neighborhood.siblings,
-    ...neighborhood.cousins,
-    ...neighborhood.halfSiblings,
-  ]).filter((relative) => !subjectClusterIds.has(relative.personId));
+  const lateralWithoutSubjectCluster = (relatives: FamilyRelative<Person>[]) =>
+    uniqueRelatives(relatives).filter((relative) => !subjectClusterIds.has(relative.personId));
+
+  return {
+    partners,
+    subjectCluster: [
+      ...partners.slice(0, splitIndex),
+      neighborhood.self,
+      ...partners.slice(splitIndex),
+    ],
+    lateralCluster: lateralWithoutSubjectCluster([
+      ...neighborhood.siblings,
+      ...neighborhood.cousins,
+      ...neighborhood.halfSiblings,
+    ]),
+    siblingCluster: lateralWithoutSubjectCluster([
+      ...neighborhood.siblings,
+      ...(layoutMode === "compact-family" ? neighborhood.halfSiblings : []),
+    ]),
+    cousinCluster: lateralWithoutSubjectCluster(neighborhood.cousins),
+    halfSiblingCluster:
+      layoutMode === "compact-family" ? [] : lateralWithoutSubjectCluster(neighborhood.halfSiblings),
+  };
+};
+
+const createSubjectRow = <Person>(
+  neighborhood: Pick<
+    FamilyNeighborhood<Person>,
+    "siblings" | "halfSiblings" | "cousins" | "self" | "partners" | "relationships"
+  >,
+  layoutMode: FamilyTreeLayoutMode = "default",
+) => {
+  const plan = createSubjectRowPlan(neighborhood, layoutMode);
 
   return uniqueRelatives([
-    ...lateral,
-    ...partners.slice(0, splitIndex),
-    neighborhood.self,
-    ...partners.slice(splitIndex),
+    ...plan.lateralCluster,
+    ...plan.subjectCluster,
   ]);
 };
 
@@ -178,36 +204,15 @@ const createSubjectRowItems = <Person>(
   anchorIds: string[],
   layoutMode: FamilyTreeLayoutMode,
 ): FamilyRowItem<Person>[] => {
-  const partners = orderSubjectPartners(neighborhood);
-  const subjectClusterIds = new Set([
-    neighborhood.self.personId,
-    ...partners.map((partner) => partner.personId),
-  ]);
-
-  const splitIndex = layoutMode === "compact-family" ? 0 : Math.floor(partners.length / 2);
-  const subjectCluster = [
-    ...partners.slice(0, splitIndex),
-    neighborhood.self,
-    ...partners.slice(splitIndex),
-  ];
-
-  const lateralWithoutSubjectCluster = (relatives: FamilyRelative<Person>[]) =>
-    uniqueRelatives(relatives).filter((relative) => !subjectClusterIds.has(relative.personId));
-  const siblingCluster = lateralWithoutSubjectCluster([
-    ...neighborhood.siblings,
-    ...(layoutMode === "compact-family" ? neighborhood.halfSiblings : []),
-  ]);
-  const cousinCluster = lateralWithoutSubjectCluster(neighborhood.cousins);
-  const halfSiblingCluster =
-    layoutMode === "compact-family" ? [] : lateralWithoutSubjectCluster(neighborhood.halfSiblings);
-  const hasLeftCluster = siblingCluster.length > 0 || cousinCluster.length > 0;
-  const subjectGapBefore = hasLeftCluster && partners.length > 0 ? 40 : undefined;
+  const plan = createSubjectRowPlan(neighborhood, layoutMode);
+  const hasLeftCluster = plan.siblingCluster.length > 0 || plan.cousinCluster.length > 0;
+  const subjectGapBefore = hasLeftCluster && plan.partners.length > 0 ? 40 : undefined;
 
   return [
-    ...relativeClusterItem(siblingCluster),
-    ...relativeClusterItem(cousinCluster),
-    { id: rowItemId(relativeIds(subjectCluster)), relatives: subjectCluster, anchorIds, gapBefore: subjectGapBefore },
-    ...relativeClusterItem(halfSiblingCluster, partners.length > 0 ? { gapBefore: 40 } : {}),
+    ...relativeClusterItem(plan.siblingCluster),
+    ...relativeClusterItem(plan.cousinCluster),
+    { id: rowItemId(relativeIds(plan.subjectCluster)), relatives: plan.subjectCluster, anchorIds, gapBefore: subjectGapBefore },
+    ...relativeClusterItem(plan.halfSiblingCluster, plan.partners.length > 0 ? { gapBefore: 40 } : {}),
   ];
 };
 
