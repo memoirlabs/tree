@@ -170,6 +170,8 @@ Links with the same `groupId`, `relation`, `status`, and `order` are grouped int
 
 For one rendered tree, each person appears once. If graph traversal reaches the same person through multiple paths, direct roles win over lateral roles: self, parents/guardians, children, partners/coparents, siblings, then broader lateral relatives. That prevents a parent or partner from also rendering as a sibling just because another parentage path can reach them.
 
+When a visible child also has their own child-bearing partner or co-parent, the descendant row keeps that child next to the co-parent group for their child. Siblings who are not part of that next-generation group remain outside the couple/co-parent cluster, so a sibling is not visually absorbed into another sibling's union.
+
 Guardianship is separate from parentage:
 
 ```ts
@@ -332,6 +334,8 @@ function LinkedTeamCard({ canEdit, href, person, depth, ...rootProps }: OrgCardP
 ## Layout And Viewport
 
 Family layout is subject-centered and neighborhood-based. It renders ancestor rows, a subject row with separated sibling and partner clusters, and descendant rows. Partnership groups and child groups participate in layout before SVG edges are routed, so parent-child lines come from measured card positions.
+
+Descendant rows preserve child-bearing unions. If one child has a partner or co-parent and another child is only a sibling, the child-bearing pair stays grouped for its own child edge while the sibling stays separate.
 
 Large families can become wide. Use `limits` to control the visible neighborhood:
 

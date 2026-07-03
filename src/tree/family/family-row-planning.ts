@@ -286,8 +286,8 @@ const createChildRowItems = <Person>(
       .filter((relative) => !consumed.has(relative.personId));
     if (children.length === 0) continue;
 
-    const childBearingCoparents = children.flatMap((child) =>
-      relationships
+    const childGroups = children.map((child) => {
+      const coparents = relationships
         .filter(
           (candidate): candidate is Extract<FamilyRelationship, { type: "parentage" }> =>
             candidate.type === "parentage" && candidate.parents.includes(child.personId),
@@ -298,9 +298,16 @@ const createChildRowItems = <Person>(
             .map((parentId) => relativesById.get(parentId))
             .filter((relative): relative is FamilyRelative<Person> => Boolean(relative))
             .filter((relative) => !consumed.has(relative.personId)),
-        ),
+        );
+      return { child, coparents: uniqueRelatives(coparents) };
+    });
+    const plainChildren = childGroups
+      .filter((group) => group.coparents.length === 0)
+      .map((group) => group.child);
+    const childBearingRelatives = childGroups.flatMap((group) =>
+      group.coparents.length > 0 ? [group.child, ...group.coparents] : [],
     );
-    const itemRelatives = uniqueRelatives([...children, ...childBearingCoparents]);
+    const itemRelatives = uniqueRelatives([...plainChildren, ...childBearingRelatives]);
     itemRelatives.forEach((relative) => consumed.add(relative.personId));
     items.push({
       id: childGroupItemId(relationship, relativeIds(itemRelatives)),

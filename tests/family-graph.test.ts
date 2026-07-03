@@ -127,6 +127,67 @@ test("graph mode keeps child-bearing partnership partners visible with descendan
   expect(henryUnknownEdge).toBeUndefined();
 });
 
+test("graph mode keeps siblings outside a child's coparent group", () => {
+  const graph: FamilyGraph = {
+    subject: "henry",
+    people: {
+      henry: { name: "Henry" },
+      alyssa: { name: "Alyssa" },
+      mini: { name: "mini H3" },
+      micro: { name: "micro Alyssa" },
+      unknown: { name: "Unknown" },
+      extra: { name: "extra junior H3" },
+    },
+    partnershipGroups: [
+      { id: "henry-alyssa", partners: ["henry", "alyssa"], relation: "spouse", order: 1 },
+      {
+        id: "mini-unknown",
+        partners: ["mini", "unknown"],
+        relation: "unknown",
+        status: "unknown",
+        order: 3,
+      },
+    ],
+    parentChildLinks: [
+      { id: "henry-mini", groupId: "henry-alyssa", parentId: "henry", childId: "mini", order: 2 },
+      { id: "alyssa-mini", groupId: "henry-alyssa", parentId: "alyssa", childId: "mini", order: 2 },
+      { id: "henry-micro", groupId: "henry-alyssa", parentId: "henry", childId: "micro", order: 2 },
+      { id: "alyssa-micro", groupId: "henry-alyssa", parentId: "alyssa", childId: "micro", order: 2 },
+      { id: "mini-extra", groupId: "mini-unknown", parentId: "mini", childId: "extra", order: 4 },
+    ],
+  };
+
+  const layout = buildFamilyTreeLayout({
+    graph,
+    estimatedCardSize: { width: 88, height: 64 },
+    measurements: {
+      alyssa: { width: 88, height: 64 },
+      extra: { width: 88, height: 64 },
+      henry: { width: 88, height: 64 },
+      micro: { width: 88, height: 64 },
+      mini: { width: 88, height: 64 },
+      unknown: { width: 88, height: 64 },
+    },
+    spacing: {
+      column: 20,
+      padding: 32,
+      row: 40,
+    },
+  });
+  const micro = layout.cards.find((card) => card.personId === "micro");
+  const mini = layout.cards.find((card) => card.personId === "mini");
+  const unknown = layout.cards.find((card) => card.personId === "unknown");
+  const extra = layout.cards.find((card) => card.personId === "extra");
+
+  expect(micro).toBeDefined();
+  expect(mini).toBeDefined();
+  expect(unknown).toBeDefined();
+  expect(extra).toBeDefined();
+  expect(micro!.x).toBeLessThan(mini!.x);
+  expect(mini!.x).toBeLessThan(unknown!.x);
+  expect(extra!.x + extra!.width / 2).toBe((mini!.x + mini!.width + unknown!.x) / 2);
+});
+
 test("graph mode renders a direct parent only as parent, not sibling", () => {
   const graph: FamilyGraph = {
     subject: "child",

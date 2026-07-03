@@ -163,6 +163,8 @@ Equivalent link reordering does not change rendered relationship IDs. Stable `id
 
 Each rendered tree shows a person at most once. If the same person is reachable through several paths, Tree assigns one primary visible role before layout: direct roles such as parent, guardian, child, partner, or co-parent outrank sibling, cousin, and other lateral roles.
 
+If a visible child later becomes a parent with their own partner or co-parent, Tree keeps that child next to the child-bearing partner for the next-generation edge. Other siblings stay outside that couple/co-parent cluster, so sibling order remains readable instead of folding every sibling into one descendant union.
+
 ## Per-Parent Lineage
 
 Lineage belongs to each parent-child link, not to the whole union. If Alex is biological and Jordan is step, model that truth directly:
@@ -206,6 +208,8 @@ parentChildLinks: [
 ```
 
 Use `order` when several partner groups need a predictable left-to-right order.
+
+This applies across generations. If one child in a sibling row has a child with a partner or unknown co-parent, that child and co-parent form the next-generation anchor; siblings without that co-parent relationship stay as sibling cards, not as part of the child-bearing pair.
 
 ## Guardianship
 
@@ -327,7 +331,7 @@ Partnership groups and child groups participate in layout before SVG edges are r
 
 Two-parent child groups use the visible midpoint between parent cards. Multi-child groups split through a horizontal bus in the clear gap below the parent row and above the child row.
 
-The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Large blended families can become wide; use `limits` to control the visible neighborhood.
+The layout prevents same-row card overlap and keeps child groups near their visible parent anchors. Descendant rows keep child-bearing co-parent pairs together while leaving unrelated siblings outside that pair. Large blended families can become wide; use `limits` to control the visible neighborhood.
 
 ```tsx
 <FamilyTree
