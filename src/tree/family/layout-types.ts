@@ -6,6 +6,7 @@ import type {
   FamilyRelationship,
   FamilyGraph,
   FamilyTreeLayoutMode,
+  FamilyTreeLayoutPolicy,
   FamilyTreeSpacing,
   PeopleById,
   PersonId,
@@ -46,6 +47,7 @@ export interface BuildFamilyTreeLayoutInput<Person> {
   estimatedCardSize?: Partial<TreeCardSize>;
   spacing?: Partial<FamilyTreeSpacing>;
   layoutMode?: FamilyTreeLayoutMode;
+  layoutPolicy?: FamilyTreeLayoutPolicy;
   boundsMode?: FamilyTreeBoundsMode;
   shouldRenderPersonCard?: (person: Person, personId: PersonId) => boolean;
   limits?: Partial<FamilyNeighborhoodLimits>;

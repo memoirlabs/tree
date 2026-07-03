@@ -5,6 +5,7 @@ import type {
   FamilyParentageRelationship,
   FamilyPartnershipRelationship,
   FamilyRelationship,
+  FamilyTreeLayoutPolicy,
   PeopleById,
   PersonId,
 } from "./types";
@@ -433,19 +434,21 @@ const collectDescendantGenerations = <Person>(
   subject: PersonId,
   lateralIds: PersonId[],
   limits: FamilyNeighborhoodLimits,
+  layoutPolicy: FamilyTreeLayoutPolicy,
 ): FamilyGenerationLayer<Person>[] => {
   const layers: FamilyGenerationLayer<Person>[] = [];
   const directSeen = new Set<PersonId>([subject]);
   const lateralSeen = new Set<PersonId>([subject, ...lateralIds]);
   let directFrontier = [subject];
   let lateralFrontier = lateralIds;
+  const includeDescendantCoparents = layoutPolicy.descendantCoparents === "include";
 
   for (let generation = 1; !generationLimitReached(generation, limits.descendantGenerations); generation += 1) {
     const directIds = compactIds(directFrontier.flatMap((personId) => getChildLikeIds(index, personId))).filter(
       (personId) => !directSeen.has(personId),
     );
     directIds.forEach((personId) => directSeen.add(personId));
-    const directPartnerIds = getChildBearingPartnerIds(index, directIds, directSeen);
+    const directPartnerIds = includeDescendantCoparents ? getChildBearingPartnerIds(index, directIds, directSeen) : [];
     directPartnerIds.forEach((personId) => directSeen.add(personId));
 
     const shouldCollectLateral =
@@ -456,7 +459,9 @@ const collectDescendantGenerations = <Person>(
         )
       : [];
     lateralOnlyIds.forEach((personId) => lateralSeen.add(personId));
-    const lateralPartnerIds = getChildBearingPartnerIds(index, lateralOnlyIds, new Set([...directSeen, ...lateralSeen]));
+    const lateralPartnerIds = includeDescendantCoparents
+      ? getChildBearingPartnerIds(index, lateralOnlyIds, new Set([...directSeen, ...lateralSeen]))
+      : [];
     lateralPartnerIds.forEach((personId) => lateralSeen.add(personId));
 
     const directRelatives = createRelatives(index, directIds, {
@@ -503,6 +508,7 @@ export function collectFamilyNeighborhood<Person>(
   index: FamilyIndex<Person>,
   subject: PersonId,
   limits?: Partial<FamilyNeighborhoodLimits>,
+  layoutPolicy: FamilyTreeLayoutPolicy = {},
 ): FamilyNeighborhood<Person> | null {
   const self = createRelative(index, subject, { label: "self", generation: 0, side: "self" });
   if (!self) return null;
@@ -600,7 +606,7 @@ export function collectFamilyNeighborhood<Person>(
     partnerParentIds,
     resolvedLimits,
   );
-  const descendantGenerations = collectDescendantGenerations(index, subject, lateralIds, resolvedLimits);
+  const descendantGenerations = collectDescendantGenerations(index, subject, lateralIds, resolvedLimits, layoutPolicy);
 
   const grandparents =
     ancestorGenerations.find((layer) => layer.generation === -2)?.relatives ??

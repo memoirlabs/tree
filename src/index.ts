@@ -13,7 +13,7 @@ export {
 export { graphToOrgReportingRelationships, org } from "./tree/org-chart/index";
 export { collectFamilyNeighborhood, createFamilyIndex, defaultFamilyNeighborhoodLimits } from "./tree/family/index";
 export { collectOrgChartSubtree, createOrgChartIndex } from "./tree/org-chart/index";
-export { buildFamilyTreeLayout } from "./tree/family/index";
+export { buildFamilyTreeLayout, defaultFamilyTreeLayoutPolicy } from "./tree/family/index";
 export {
   createFamilyLayoutService,
   createUnionParentLinks,
@@ -86,6 +86,7 @@ export type {
   FamilyTreeBoundsMode,
   FamilyTreeCardProps,
   FamilyTreeLayoutMode,
+  FamilyTreeLayoutPolicy,
   FamilyTreePersonHandler,
   FamilyTreeProps,
   FamilyTreeRenderCardPredicate,

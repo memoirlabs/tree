@@ -49,6 +49,7 @@ export interface FamilyTreeProviderProps<Person> {
   spacing?: Partial<FamilyTreeSpacing>;
   estimatedCardSize?: FamilyTreeProps<Person>["estimatedCardSize"];
   layoutMode?: FamilyTreeProps<Person>["layoutMode"];
+  layoutPolicy?: FamilyTreeProps<Person>["layoutPolicy"];
   boundsMode?: FamilyTreeProps<Person>["boundsMode"];
   shouldRenderPersonCard?: FamilyTreeProps<Person>["shouldRenderPersonCard"];
   limits?: FamilyTreeProps<Person>["limits"];
@@ -113,6 +114,7 @@ const createMeasurementKey = (
   collapsed?: PersonId[],
   estimatedCardSize?: FamilyTreeProps<unknown>["estimatedCardSize"],
   layoutMode?: FamilyTreeProps<unknown>["layoutMode"],
+  layoutPolicy?: FamilyTreeProps<unknown>["layoutPolicy"],
   boundsMode?: FamilyTreeProps<unknown>["boundsMode"],
   hasRenderPredicate?: boolean,
 ) => {
@@ -131,6 +133,8 @@ const createMeasurementKey = (
     subject,
     collapsed?.join(",") ?? "",
     layoutMode ?? "default",
+    layoutPolicy?.descendantCoparents ?? "",
+    layoutPolicy?.subjectPartnerPlacement ?? "",
     boundsMode ?? "subject",
     hasRenderPredicate ?? false,
     `${estimatedCardSize?.width ?? ""}x${estimatedCardSize?.height ?? ""}`,
@@ -159,6 +163,7 @@ function FamilyTreeProvider<Person>({
   spacing,
   estimatedCardSize,
   layoutMode = "default",
+  layoutPolicy,
   boundsMode = "subject",
   shouldRenderPersonCard,
 }: FamilyTreeProviderProps<Person>): JSX.Element {
@@ -175,6 +180,7 @@ function FamilyTreeProvider<Person>({
     collapsed,
     estimatedCardSize,
     layoutMode,
+    layoutPolicy,
     boundsMode,
     Boolean(shouldRenderPersonCard),
   );
@@ -189,6 +195,7 @@ function FamilyTreeProvider<Person>({
         measurements,
         estimatedCardSize,
         layoutMode,
+        layoutPolicy,
         boundsMode,
         shouldRenderPersonCard,
         limits,
@@ -199,6 +206,7 @@ function FamilyTreeProvider<Person>({
       collapsed,
       estimatedCardSize,
       layoutMode,
+      layoutPolicy,
       boundsMode,
       layoutSpacing,
       limits,

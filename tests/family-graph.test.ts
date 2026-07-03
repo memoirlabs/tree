@@ -48,7 +48,7 @@ test("graph mode renders a simple two-parent family", () => {
   });
 });
 
-test("graph mode keeps child-bearing partnership partners visible with descendants", () => {
+test("graph mode can keep child-bearing partnership partners visible with descendants", () => {
   const graph: FamilyGraph = {
     subject: "henry",
     people: {
@@ -96,6 +96,7 @@ test("graph mode keeps child-bearing partnership partners visible with descendan
       padding: 32,
       row: 40,
     },
+    layoutPolicy: { descendantCoparents: "include" },
   });
   const mini = layout.cards.find((card) => card.personId === "mini-h3");
   const unknown = layout.cards.find((card) => card.personId === "unknown-parent");
@@ -127,7 +128,7 @@ test("graph mode keeps child-bearing partnership partners visible with descendan
   expect(henryUnknownEdge).toBeUndefined();
 });
 
-test("graph mode keeps siblings outside a child's coparent group", () => {
+test("graph mode keeps siblings outside an opted-in child coparent group", () => {
   const graph: FamilyGraph = {
     subject: "henry",
     people: {
@@ -173,6 +174,7 @@ test("graph mode keeps siblings outside a child's coparent group", () => {
       padding: 32,
       row: 40,
     },
+    layoutPolicy: { descendantCoparents: "include" },
   });
   const micro = layout.cards.find((card) => card.personId === "micro");
   const mini = layout.cards.find((card) => card.personId === "mini");

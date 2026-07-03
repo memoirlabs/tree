@@ -421,6 +421,123 @@ test("separates sibling and spouse clusters in compact family layout", () => {
   expect((henry?.x ?? 0) - ((charlie?.x ?? 0) + (charlie?.width ?? 0))).toBeGreaterThan(20);
 });
 
+test("omits descendant coparent cards by default", () => {
+  const layout = buildFamilyTreeLayout({
+    graph: {
+      people: {
+        henry: { name: "Henry" },
+        spouse: { name: "Spouse" },
+        child: { name: "Child" },
+        grandchild: { name: "Grandchild" },
+        unknownOtherParent: { name: "Unknown", isPlaceholder: true },
+      },
+      subject: "henry",
+      partnershipGroups: [
+        { id: "henry-spouse", partners: ["henry", "spouse"], relation: "spouse" },
+        { id: "child-family", partners: ["child", "unknownOtherParent"], relation: "unknown", status: "unknown" },
+      ],
+      parentChildLinks: [
+        { groupId: "henry-spouse", parentId: "henry", childId: "child" },
+        { groupId: "henry-spouse", parentId: "spouse", childId: "child" },
+        { groupId: "child-family", parentId: "child", childId: "grandchild" },
+      ],
+    },
+    estimatedCardSize: { width: 88, height: 64 },
+    layoutMode: "compact-family",
+    spacing: { column: 20, row: 48, padding: 24 },
+  });
+
+  const cardIds = layout.cards.map((card) => card.personId);
+  expect(cardIds).toEqual(expect.arrayContaining(["henry", "spouse", "child", "grandchild"]));
+  expect(cardIds).not.toContain("unknownOtherParent");
+  expect(layout.edges.some((edge) => edge.targetId === "grandchild")).toBe(true);
+});
+
+test("can opt into descendant coparent cards", () => {
+  const layout = buildFamilyTreeLayout({
+    graph: {
+      people: {
+        henry: { name: "Henry" },
+        child: { name: "Child" },
+        grandchild: { name: "Grandchild" },
+        unknownOtherParent: { name: "Unknown", isPlaceholder: true },
+      },
+      subject: "henry",
+      partnershipGroups: [
+        { id: "child-family", partners: ["child", "unknownOtherParent"], relation: "unknown", status: "unknown" },
+      ],
+      parentChildLinks: [
+        { parentId: "henry", childId: "child" },
+        { groupId: "child-family", parentId: "child", childId: "grandchild" },
+      ],
+    },
+    layoutPolicy: { descendantCoparents: "include" },
+  });
+
+  const unknownOtherParent = layout.cards.find((card) => card.personId === "unknownOtherParent");
+  expect(unknownOtherParent?.relation.label).toBe("coparent");
+});
+
+test("balances multiple subject partners by default", () => {
+  const layout = buildFamilyTreeLayout({
+    graph: {
+      people: {
+        henry: { name: "Henry" },
+        firstPartner: { name: "First partner" },
+        secondPartner: { name: "Second partner" },
+        firstChild: { name: "First child" },
+        secondChild: { name: "Second child" },
+      },
+      subject: "henry",
+      partnershipGroups: [
+        { id: "first-family", partners: ["henry", "firstPartner"], relation: "spouse", order: 1 },
+        { id: "second-family", partners: ["henry", "secondPartner"], relation: "spouse", order: 2 },
+      ],
+      parentChildLinks: [
+        { groupId: "first-family", parentId: "henry", childId: "firstChild", order: 1 },
+        { groupId: "first-family", parentId: "firstPartner", childId: "firstChild", order: 1 },
+        { groupId: "second-family", parentId: "henry", childId: "secondChild", order: 2 },
+        { groupId: "second-family", parentId: "secondPartner", childId: "secondChild", order: 2 },
+      ],
+    },
+    estimatedCardSize: { width: 88, height: 64 },
+    layoutMode: "compact-family",
+  });
+  const card = (personId: string) => layout.cards.find((candidate) => candidate.personId === personId);
+  const henry = card("henry");
+  const firstPartner = card("firstPartner");
+  const secondPartner = card("secondPartner");
+
+  expect(firstPartner?.x).toBeLessThan(henry?.x ?? 0);
+  expect(secondPartner?.x).toBeGreaterThan((henry?.x ?? 0) + (henry?.width ?? 0));
+});
+
+test("can place subject partners after the subject", () => {
+  const layout = buildFamilyTreeLayout({
+    graph: {
+      people: {
+        henry: { name: "Henry" },
+        firstPartner: { name: "First partner" },
+        secondPartner: { name: "Second partner" },
+      },
+      subject: "henry",
+      partnershipGroups: [
+        { id: "first-family", partners: ["henry", "firstPartner"], relation: "spouse", order: 1 },
+        { id: "second-family", partners: ["henry", "secondPartner"], relation: "spouse", order: 2 },
+      ],
+      parentChildLinks: [],
+    },
+    estimatedCardSize: { width: 88, height: 64 },
+    layoutMode: "compact-family",
+    layoutPolicy: { subjectPartnerPlacement: "after-subject" },
+  });
+  const henry = layout.cards.find((card) => card.personId === "henry");
+  const partnerCards = layout.cards.filter((card) => card.personId.endsWith("Partner"));
+
+  expect(partnerCards).toHaveLength(2);
+  expect(partnerCards.every((card) => card.x > (henry?.x ?? 0))).toBe(true);
+});
+
 test("hides descendant branch rows for collapsed family cards", () => {
   const layout = buildFamilyTreeLayout({
     subject: "henry",

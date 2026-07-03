@@ -170,7 +170,7 @@ Links with the same `groupId`, `relation`, `status`, and `order` are grouped int
 
 For one rendered tree, each person appears once. If graph traversal reaches the same person through multiple paths, direct roles win over lateral roles: self, parents/guardians, children, partners/coparents, siblings, then broader lateral relatives. That prevents a parent or partner from also rendering as a sibling just because another parentage path can reach them.
 
-When a visible child also has their own child-bearing partner or co-parent, the descendant row keeps that child next to the co-parent group for their child. Siblings who are not part of that next-generation group remain outside the couple/co-parent cluster, so a sibling is not visually absorbed into another sibling's union.
+By default, a visible child's own child-bearing partner or co-parent is not promoted into the descendant row. Set `layoutPolicy.descendantCoparents` to `"include"` when that co-parent should be visible next to the child; siblings who are not part of that next-generation group remain outside the couple/co-parent cluster.
 
 Guardianship is separate from parentage:
 
@@ -375,7 +375,20 @@ Any person can be connector-only. Pass `shouldRenderPersonCard` when a person sh
 />
 ```
 
-Use `layoutMode="compact-family"` for compact subject-centered trees with spouse/partner cards adjacent to the subject, siblings on the opposite side, and children below the subject-partner union. Layout mode changes placement only; it does not hide cards.
+Use `layoutMode="compact-family"` for compact subject-centered trees with spouse/partner cards adjacent to the subject and children below the subject-partner union. Layout mode changes placement only; it does not hide cards.
+
+Use `layoutPolicy` when your app needs more specific genealogy placement. By default, multiple subject partners are balanced around the subject and a descendant's co-parent is not promoted into the visible descendant row. Opt into the older compact behavior when useful:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  layoutMode="compact-family"
+  layoutPolicy={{
+    descendantCoparents: "include",
+    subjectPartnerPlacement: "after-subject",
+  }}
+/>
+```
 
 The default `interactionMode` is `"pan"`. Users can drag the canvas or non-interactive card surfaces with mouse, touch, or pen. Use `"pan-page-scroll"` when vertical touch should scroll the page, `"scroll"` for native scrollbars, or `"none"` for a static tree.
 

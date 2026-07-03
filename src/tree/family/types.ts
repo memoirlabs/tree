@@ -190,6 +190,11 @@ export type FamilyTreePersonHandler<Person> = TreePersonHandler<Person>;
 export type FamilyTreeLayoutMode = "default" | "compact-family";
 export type FamilyTreeBoundsMode = "subject" | "content";
 
+export interface FamilyTreeLayoutPolicy {
+  descendantCoparents?: "omit" | "include";
+  subjectPartnerPlacement?: "balanced" | "after-subject";
+}
+
 export type FamilyTreeRenderCardPredicate<Person> = (person: Person, personId: PersonId) => boolean;
 
 export type FamilyTreeCardProps<Person, CardExtraProps extends object> =
@@ -217,6 +222,7 @@ export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<
   spacing?: Partial<FamilyTreeSpacing>;
   estimatedCardSize?: Partial<FamilyTreeSize>;
   layoutMode?: FamilyTreeLayoutMode;
+  layoutPolicy?: FamilyTreeLayoutPolicy;
   boundsMode?: FamilyTreeBoundsMode;
   shouldRenderPersonCard?: FamilyTreeRenderCardPredicate<Person>;
   limits?: Partial<FamilyNeighborhoodLimits>;

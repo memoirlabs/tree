@@ -7,7 +7,7 @@ import { createFamilyLayerBoxes, createFamilyLayoutCards } from "./family-layere
 import { createFamilyLayoutLayers, createFamilyRelativeRows } from "./family-row-planning";
 import type { FamilyRelative } from "./family-indexing";
 import type { BuildFamilyTreeLayoutInput, FamilyTreeContentBounds, FamilyTreeLayoutEdge, FamilyTreeLayoutResult } from "./layout-types";
-import type { ComputedRelation, FamilyTreeSize, FamilyTreeSpacing, PersonId } from "./types";
+import type { ComputedRelation, FamilyTreeLayoutPolicy, FamilyTreeSize, FamilyTreeSpacing, PersonId } from "./types";
 import type { FamilyPlacementMetadata, FamilyRelationship } from "./types";
 
 const defaultEstimatedCardSize: FamilyTreeSize = {
@@ -20,6 +20,16 @@ const defaultSpacing: FamilyTreeSpacing = {
   column: 40,
   padding: 24,
 };
+
+export const defaultFamilyTreeLayoutPolicy = {
+  descendantCoparents: "omit",
+  subjectPartnerPlacement: "balanced",
+} as const satisfies Required<FamilyTreeLayoutPolicy>;
+
+const resolveFamilyTreeLayoutPolicy = (layoutPolicy: FamilyTreeLayoutPolicy | undefined) => ({
+  ...defaultFamilyTreeLayoutPolicy,
+  ...layoutPolicy,
+});
 
 const resolveEstimatedCardSize = (size: Partial<FamilyTreeSize> | undefined): FamilyTreeSize => ({
   width: size?.width ?? defaultEstimatedCardSize.width,
@@ -236,15 +246,17 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
   estimatedCardSize: estimatedCardSizeOverrides,
   spacing: spacingOverrides,
   layoutMode = "default",
+  layoutPolicy: layoutPolicyOverrides,
   boundsMode = "subject",
   shouldRenderPersonCard,
   limits,
   lineShape = "orthogonal",
 }: BuildNormalizedFamilyTreeLayoutInput<Person>): FamilyTreeLayoutResult<Person> {
   const estimatedCardSize = resolveEstimatedCardSize(estimatedCardSizeOverrides);
+  const layoutPolicy = resolveFamilyTreeLayoutPolicy(layoutPolicyOverrides);
   const spacing = { ...defaultSpacing, ...spacingOverrides };
   const index = createFamilyIndex(people, relationships);
-  const neighborhood = collectFamilyNeighborhood(index, subject, limits);
+  const neighborhood = collectFamilyNeighborhood(index, subject, limits, layoutPolicy);
   if (!neighborhood) {
     return {
       cards: [],
@@ -254,7 +266,7 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
     };
   }
 
-  const rows = createFamilyRelativeRows(neighborhood, layoutMode);
+  const rows = createFamilyRelativeRows(neighborhood, layoutMode, layoutPolicy);
 
   const relativesById = new Map<PersonId, ComputedRelation>();
   for (const row of rows) {
@@ -274,7 +286,7 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
   const placementByPerson = createPlacementByPerson(neighborhood.relationships);
   const personGap = Math.min(spacing.column, 40);
   const hiddenCardIds = collectHiddenCardIds({ people, shouldRenderPersonCard, subject });
-  const layers = createFamilyLayoutLayers(neighborhood, visibleRows, layoutMode);
+  const layers = createFamilyLayoutLayers(neighborhood, visibleRows, layoutMode, layoutPolicy);
   const layeredLayout = buildLayeredTreeLayout({
     layers: createFamilyLayerBoxes(layers, measurements, estimatedCardSize, personGap, hiddenCardIds),
     spacing,

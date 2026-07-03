@@ -116,7 +116,7 @@ Org charts keep a compact default:
 
 Pass `spacing` when your custom cards need a different density. The default `interactionMode` is `"pan"`; users can drag the canvas or non-interactive card surfaces with mouse, touch, or pen. Use `"pan-page-scroll"` when mouse or horizontal touch should drag the tree and vertical touch should scroll the page. Buttons, links, inputs, selects, textareas, contenteditable elements, and elements marked with `data-tree-drag-ignore` keep their own pointer behavior.
 
-Pass `estimatedCardSize` when your custom family cards differ from the default first-pass estimate of `220x80`. Use `shouldRenderPersonCard` when a person should remain as a connector-only layout point instead of a visible card; `layoutMode="compact-family"` changes placement only. Descendant rows keep a child with their own co-parent next to that co-parent while unrelated siblings stay separate.
+Pass `estimatedCardSize` when your custom family cards differ from the default first-pass estimate of `220x80`. Use `shouldRenderPersonCard` when a person should remain as a connector-only layout point instead of a visible card; `layoutMode="compact-family"` changes placement only. Use `layoutPolicy` to opt into descendant co-parent cards or to place all subject partners after the subject.
 
 ## Next
 

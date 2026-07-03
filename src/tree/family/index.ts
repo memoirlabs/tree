@@ -7,7 +7,7 @@ export {
   getFamilyChildPlacementGroupIds,
   getFamilyPartnershipGroupIds,
 } from "./family-graph-helpers";
-export { buildFamilyTreeLayout } from "./family-layout";
+export { buildFamilyTreeLayout, defaultFamilyTreeLayoutPolicy } from "./family-layout";
 export {
   createFamilyLayoutService,
   createUnionParentLinks,
@@ -44,6 +44,7 @@ export type {
   FamilyTreeBoundsMode,
   FamilyTreeCardProps,
   FamilyTreeLayoutMode,
+  FamilyTreeLayoutPolicy,
   FamilyTreePersonHandler,
   FamilyTreeProps,
   FamilyTreeRenderCardPredicate,
