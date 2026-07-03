@@ -8,6 +8,7 @@ import type {
   PeopleById,
   PersonId,
 } from "./types";
+import { createPartnershipByGroupId, getVisualParentIds } from "./family-visual-parents";
 
 export interface FamilyIndex<Person> {
   people: PeopleById<Person>;
@@ -18,6 +19,7 @@ export interface FamilyIndex<Person> {
   guardianshipByChild: Map<PersonId, FamilyGuardianshipRelationship[]>;
   guardianshipByGuardian: Map<PersonId, FamilyGuardianshipRelationship[]>;
   partnershipsByPerson: Map<PersonId, FamilyPartnershipRelationship[]>;
+  partnershipByGroupId: Map<string, FamilyPartnershipRelationship>;
 }
 
 export interface FamilyRelative<Person> {
@@ -164,6 +166,7 @@ export function createFamilyIndex<Person>(
   const guardianshipByChild = new Map<PersonId, FamilyGuardianshipRelationship[]>();
   const guardianshipByGuardian = new Map<PersonId, FamilyGuardianshipRelationship[]>();
   const partnershipsByPerson = new Map<PersonId, FamilyPartnershipRelationship[]>();
+  const partnershipByGroupId = createPartnershipByGroupId(relationships);
 
   for (const relationship of relationships) {
     if (relationship.type === "parentage") {
@@ -202,6 +205,7 @@ export function createFamilyIndex<Person>(
     guardianshipByChild,
     guardianshipByGuardian,
     partnershipsByPerson,
+    partnershipByGroupId,
   };
 }
 
@@ -343,6 +347,19 @@ const getParentLikeIds = <Person>(index: FamilyIndex<Person>, personId: PersonId
 const getChildLikeIds = <Person>(index: FamilyIndex<Person>, personId: PersonId) =>
   compactIds([...getChildren(index, personId), ...getGuardianChildren(index, personId)]);
 
+const getChildBearingPartnerIds = <Person>(
+  index: FamilyIndex<Person>,
+  childIds: PersonId[],
+  seen: Set<PersonId>,
+) =>
+  compactIds(
+    childIds.flatMap((childId) =>
+      parentageForParent(index, childId).flatMap((relationship) =>
+        getVisualParentIds(relationship, index.partnershipByGroupId).filter((parentId) => !seen.has(parentId)),
+      ),
+    ),
+  ).filter((personId) => !childIds.includes(personId));
+
 const collectAncestorGenerations = <Person>(
   index: FamilyIndex<Person>,
   subject: PersonId,
@@ -428,6 +445,8 @@ const collectDescendantGenerations = <Person>(
       (personId) => !directSeen.has(personId),
     );
     directIds.forEach((personId) => directSeen.add(personId));
+    const directPartnerIds = getChildBearingPartnerIds(index, directIds, directSeen);
+    directPartnerIds.forEach((personId) => directSeen.add(personId));
 
     const shouldCollectLateral =
       limits.lateralFamilyGenerations === null || generation <= limits.lateralFamilyGenerations;
@@ -437,21 +456,42 @@ const collectDescendantGenerations = <Person>(
         )
       : [];
     lateralOnlyIds.forEach((personId) => lateralSeen.add(personId));
+    const lateralPartnerIds = getChildBearingPartnerIds(index, lateralOnlyIds, new Set([...directSeen, ...lateralSeen]));
+    lateralPartnerIds.forEach((personId) => lateralSeen.add(personId));
 
     const directRelatives = createRelatives(index, directIds, {
       label: descendantLabelForGeneration(generation),
       generation,
       side: "descendant",
     });
+    const directPartnerRelatives = createRelatives(index, directPartnerIds, {
+      label: "coparent",
+      generation,
+      side: "partner",
+    });
     const lateralRelatives = createRelatives(index, lateralOnlyIds, {
       label: "relative",
       generation,
       side: "other",
     });
-    const relatives = capDescendantRelatives(generation, mergeRelatives(directRelatives, lateralRelatives), limits);
+    const lateralPartnerRelatives = createRelatives(index, lateralPartnerIds, {
+      label: "coparent",
+      generation,
+      side: "partner",
+    });
+    const relatives = capDescendantRelatives(
+      generation,
+      mergeRelatives(directRelatives, directPartnerRelatives, lateralRelatives, lateralPartnerRelatives),
+      limits,
+    );
     if (relatives.length > 0) layers.push({ generation, relatives });
 
-    if (directIds.length === 0 && lateralOnlyIds.length === 0) break;
+    if (
+      directIds.length === 0 &&
+      directPartnerIds.length === 0 &&
+      lateralOnlyIds.length === 0 &&
+      lateralPartnerIds.length === 0
+    ) break;
     directFrontier = directIds;
     lateralFrontier = lateralOnlyIds;
   }

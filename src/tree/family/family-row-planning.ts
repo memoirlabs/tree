@@ -1,5 +1,6 @@
 import type { FamilyNeighborhood, FamilyRelative } from "./family-indexing";
 import type { ComputedRelation, FamilyRelationship, FamilyTreeLayoutMode, PersonId } from "./types";
+import { createPartnershipByGroupId, getVisualParentIds } from "./family-visual-parents";
 
 export interface FamilyRowItem<Person> {
   id: string;
@@ -168,6 +169,7 @@ const createGroupedRowItems = <Person>(
   relationships: FamilyRelationship[],
 ): FamilyRowItem<Person>[] => {
   const relativesById = new Map(relatives.map((relative) => [relative.personId, relative]));
+  const partnershipByGroupId = createPartnershipByGroupId(relationships);
   const consumed = new Set<PersonId>();
   const items: FamilyRowItem<Person>[] = [];
 
@@ -184,12 +186,11 @@ const createGroupedRowItems = <Person>(
     if (relationship.type === "partnership" && relationship.partners.every((id) => relativesById.has(id))) {
       addGroup(relationship.partners);
     }
-    if (
-      relationship.type === "parentage" &&
-      relationship.parents.length > 1 &&
-      relationship.parents.every((id) => relativesById.has(id))
-    ) {
-      addGroup(relationship.parents);
+    if (relationship.type === "parentage") {
+      const parents = getVisualParentIds(relationship, partnershipByGroupId);
+      if (parents.length > 1 && parents.every((id) => relativesById.has(id))) {
+        addGroup(parents);
+      }
     }
   }
 
@@ -221,11 +222,12 @@ const orderSubjectPartners = <Person>(
 ) => {
   const partners = uniqueRelatives(neighborhood.partners);
   const partnersById = new Map(partners.map((partner) => [partner.personId, partner]));
+  const partnershipByGroupId = createPartnershipByGroupId(neighborhood.relationships);
   const childBearingPartnerIds: PersonId[] = [];
 
   for (const relationship of neighborhood.relationships.toSorted(byRelationshipOrder)) {
     if (relationship.type !== "parentage" || !relationship.parents.includes(neighborhood.self.personId)) continue;
-    for (const parentId of relationship.parents) {
+    for (const parentId of getVisualParentIds(relationship, partnershipByGroupId)) {
       if (parentId === neighborhood.self.personId || !partnersById.has(parentId)) continue;
       if (!childBearingPartnerIds.includes(parentId)) childBearingPartnerIds.push(parentId);
     }
@@ -261,12 +263,16 @@ const createChildRowItems = <Person>(
   previousPersonOrder: Map<PersonId, number>,
 ): FamilyRowItem<Person>[] => {
   const relativesById = new Map(relatives.map((relative) => [relative.personId, relative]));
+  const partnershipByGroupId = createPartnershipByGroupId(relationships);
   const consumed = new Set<PersonId>();
   const items: Array<FamilyRowItem<Person> & { anchorOrder: number }> = [];
 
   for (const relationship of relationships.toSorted(byRelationshipOrder)) {
     if (relationship.type !== "parentage" && relationship.type !== "guardianship") continue;
-    const parents = relationship.type === "parentage" ? relationship.parents : relationship.guardians;
+    const parents =
+      relationship.type === "parentage"
+        ? getVisualParentIds(relationship, partnershipByGroupId)
+        : relationship.guardians;
     const visibleParentOrders = parents
       .map((parentId) => previousPersonOrder.get(parentId))
       .filter((order): order is number => order !== undefined);
@@ -328,6 +334,7 @@ export const createFamilyLayoutLayers = <Person>(
   };
   const layers: FamilyRowItem<Person>[][] = [];
   let previousPersonOrder = new Map<PersonId, number>();
+  const partnershipByGroupId = createPartnershipByGroupId(neighborhood.relationships);
 
   const appendLayer = (items: FamilyRowItem<Person>[]) => {
     if (items.length === 0) return;
@@ -348,7 +355,7 @@ export const createFamilyLayoutLayers = <Person>(
           (relationship): relationship is Extract<FamilyRelationship, { type: "parentage" }> =>
             relationship.type === "parentage" && relationship.children.includes(neighborhood.self.personId),
         )
-        .flatMap((relationship) => relationship.parents)
+        .flatMap((relationship) => getVisualParentIds(relationship, partnershipByGroupId))
         .filter((parentId) => previousPersonOrder.has(parentId))
         .map(personAnchorId),
     ),

@@ -7,6 +7,7 @@ import {
 import type { LayoutLineShape } from "../../layout-engine";
 import type { FamilyRelationship, PersonId } from "./types";
 import type { FamilyTreeLayoutCard, FamilyTreeLayoutEdge } from "./layout-types";
+import { createPartnershipByGroupId, getVisualParentIds } from "./family-visual-parents";
 
 const cardById = <Person>(cards: FamilyTreeLayoutCard<Person>[]) =>
   new Map<PersonId, FamilyTreeLayoutCard<Person>>(cards.map((card) => [card.personId, card]));
@@ -139,6 +140,7 @@ export function routeFamilyEdges<Person>(
   const drawnParentBars = new Set<string>();
   const drawnParentageGroups = new Set<string>();
   const drawnPersonEdges = new Set<string>();
+  const partnershipByGroupId = createPartnershipByGroupId(relationships);
 
   const drawParentBar = (
     pair: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>],
@@ -331,8 +333,9 @@ export function routeFamilyEdges<Person>(
   relationships.forEach((relationship, relationshipIndex) => {
     if (relationship.type === "partnership") return;
     if (relationship.type === "parentage") {
-      if (relationship.parents.length === 2) {
-        const [parentAId, parentBId] = relationship.parents;
+      const visualParents = getVisualParentIds(relationship, partnershipByGroupId);
+      if (visualParents.length === 2) {
+        const [parentAId, parentBId] = visualParents;
         if (parentAId && parentBId) {
           const pair = findOrderedPair(parentAId, parentBId);
           if (pair) {
@@ -345,7 +348,7 @@ export function routeFamilyEdges<Person>(
               kind: relationship.relation ?? "biological",
               parentCards: visiblePair.length === 2 ? pair : undefined,
               parentConnectors: visiblePair.length === 2 ? undefined : pair,
-              parents: [parentAId, parentBId],
+              parents: visualParents,
               sourceId: relationship.groupId,
               start: parentageJoinPoint(pair),
               status: relationship.status,
@@ -355,7 +358,7 @@ export function routeFamilyEdges<Person>(
         }
       }
 
-      for (const parentId of relationship.parents) {
+      for (const parentId of visualParents) {
         const parentCard = cardsById.get(parentId);
         if (!parentCard) continue;
         addParentageGroupEdge({

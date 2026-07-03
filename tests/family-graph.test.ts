@@ -48,6 +48,80 @@ test("graph mode renders a simple two-parent family", () => {
   });
 });
 
+test("graph mode keeps child-bearing partnership partners visible with descendants", () => {
+  const graph: FamilyGraph = {
+    subject: "henry",
+    people: {
+      henry: { name: "Henry" },
+      alyssa: { name: "Alyssa" },
+      "mini-h3": { name: "mini H3" },
+      "unknown-parent": { name: "Unknown" },
+      "extra-junior-h3": { name: "extra junior H3" },
+    },
+    partnershipGroups: [
+      { id: "henry-alyssa", partners: ["henry", "alyssa"], relation: "spouse", order: 1 },
+      {
+        id: "child-family",
+        partners: ["mini-h3", "unknown-parent"],
+        relation: "unknown",
+        status: "unknown",
+        order: 3,
+      },
+    ],
+    parentChildLinks: [
+      { id: "henry-mini", groupId: "henry-alyssa", parentId: "henry", childId: "mini-h3", order: 2 },
+      { id: "alyssa-mini", groupId: "henry-alyssa", parentId: "alyssa", childId: "mini-h3", order: 2 },
+      {
+        id: "mini-extra",
+        groupId: "child-family",
+        parentId: "mini-h3",
+        childId: "extra-junior-h3",
+        order: 4,
+      },
+    ],
+  };
+
+  const layout = buildFamilyTreeLayout({
+    graph,
+    estimatedCardSize: { width: 88, height: 64 },
+    measurements: {
+      alyssa: { width: 88, height: 64 },
+      henry: { width: 88, height: 64 },
+      "extra-junior-h3": { width: 88, height: 64 },
+      "mini-h3": { width: 88, height: 64 },
+      "unknown-parent": { width: 88, height: 64 },
+    },
+    spacing: {
+      column: 20,
+      padding: 32,
+      row: 40,
+    },
+  });
+  const mini = layout.cards.find((card) => card.personId === "mini-h3");
+  const unknown = layout.cards.find((card) => card.personId === "unknown-parent");
+  const extra = layout.cards.find((card) => card.personId === "extra-junior-h3");
+  const henry = layout.cards.find((card) => card.personId === "henry");
+  const childFamilyEdge = layout.edges.find((edge) => edge.sourceId === "child-family" && edge.targetId === "extra-junior-h3");
+  const henryUnknownEdge = layout.edges.find(
+    (edge) =>
+      (edge.sourceId === "henry" && edge.targetId === "unknown-parent") ||
+      (edge.sourceId === "unknown-parent" && edge.targetId === "henry"),
+  );
+
+  expect(mini).toBeDefined();
+  expect(unknown).toBeDefined();
+  expect(extra).toBeDefined();
+  expect(henry).toBeDefined();
+  expect(unknown?.relation.label).toBe("coparent");
+  expect(unknown?.y).toBe(mini?.y);
+  expect(extra?.y).toBeGreaterThan(unknown?.y ?? 0);
+  expect(childFamilyEdge?.path).toContain(
+    `M ${mini!.x + mini!.width} ${mini!.y + mini!.height / 2} L ${unknown!.x} ${unknown!.y + unknown!.height / 2}`,
+  );
+  expect(childFamilyEdge?.path).toContain(`M ${(mini!.x + mini!.width + unknown!.x) / 2}`);
+  expect(henryUnknownEdge).toBeUndefined();
+});
+
 test("graph mode renders a direct parent only as parent, not sibling", () => {
   const graph: FamilyGraph = {
     subject: "child",

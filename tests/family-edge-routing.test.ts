@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 
 import { buildFamilyTreeLayout, rel } from "../src/index";
 import { routeFamilyEdges } from "../src/tree/family/family-edge-routing";
+import type { FamilyRelationship } from "../src/index";
 import type { FamilyTreeLayoutCard } from "../src/tree/family/layout-types";
 import { pathSegments, segmentCrossesCardInterior } from "./helpers/geometry";
 
@@ -224,6 +225,65 @@ test("routes connector-only co-parent edges from the parent connector point", ()
   const edge = edges.find((layoutEdge) => layoutEdge.targetId === "childA");
 
   expect(edge?.path).toBe("M 130 20 L 130 110 L 250 110 L 250 140");
+});
+
+test("routes grouped single-parent parentage through its partnership group", () => {
+  const cards: FamilyTreeLayoutCard<{ name: string }>[] = [
+    {
+      personId: "mini-h3",
+      person: { name: "Mini H3" },
+      relation: { label: "child", generation: 1, side: "descendant" },
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 80,
+    },
+    {
+      personId: "unknown-parent",
+      person: { name: "Unknown" },
+      relation: { label: "coparent", generation: 1, side: "partner" },
+      x: 160,
+      y: 0,
+      width: 100,
+      height: 80,
+    },
+    {
+      personId: "extra-junior-h3",
+      person: { name: "Extra junior H3" },
+      relation: { label: "grandchild", generation: 2, side: "descendant" },
+      x: 80,
+      y: 140,
+      width: 100,
+      height: 80,
+    },
+  ];
+  const relationships = [
+    {
+      id: "child-family",
+      type: "partnership",
+      partners: ["mini-h3", "unknown-parent"],
+      groupId: "child-family",
+      relation: "unknown",
+      status: "unknown",
+    },
+    {
+      id: "parentage-child-family-biological-none-none",
+      type: "parentage",
+      parents: ["mini-h3"],
+      children: ["extra-junior-h3"],
+      groupId: "child-family",
+      relation: "biological",
+    },
+  ] satisfies FamilyRelationship[];
+
+  const edges = routeFamilyEdges(cards, relationships);
+  const edge = edges.find((layoutEdge) => layoutEdge.targetId === "extra-junior-h3");
+
+  expect(edges.find((layoutEdge) => layoutEdge.id === "child-family")).toBeUndefined();
+  expect(edge?.path).toBe("M 100 40 L 160 40 M 130 40 L 130 140");
+  expect(edge?.sourceId).toBe("child-family");
+  expect(edge?.sourcePort).toBe("center");
+  expect(edge?.targetPort).toBe("top");
 });
 
 test("draws explicit partnership bars before inferred parentage bars", () => {
