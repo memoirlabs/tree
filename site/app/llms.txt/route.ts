@@ -9,6 +9,8 @@ export function GET() {
 
 ## Install
 
+Current npm release: \`@memoir/tree@0.6.1\` at https://www.npmjs.com/package/@memoir/tree/v/0.6.1.
+
 \`\`\`bash
 bun add @memoir/tree
 \`\`\`

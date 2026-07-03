@@ -314,6 +314,7 @@ html[data-docs-scrollbars] body::-webkit-scrollbar-thumb,
   padding-top: 14px;
 }
 
+.hero-highlights a,
 .hero-highlights span {
   display: inline-flex;
   align-items: center;
@@ -326,7 +327,15 @@ html[data-docs-scrollbars] body::-webkit-scrollbar-thumb,
   text-transform: uppercase;
 }
 
-.hero-highlights span + span::before {
+.hero-highlights a {
+  text-decoration: none;
+}
+
+.hero-highlights a:hover {
+  color: var(--color-brand-yellow);
+}
+
+.hero-highlights :is(a, span) + :is(a, span)::before {
   content: "";
   display: inline-block;
   width: 4px;

@@ -5,6 +5,8 @@ import { SimpleFamilyTreeDemo } from "@/components/simple-family-tree-demo";
 import { highlightTsx } from "@/lib/highlight";
 import logo from "../../public/logo-transparent.png";
 
+const currentVersion = "0.6.1";
+
 const exampleCode = `import { FamilyTree, rel } from "@memoir/tree";
 
 const people = {
@@ -96,6 +98,13 @@ export default async function HomePage() {
               </a>
             </div>
             <div className="hero-highlights" aria-label="Package highlights">
+              <a
+                href={`https://www.npmjs.com/package/@memoir/tree/v/${currentVersion}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                v{currentVersion}
+              </a>
               <span>Built for React 19</span>
               <span>By Memoir Labs</span>
             </div>
