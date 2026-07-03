@@ -5,6 +5,7 @@ export interface TreeLayeredBoxInput<Data = unknown> extends LayoutBoxSize {
   id: string;
   data?: Data;
   anchorIds?: string[];
+  anchorOffsetX?: number;
   anchorPoints?: TreeLayeredAnchorPointInput[];
 }
 
@@ -89,7 +90,8 @@ const placeLayer = <Data>(
     const defaultCenter = nextX + box.width / 2;
     nextX += box.width + columnGap;
     if (anchorCenters.length === 0) return defaultCenter;
-    return anchorCenters.reduce((sum, anchorCenter) => sum + anchorCenter, 0) / anchorCenters.length;
+    const anchorTarget = anchorCenters.reduce((sum, anchorCenter) => sum + anchorCenter, 0) / anchorCenters.length;
+    return anchorTarget + box.width / 2 - (box.anchorOffsetX ?? box.width / 2);
   });
   const centers = solveNonOverlappingCenters(layer, targets, columnGap);
 

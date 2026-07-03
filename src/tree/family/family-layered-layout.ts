@@ -59,9 +59,17 @@ const measureItem = <Person>(
     hiddenCardIds,
   );
 
+  const anchorOffsets = (item.anchorRelativeIds ?? [])
+    .map((personId) => slots.find((slot) => slot.relative.personId === personId))
+    .filter((slot): slot is FamilyRelativeSlot<Person> => Boolean(slot))
+    .map((slot) => slot.offsetX + slot.size.width / 2);
+
   return {
     width,
     height,
+    ...(anchorOffsets.length > 0
+      ? { anchorOffsetX: anchorOffsets.reduce((sum, offset) => sum + offset, 0) / anchorOffsets.length }
+      : {}),
     anchorPoints: slots.map((slot) => ({
       id: personAnchorId(slot.relative.personId),
       offsetX: slot.offsetX + slot.size.width / 2,

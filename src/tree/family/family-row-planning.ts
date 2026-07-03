@@ -6,6 +6,7 @@ export interface FamilyRowItem<Person> {
   id: string;
   relatives: FamilyRelative<Person>[];
   anchorIds?: string[];
+  anchorRelativeIds?: PersonId[];
   gapBefore?: number;
   gapAfter?: number;
 }
@@ -285,11 +286,27 @@ const createChildRowItems = <Person>(
       .filter((relative) => !consumed.has(relative.personId));
     if (children.length === 0) continue;
 
-    children.forEach((child) => consumed.add(child.personId));
+    const childBearingCoparents = children.flatMap((child) =>
+      relationships
+        .filter(
+          (candidate): candidate is Extract<FamilyRelationship, { type: "parentage" }> =>
+            candidate.type === "parentage" && candidate.parents.includes(child.personId),
+        )
+        .flatMap((candidate) =>
+          getVisualParentIds(candidate, partnershipByGroupId)
+            .filter((parentId) => parentId !== child.personId)
+            .map((parentId) => relativesById.get(parentId))
+            .filter((relative): relative is FamilyRelative<Person> => Boolean(relative))
+            .filter((relative) => !consumed.has(relative.personId)),
+        ),
+    );
+    const itemRelatives = uniqueRelatives([...children, ...childBearingCoparents]);
+    itemRelatives.forEach((relative) => consumed.add(relative.personId));
     items.push({
-      id: childGroupItemId(relationship, relativeIds(children)),
-      relatives: children,
+      id: childGroupItemId(relationship, relativeIds(itemRelatives)),
+      relatives: itemRelatives,
       anchorIds,
+      anchorRelativeIds: relativeIds(children),
       anchorOrder: visibleParentOrders.reduce((sum, order) => sum + order, 0) / visibleParentOrders.length,
     });
   }

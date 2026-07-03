@@ -116,6 +116,9 @@ test("graph mode keeps child-bearing partnership partners visible with descendan
   expect(unknown?.relation.label).toBe("coparent");
   expect(unknown?.y).toBe(mini?.y);
   expect(extra?.y).toBeGreaterThan(unknown?.y ?? 0);
+  expect(mini!.x + mini!.width / 2).toBe((henry!.x + henry!.width + (layout.cards.find((card) => card.personId === "alyssa")!.x)) / 2);
+  expect((mini!.x + mini!.width + unknown!.x) / 2).toBeGreaterThan(mini!.x + mini!.width / 2);
+  expect(extra!.x + extra!.width / 2).toBe((mini!.x + mini!.width + unknown!.x) / 2);
   expect(henryMiniEdge?.path).toContain(`L ${mini!.x + mini!.width / 2} ${mini!.y}`);
   expect(childFamilyEdge?.path).toContain(
     `M ${mini!.x + mini!.width} ${mini!.y + mini!.height / 2} L ${unknown!.x} ${unknown!.y + unknown!.height / 2}`,
