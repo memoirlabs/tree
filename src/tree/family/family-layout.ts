@@ -6,7 +6,7 @@ import { collectFamilyNeighborhood, createFamilyIndex } from "./family-indexing"
 import { createFamilyLayerBoxes, createFamilyLayoutCards } from "./family-layered-layout";
 import { createFamilyLayoutLayers, createFamilyRelativeRows } from "./family-row-planning";
 import type { FamilyRelative } from "./family-indexing";
-import type { BuildFamilyTreeLayoutInput, FamilyTreeLayoutResult } from "./layout-types";
+import type { BuildFamilyTreeLayoutInput, FamilyTreeContentBounds, FamilyTreeLayoutEdge, FamilyTreeLayoutResult } from "./layout-types";
 import type { ComputedRelation, FamilyTreeSize, FamilyTreeSpacing, PersonId } from "./types";
 import type { FamilyPlacementMetadata, FamilyRelationship } from "./types";
 
@@ -88,6 +88,51 @@ const createSubjectCenteredBounds = (
   return {
     width: roundTreeCoordinate(Math.max(maxX + padding, subjectCenter * 2)),
     height: roundTreeCoordinate(maxY + padding),
+  };
+};
+
+const pathNumbers = (path: string) => path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+
+const createContentBounds = (
+  cards: Array<{ hiddenCard?: boolean; x: number; y: number; width: number; height: number }>,
+  edges: FamilyTreeLayoutEdge[],
+  padding: number,
+): FamilyTreeContentBounds => {
+  const xValues: number[] = [];
+  const yValues: number[] = [];
+
+  for (const card of cards) {
+    if (card.hiddenCard) continue;
+    xValues.push(card.x, card.x + card.width);
+    yValues.push(card.y, card.y + card.height);
+  }
+
+  for (const edge of edges) {
+    const numbers = pathNumbers(edge.path);
+    for (let index = 0; index < numbers.length; index += 2) {
+      const x = numbers[index];
+      const y = numbers[index + 1];
+      if (x !== undefined) xValues.push(x);
+      if (y !== undefined) yValues.push(y);
+    }
+  }
+
+  if (xValues.length === 0 || yValues.length === 0) {
+    return { x: 0, y: 0, width: 0, height: 0 };
+  }
+
+  const minX = Math.min(...xValues);
+  const minY = Math.min(...yValues);
+  const maxX = Math.max(...xValues);
+  const maxY = Math.max(...yValues);
+  const x = roundTreeCoordinate(Math.max(0, minX - padding));
+  const y = roundTreeCoordinate(Math.max(0, minY - padding));
+
+  return {
+    x,
+    y,
+    width: roundTreeCoordinate(maxX - x + padding),
+    height: roundTreeCoordinate(maxY - y + padding),
   };
 };
 
@@ -191,6 +236,7 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
   estimatedCardSize: estimatedCardSizeOverrides,
   spacing: spacingOverrides,
   layoutMode = "default",
+  boundsMode = "subject",
   shouldRenderPersonCard,
   limits,
   lineShape = "orthogonal",
@@ -204,6 +250,7 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
       cards: [],
       edges: [],
       bounds: { width: 0, height: 0 },
+      contentBounds: { x: 0, y: 0, width: 0, height: 0 },
     };
   }
 
@@ -245,6 +292,7 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
       cards,
       edges: [],
       bounds: { width: 0, height: 0 },
+      contentBounds: { x: 0, y: 0, width: 0, height: 0 },
     };
   }
 
@@ -258,12 +306,18 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
     card.y = roundTreeCoordinate(card.y + offsetY);
     card.placement = placementByPerson.get(card.personId) ?? emptyPlacement();
   }
-  centerSubjectInBounds(cards, subject, spacing.padding);
+  if (boundsMode === "subject") {
+    centerSubjectInBounds(cards, subject, spacing.padding);
+  }
+  const edges = routeFamilyEdges(cards, relationships, { lineShape });
+  const contentBounds = createContentBounds(cards, edges, spacing.padding);
+  const subjectBounds = createSubjectCenteredBounds(cards, subject, spacing.padding);
 
   return {
     cards,
-    edges: routeFamilyEdges(cards, relationships, { lineShape }),
-    bounds: createSubjectCenteredBounds(cards, subject, spacing.padding),
+    edges,
+    bounds: boundsMode === "content" ? { width: contentBounds.width, height: contentBounds.height } : subjectBounds,
+    contentBounds,
   };
 }
 

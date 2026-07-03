@@ -183,7 +183,7 @@ test("computes final family bounds from shifted cards", () => {
 });
 
 test("keeps multiple right-side relatives inside family bounds", () => {
-  const layout = buildFamilyTreeLayout({
+  const input = {
     subject: "henry",
     people: {
       ...people,
@@ -213,9 +213,54 @@ test("keeps multiple right-side relatives inside family bounds", () => {
       padding: 28,
       row: 84,
     },
-  });
+  };
+  const layout = buildFamilyTreeLayout(input);
 
   expect(layout.cards.every((card) => card.x + card.width <= layout.bounds.width)).toBe(true);
+});
+
+test("supports content bounds for export-sized family layouts", () => {
+  const input = {
+    subject: "c1",
+    people: {
+      c1: { id: "c1", name: "Child 1" },
+      c2: { id: "c2", name: "Child 2" },
+      c3: { id: "c3", name: "Child 3" },
+      c4: { id: "c4", name: "Child 4" },
+      p1: { id: "p1", name: "Partner 1" },
+      p2: { id: "p2", name: "Partner 2" },
+      p3: { id: "p3", name: "Partner 3" },
+      p4: { id: "p4", name: "Partner 4" },
+      s: { id: "s", name: "Subject" },
+    },
+    relationships: [
+      rel.partner("s", "p1", { order: 1 }),
+      rel.partner("s", "p2", { order: 2 }),
+      rel.partner("s", "p3", { order: 3 }),
+      rel.partner("s", "p4", { order: 4 }),
+      rel.children(["s", "p1"], ["c1"], { order: 1 }),
+      rel.children(["s", "p2"], ["c2"], { order: 2 }),
+      rel.children(["s", "p3"], ["c3"], { order: 3 }),
+      rel.children(["s", "p4"], ["c4"], { order: 4 }),
+    ],
+    measurements: Object.fromEntries(["c1", "c2", "c3", "c4", "p1", "p2", "p3", "p4", "s"].map((personId) => [personId, { width: 80, height: 50 }])),
+    spacing: {
+      column: 40,
+      padding: 20,
+      row: 60,
+    },
+  };
+  const subjectBoundsLayout = buildFamilyTreeLayout(input);
+  const contentBoundsLayout = buildFamilyTreeLayout({ ...input, boundsMode: "content" });
+
+  expect(subjectBoundsLayout.bounds.width).toBeGreaterThan(subjectBoundsLayout.contentBounds.width);
+  expect(contentBoundsLayout.bounds).toEqual({
+    width: contentBoundsLayout.contentBounds.width,
+    height: contentBoundsLayout.contentBounds.height,
+  });
+  expect(contentBoundsLayout.contentBounds).toMatchObject({ x: 0, y: 0 });
+  expect(contentBoundsLayout.bounds.width).toBeLessThan(subjectBoundsLayout.bounds.width);
+  expect(contentBoundsLayout.cards.every((card) => card.x + card.width <= contentBoundsLayout.bounds.width)).toBe(true);
 });
 
 test("marks separated and divorced partnership lines", () => {

@@ -49,6 +49,7 @@ export interface FamilyTreeProviderProps<Person> {
   spacing?: Partial<FamilyTreeSpacing>;
   estimatedCardSize?: FamilyTreeProps<Person>["estimatedCardSize"];
   layoutMode?: FamilyTreeProps<Person>["layoutMode"];
+  boundsMode?: FamilyTreeProps<Person>["boundsMode"];
   shouldRenderPersonCard?: FamilyTreeProps<Person>["shouldRenderPersonCard"];
   limits?: FamilyTreeProps<Person>["limits"];
 }
@@ -112,6 +113,7 @@ const createMeasurementKey = (
   collapsed?: PersonId[],
   estimatedCardSize?: FamilyTreeProps<unknown>["estimatedCardSize"],
   layoutMode?: FamilyTreeProps<unknown>["layoutMode"],
+  boundsMode?: FamilyTreeProps<unknown>["boundsMode"],
   hasRenderPredicate?: boolean,
 ) => {
   const relationshipKey = relationships
@@ -129,6 +131,7 @@ const createMeasurementKey = (
     subject,
     collapsed?.join(",") ?? "",
     layoutMode ?? "default",
+    boundsMode ?? "subject",
     hasRenderPredicate ?? false,
     `${estimatedCardSize?.width ?? ""}x${estimatedCardSize?.height ?? ""}`,
     relationshipKey,
@@ -156,6 +159,7 @@ function FamilyTreeProvider<Person>({
   spacing,
   estimatedCardSize,
   layoutMode = "default",
+  boundsMode = "subject",
   shouldRenderPersonCard,
 }: FamilyTreeProviderProps<Person>): JSX.Element {
   const normalized = useMemo(
@@ -171,6 +175,7 @@ function FamilyTreeProvider<Person>({
     collapsed,
     estimatedCardSize,
     layoutMode,
+    boundsMode,
     Boolean(shouldRenderPersonCard),
   );
   const measurements = useCardMeasurements(containerRef, measureKey);
@@ -184,6 +189,7 @@ function FamilyTreeProvider<Person>({
         measurements,
         estimatedCardSize,
         layoutMode,
+        boundsMode,
         shouldRenderPersonCard,
         limits,
         lineShape,
@@ -193,6 +199,7 @@ function FamilyTreeProvider<Person>({
       collapsed,
       estimatedCardSize,
       layoutMode,
+      boundsMode,
       layoutSpacing,
       limits,
       lineShape,

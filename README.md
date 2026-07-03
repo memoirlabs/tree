@@ -420,6 +420,7 @@ import { buildFamilyTreeLayout } from "@memoir/tree";
 
 const layout = buildFamilyTreeLayout({
   graph,
+  boundsMode: "content",
   measurements: {
     alex: { width: 180, height: 72 },
     jordan: { width: 180, height: 72 },
@@ -427,6 +428,8 @@ const layout = buildFamilyTreeLayout({
   },
 });
 ```
+
+The default `boundsMode` is `"subject"`, matching the interactive `FamilyTree` canvas. Use `"content"` for exports or screenshots that should tightly fit rendered cards and edges. Every result also includes `contentBounds`.
 
 Use `buildLayeredTreeLayout()` only when you need the small shared measured-box layout primitive. `FamilyTree` and `OrgChart` are the main domain renderers.
 

@@ -77,6 +77,16 @@ const createFamilyMultiParentPath = <Person>(
   const minBusX = Math.min(firstRight, secondLeft, midpointX, ...childXs);
   const maxBusX = Math.max(firstRight, secondLeft, midpointX, ...childXs);
   const hasInterveningCard = hasCardBetweenPair(parents, cards);
+  if (!hasInterveningCard && children.length === 1) {
+    const child = children[0];
+    if (!child) return "";
+    const childTop = topCenterPoint(child);
+    return [
+      `M ${firstRight} ${parentY} L ${secondLeft} ${parentY}`,
+      `M ${midpointX} ${parentY} L ${midpointX} ${roundTreeCoordinate(childTop.y)}`,
+    ].join(" ");
+  }
+
   const parentConnector = hasInterveningCard
     ? [
         `M ${firstRight} ${parentY} L ${firstRight} ${busY}`,
@@ -270,9 +280,11 @@ export function routeFamilyEdges<Person>(
     const minChildY = Math.min(...childTopPoints.map((point) => point.y));
     const busStartY = start.clearY ?? start.y;
     const busY = roundTreeCoordinate(busStartY + (minChildY - busStartY) * 0.5);
+    const startsFromHiddenParent = parents.length === 1 && cardsById.get(parents[0] ?? "")?.hiddenCard;
     const path = [
-      `M ${roundTreeCoordinate(start.x)} ${roundTreeCoordinate(start.y)} L ${roundTreeCoordinate(start.x)} ${busY}`,
-      `L ${roundTreeCoordinate(minChildX)} ${busY} L ${roundTreeCoordinate(maxChildX)} ${busY}`,
+      startsFromHiddenParent
+        ? `M ${roundTreeCoordinate(minChildX)} ${busY} L ${roundTreeCoordinate(maxChildX)} ${busY}`
+        : `M ${roundTreeCoordinate(start.x)} ${roundTreeCoordinate(start.y)} L ${roundTreeCoordinate(start.x)} ${busY} L ${roundTreeCoordinate(minChildX)} ${busY} L ${roundTreeCoordinate(maxChildX)} ${busY}`,
       ...childTopPoints.map(
         (point) =>
           `M ${roundTreeCoordinate(point.x)} ${busY} L ${roundTreeCoordinate(point.x)} ${roundTreeCoordinate(point.y)}`,

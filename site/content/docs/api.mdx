@@ -111,7 +111,7 @@ Most apps only need the `theme` prop and CSS variables. These helpers are useful
 
 ## Layout Exports
 
-- `buildFamilyTreeLayout(input)`: React-free family layout used by `FamilyTree`. It accepts graph or simple relationship data and returns positioned cards, SVG edge paths, and bounds.
+- `buildFamilyTreeLayout(input)`: React-free family layout used by `FamilyTree`. It accepts graph or simple relationship data and returns positioned cards, SVG edge paths, `bounds`, and `contentBounds`.
 - `createFamilyLayoutService(options?)`: lower-level family service for app code that needs old-style `people`, `unions`, `parentLinks`, and `center` control while still using the current graph/layout model.
 - `createUnionParentLinks(union, child, options?)`: helper for add-child flows where the selected UI context is a union.
 - `getFamilyPartnershipGroupIds(graph, personId)`: returns stable partnership group IDs involving a person, sorted by group order.
@@ -120,7 +120,7 @@ Most apps only need the `theme` prop and CSS variables. These helpers are useful
 - `layoutFamilyTree(input)`: convenience wrapper around `createFamilyLayoutService().layout(input)`.
 - `buildLayeredTreeLayout(input)`: small measured-box layout primitive used by the renderers.
 
-Use `FamilyTree` for the normal app UI. Use `buildFamilyTreeLayout()` when you need to render the same family layout yourself or build a custom non-React surface. React card size stays owned by rendered components and CSS; the React wrapper only passes measured card dimensions into this layout function.
+Use `FamilyTree` for the normal app UI. Use `buildFamilyTreeLayout()` when you need to render the same family layout yourself or build a custom non-React surface. React card size stays owned by rendered components and CSS; the React wrapper only passes measured card dimensions into this layout function. The default `boundsMode` is `"subject"` so interactive trees keep their subject-centered canvas. Pass `boundsMode: "content"` for export surfaces that should tightly fit rendered cards and edges.
 
 Use `createFamilyLayoutService()` when you need lower-level data similar to the earlier layout API. It returns person nodes, union nodes, edges, bounds, warnings, and the derived `FamilyGraph`. Union entities can carry app-owned `data`.
 
@@ -218,6 +218,7 @@ Common optional props:
 - `estimatedCardSize`: first-pass card estimate before DOM measurement, defaulting to `{ width: 220, height: 80 }`.
 - `shouldRenderPersonCard`: explicit card-render predicate. Returning `false` keeps the person in layout and edge routing but skips card rendering and measurement. The subject always renders.
 - `layoutMode`: `"default"` or `"compact-family"`; compact mode keeps partners adjacent to the subject and separates sibling and partner clusters. It does not hide cards.
+- `boundsMode`: `"subject"` or `"content"`; defaults to `"subject"` for the interactive canvas. Use `"content"` for export surfaces that should tightly fit rendered cards and edges.
 - `onPersonClick`: card click and Enter/Space activation handler.
 - `onAddRelationship`: passed to cards for app-owned add-relative flows.
 - `getPersonLabel`: accessible card label builder.
@@ -501,10 +502,12 @@ Family component and neighborhood types:
 Family React-free layout types:
 
 - `BuildFamilyTreeLayoutInput<Person>`: input for `buildFamilyTreeLayout`.
-- `FamilyTreeLayoutResult<Person>`: cards, edges, and bounds from `buildFamilyTreeLayout`.
+- `FamilyTreeLayoutResult<Person>`: cards, edges, `bounds`, and `contentBounds` from `buildFamilyTreeLayout`.
 - `FamilyTreeLayoutCard<Person>`: positioned family card plus computed relation.
 - `FamilyTreeLayoutEdge`: rendered family edge path.
 - `FamilyTreeBounds`: family layout bounds.
+- `FamilyTreeBoundsMode`: `"subject"` or `"content"`.
+- `FamilyTreeContentBounds`: tight rendered content bounds.
 
 Advanced family layout service types:
 

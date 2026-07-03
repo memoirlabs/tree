@@ -174,6 +174,7 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
   spacing,
   estimatedCardSize,
   layoutMode,
+  boundsMode,
   shouldRenderPersonCard,
   limits,
   theme,
@@ -205,6 +206,7 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
       spacing={spacing}
       estimatedCardSize={estimatedCardSize}
       layoutMode={layoutMode}
+      boundsMode={boundsMode}
       shouldRenderPersonCard={shouldRenderPersonCard}
       subject={subject}
     >

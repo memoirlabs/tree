@@ -144,8 +144,48 @@ test("routes right-shifted single children below the parent cards", () => {
     (layoutEdge) => layoutEdge.targetId === "childA",
   );
 
-  expect(edge?.path).toBe("M 100 40 L 120 40 M 110 40 L 110 110 M 100 110 L 290 110 M 290 110 L 290 140");
+  expect(edge?.path).toBe("M 100 40 L 120 40 M 110 40 L 110 140");
   expect(firstLineY(edge?.path ?? "")).toBe(40);
+});
+
+test("does not draw an orphan stem for hidden sibling connector parents", () => {
+  const cards: FamilyTreeLayoutCard<{ name: string }>[] = [
+    {
+      personId: "connector",
+      person: { name: "Connector" },
+      relation: { label: "parent", generation: -1, side: "ancestor" },
+      x: 170,
+      y: 0,
+      width: 0,
+      height: 0,
+      hiddenCard: true,
+    },
+    {
+      personId: "childA",
+      person: { name: "Child A" },
+      relation: { label: "sibling", generation: 0, side: "sibling" },
+      x: 0,
+      y: 80,
+      width: 100,
+      height: 60,
+    },
+    {
+      personId: "childB",
+      person: { name: "Child B" },
+      relation: { label: "self", generation: 0, side: "self" },
+      x: 240,
+      y: 80,
+      width: 100,
+      height: 60,
+    },
+  ];
+
+  const edge = routeFamilyEdges(cards, [rel.children(["connector"], ["childA", "childB"])]).find(
+    (layoutEdge) => layoutEdge.targetId === "childA",
+  );
+
+  expect(edge?.path.startsWith("M 170 0")).toBe(false);
+  expect(edge?.path).toBe("M 50 40 L 290 40 M 50 40 L 50 80 M 290 40 L 290 80");
 });
 
 test("routes connector-only co-parent edges from the parent connector point", () => {

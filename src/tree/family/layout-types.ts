@@ -22,10 +22,18 @@ export type FamilyTreeLayoutEdge = TreeLayoutEdge;
 
 export type FamilyTreeBounds = TreeBounds;
 
+export type FamilyTreeBoundsMode = "subject" | "content";
+
+export interface FamilyTreeContentBounds extends FamilyTreeBounds {
+  x: number;
+  y: number;
+}
+
 export interface FamilyTreeLayoutResult<Person> {
   cards: FamilyTreeLayoutCard<Person>[];
   edges: FamilyTreeLayoutEdge[];
   bounds: FamilyTreeBounds;
+  contentBounds: FamilyTreeContentBounds;
 }
 
 export interface BuildFamilyTreeLayoutInput<Person> {
@@ -38,6 +46,7 @@ export interface BuildFamilyTreeLayoutInput<Person> {
   estimatedCardSize?: Partial<TreeCardSize>;
   spacing?: Partial<FamilyTreeSpacing>;
   layoutMode?: FamilyTreeLayoutMode;
+  boundsMode?: FamilyTreeBoundsMode;
   shouldRenderPersonCard?: (person: Person, personId: PersonId) => boolean;
   limits?: Partial<FamilyNeighborhoodLimits>;
   lineShape?: TreeLineShape;

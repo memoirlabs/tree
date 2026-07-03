@@ -83,6 +83,7 @@ export type {
   FamilyRelationship,
   FamilyRelationshipStatus,
   FamilyRelative,
+  FamilyTreeBoundsMode,
   FamilyTreeCardProps,
   FamilyTreeLayoutMode,
   FamilyTreePersonHandler,
@@ -98,6 +99,7 @@ export type {
 export type {
   BuildFamilyTreeLayoutInput,
   FamilyTreeBounds,
+  FamilyTreeContentBounds,
   FamilyTreeLayoutCard,
   FamilyTreeLayoutEdge,
   FamilyTreeLayoutResult,

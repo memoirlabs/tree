@@ -41,6 +41,7 @@ export type {
   FamilyPlacementMetadata,
   FamilyRelationship,
   FamilyRelationshipStatus,
+  FamilyTreeBoundsMode,
   FamilyTreeCardProps,
   FamilyTreeLayoutMode,
   FamilyTreePersonHandler,
@@ -73,6 +74,7 @@ export type { FamilyGenerationLayer, FamilyIndex, FamilyNeighborhood, FamilyRela
 export type {
   BuildFamilyTreeLayoutInput,
   FamilyTreeBounds,
+  FamilyTreeContentBounds,
   FamilyTreeLayoutCard,
   FamilyTreeLayoutEdge,
   FamilyTreeLayoutResult,

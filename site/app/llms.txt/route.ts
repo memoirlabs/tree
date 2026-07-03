@@ -9,7 +9,7 @@ export function GET() {
 
 ## Install
 
-Current npm release: \`@memoir/tree@0.6.1\` at https://www.npmjs.com/package/@memoir/tree/v/0.6.1.
+Current npm release: \`@memoir/tree@0.6.3\` at https://www.npmjs.com/package/@memoir/tree/v/0.6.3.
 
 \`\`\`bash
 bun add @memoir/tree
@@ -36,7 +36,7 @@ Simple examples can use \`people\`, \`subject\`, and \`relationships\` with \`re
 
 Family layout renders a bounded neighborhood: ancestor generations, subject row with separated sibling and partner clusters, and descendant generations. Default limits are 2 ancestor generations, 2 descendant generations, no lateral family expansion, 4 grandparents, 4 parents, 8 siblings, 8 half-siblings, 3 partners, 8 children, and 8 grandchildren. A limit of \`null\` disables that cap.
 
-Default family spacing is \`{ row: 104, column: 40, padding: 24 }\`. The default first-pass family card estimate is \`{ width: 220, height: 80 }\`; pass \`estimatedCardSize\` for compact custom cards.
+Default family spacing is \`{ row: 104, column: 40, padding: 24 }\`. The default first-pass family card estimate is \`{ width: 220, height: 80 }\`; pass \`estimatedCardSize\` for compact custom cards. Layout results include subject-centered \`bounds\` by default plus \`contentBounds\`; pass \`boundsMode: "content"\` to \`buildFamilyTreeLayout\` for export-sized bounds that fit rendered cards and edges.
 
 Graph normalization groups \`parentChildLinks\` by \`groupId\`, \`relation\`, \`status\`, and \`order\`. Mixed lineage such as biological plus step/adoptive in one partnership group remains distinct so edge kinds stay accurate. If two parent links should render as one two-parent edge, use the same \`groupId\`, \`relation\`, \`status\`, and \`order\`.
 
