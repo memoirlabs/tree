@@ -1,10 +1,12 @@
 import type { FamilyNeighborhood, FamilyRelative } from "./family-indexing";
-import type { ComputedRelation, FamilyRelationship, PersonId } from "./types";
+import type { ComputedRelation, FamilyRelationship, FamilyTreeLayoutMode, PersonId } from "./types";
 
 export interface FamilyRowItem<Person> {
   id: string;
   relatives: FamilyRelative<Person>[];
   anchorIds?: string[];
+  gapBefore?: number;
+  gapAfter?: number;
 }
 
 const relationshipOrder = (relationship: FamilyRelationship) => relationship.order ?? Number.POSITIVE_INFINITY;
@@ -76,13 +78,14 @@ const createSubjectRow = <Person>(
     FamilyNeighborhood<Person>,
     "siblings" | "halfSiblings" | "cousins" | "self" | "partners" | "relationships"
   >,
+  layoutMode: FamilyTreeLayoutMode = "default",
 ) => {
   const partners = orderSubjectPartners(neighborhood);
   const subjectClusterIds = new Set([
     neighborhood.self.personId,
     ...partners.map((partner) => partner.personId),
   ]);
-  const splitIndex = Math.floor(partners.length / 2);
+  const splitIndex = layoutMode === "compact-family" ? 0 : Math.floor(partners.length / 2);
   const lateral = uniqueRelatives([
     ...neighborhood.siblings,
     ...neighborhood.cousins,
@@ -97,14 +100,17 @@ const createSubjectRow = <Person>(
   ]);
 };
 
-export const createFamilyRelativeRows = <Person>(neighborhood: FamilyNeighborhood<Person>) =>
+export const createFamilyRelativeRows = <Person>(
+  neighborhood: FamilyNeighborhood<Person>,
+  layoutMode: FamilyTreeLayoutMode = "default",
+) =>
   filterToPreferredVisibleRelatives([
     ...neighborhood.ancestorGenerations
       .toReversed()
       .map((layer) =>
         uniqueRelatives(layer.generation === -1 ? [...layer.relatives, ...neighborhood.auntsUncles] : layer.relatives),
       ),
-    createSubjectRow(neighborhood),
+    createSubjectRow(neighborhood, layoutMode),
     ...neighborhood.descendantGenerations.map((layer) =>
       uniqueRelatives(layer.generation === 1 ? [...neighborhood.niecesNephews, ...layer.relatives] : layer.relatives),
     ),
@@ -122,6 +128,14 @@ const singleRelativeItems = <Person>(relatives: FamilyRelative<Person>[]) =>
     id: rowItemId([relative.personId]),
     relatives: [relative],
   }));
+
+const relativeClusterItem = <Person>(
+  relatives: FamilyRelative<Person>[],
+  options: Pick<FamilyRowItem<Person>, "anchorIds" | "gapAfter" | "gapBefore"> = {},
+): FamilyRowItem<Person>[] => {
+  const unique = uniqueRelatives(relatives);
+  return unique.length > 0 ? [{ id: rowItemId(relativeIds(unique)), relatives: unique, ...options }] : [];
+};
 
 const createGroupedRowItems = <Person>(
   relatives: FamilyRelative<Person>[],
@@ -162,6 +176,7 @@ const createSubjectRowItems = <Person>(
     "siblings" | "halfSiblings" | "cousins" | "self" | "partners" | "relationships"
   >,
   anchorIds: string[],
+  layoutMode: FamilyTreeLayoutMode,
 ): FamilyRowItem<Person>[] => {
   const partners = orderSubjectPartners(neighborhood);
   const subjectClusterIds = new Set([
@@ -169,7 +184,7 @@ const createSubjectRowItems = <Person>(
     ...partners.map((partner) => partner.personId),
   ]);
 
-  const splitIndex = Math.floor(partners.length / 2);
+  const splitIndex = layoutMode === "compact-family" ? 0 : Math.floor(partners.length / 2);
   const subjectCluster = [
     ...partners.slice(0, splitIndex),
     neighborhood.self,
@@ -178,12 +193,21 @@ const createSubjectRowItems = <Person>(
 
   const lateralWithoutSubjectCluster = (relatives: FamilyRelative<Person>[]) =>
     uniqueRelatives(relatives).filter((relative) => !subjectClusterIds.has(relative.personId));
+  const siblingCluster = lateralWithoutSubjectCluster([
+    ...neighborhood.siblings,
+    ...(layoutMode === "compact-family" ? neighborhood.halfSiblings : []),
+  ]);
+  const cousinCluster = lateralWithoutSubjectCluster(neighborhood.cousins);
+  const halfSiblingCluster =
+    layoutMode === "compact-family" ? [] : lateralWithoutSubjectCluster(neighborhood.halfSiblings);
+  const hasLeftCluster = siblingCluster.length > 0 || cousinCluster.length > 0;
+  const subjectGapBefore = hasLeftCluster && partners.length > 0 ? 40 : undefined;
 
   return [
-    ...singleRelativeItems(lateralWithoutSubjectCluster(neighborhood.siblings)),
-    ...singleRelativeItems(lateralWithoutSubjectCluster(neighborhood.cousins)),
-    { id: rowItemId(relativeIds(subjectCluster)), relatives: subjectCluster, anchorIds },
-    ...singleRelativeItems(lateralWithoutSubjectCluster(neighborhood.halfSiblings)),
+    ...relativeClusterItem(siblingCluster),
+    ...relativeClusterItem(cousinCluster),
+    { id: rowItemId(relativeIds(subjectCluster)), relatives: subjectCluster, anchorIds, gapBefore: subjectGapBefore },
+    ...relativeClusterItem(halfSiblingCluster, partners.length > 0 ? { gapBefore: 40 } : {}),
   ];
 };
 
@@ -268,6 +292,7 @@ const createChildRowItems = <Person>(
 export const createFamilyLayoutLayers = <Person>(
   neighborhood: FamilyNeighborhood<Person>,
   visibleRows: FamilyRelative<Person>[][],
+  layoutMode: FamilyTreeLayoutMode = "default",
 ): FamilyRowItem<Person>[][] => {
   const preferredVisibleRelatives = createPreferredRelationByPerson(visibleRows);
   const visibleRelatives = (relatives: FamilyRelative<Person>[]) =>
@@ -323,7 +348,7 @@ export const createFamilyLayoutLayers = <Person>(
         .map(personAnchorId),
     ),
   );
-  appendLayer(createSubjectRowItems(visibleNeighborhood, subjectAnchorIds));
+  appendLayer(createSubjectRowItems(visibleNeighborhood, subjectAnchorIds, layoutMode));
 
   for (const layer of visibleNeighborhood.descendantGenerations) {
     const relatives =

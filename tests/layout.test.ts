@@ -260,6 +260,122 @@ test("accepts custom family spacing and curved edge routing", () => {
   expect(compact.edges.some((edge) => edge.path.includes(" C "))).toBe(true);
 });
 
+test("uses configurable estimated family card size before measurement", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people,
+    relationships: [rel.partner("henry", "emma")],
+    estimatedCardSize: { width: 88, height: 64 },
+  });
+
+  expect(layout.cards.find((card) => card.personId === "henry")).toMatchObject({
+    width: 88,
+    height: 64,
+  });
+  expect(layout.cards.find((card) => card.personId === "emma")).toMatchObject({
+    width: 88,
+    height: 64,
+  });
+});
+
+test("keeps hidden placeholder parents as connector-only layout cards", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      unknownParent: { id: "unknownParent", name: "Unknown parent", isPlaceholder: true, hiddenCard: true },
+    },
+    relationships: [
+      rel.children(["henry", "unknownParent"], ["ava"], {
+        relation: "unknown",
+        status: "unknown",
+      }),
+    ],
+    estimatedCardSize: { width: 88, height: 64 },
+  });
+
+  const unknownParent = layout.cards.find((card) => card.personId === "unknownParent");
+
+  expect(unknownParent).toMatchObject({
+    hiddenCard: true,
+    width: 0,
+    height: 0,
+  });
+  expect(layout.edges.filter((edge) => edge.targetId === "ava")).toHaveLength(1);
+});
+
+test("hides connector-only parents through the explicit render predicate", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      unknownParent: { id: "unknownParent", name: "Unknown parent", isPlaceholder: true },
+    },
+    relationships: [
+      rel.partner("henry", "unknownParent", { relation: "unknown", status: "unknown" }),
+      rel.children(["henry", "unknownParent"], ["ava"], {
+        relation: "unknown",
+        status: "unknown",
+      }),
+    ],
+    shouldRenderPersonCard: (_person, personId) => personId !== "unknownParent",
+  });
+
+  expect(layout.cards.find((card) => card.personId === "unknownParent")?.hiddenCard).toBe(true);
+  expect(layout.edges.some((edge) => edge.sourceId === "henry" && edge.targetId === "unknownParent")).toBe(false);
+  expect(layout.edges.filter((edge) => edge.targetId === "ava")).toHaveLength(1);
+});
+
+test("compact family layout does not hide unknown-looking people by itself", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      unknownParent: { id: "unknownParent", name: "Unknown parent", isPlaceholder: true },
+    },
+    relationships: [
+      rel.partner("henry", "unknownParent", { relation: "unknown", status: "unknown" }),
+      rel.children(["henry", "unknownParent"], ["ava"], {
+        relation: "unknown",
+        status: "unknown",
+      }),
+    ],
+    layoutMode: "compact-family",
+  });
+
+  expect(layout.cards.find((card) => card.personId === "unknownParent")?.hiddenCard).toBeUndefined();
+});
+
+test("separates sibling and spouse clusters in compact family layout", () => {
+  const layout = buildFamilyTreeLayout({
+    subject: "henry",
+    people: {
+      ...people,
+      charlie: { id: "charlie", name: "Charlie" },
+    },
+    relationships: [
+      rel.parents("henry", ["carol", "james"]),
+      rel.parents("charlie", ["carol", "james"]),
+      rel.partner("henry", "emma", { relation: "spouse" }),
+      rel.children(["henry", "emma"], ["ava"]),
+    ],
+    estimatedCardSize: { width: 88, height: 64 },
+    layoutMode: "compact-family",
+    spacing: { column: 20, row: 48, padding: 24 },
+  });
+  const card = (personId: string) => layout.cards.find((candidate) => candidate.personId === personId);
+  const charlie = card("charlie");
+  const henry = card("henry");
+  const emma = card("emma");
+
+  expect(charlie).toBeDefined();
+  expect(henry).toBeDefined();
+  expect(emma).toBeDefined();
+  expect((charlie?.x ?? 0) + (charlie?.width ?? 0)).toBeLessThan(henry?.x ?? 0);
+  expect(emma?.x ?? 0).toBeGreaterThan((henry?.x ?? 0) + (henry?.width ?? 0));
+  expect((henry?.x ?? 0) - ((charlie?.x ?? 0) + (charlie?.width ?? 0))).toBeGreaterThan(20);
+});
+
 test("hides descendant branch rows for collapsed family cards", () => {
   const layout = buildFamilyTreeLayout({
     subject: "henry",

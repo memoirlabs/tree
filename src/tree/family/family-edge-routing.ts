@@ -26,12 +26,14 @@ const parentageJoinPoint = <Person>(pair: [FamilyTreeLayoutCard<Person>, FamilyT
 };
 const rowOverlap = <Person>(a: FamilyTreeLayoutCard<Person>, b: FamilyTreeLayoutCard<Person>) =>
   Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > Math.min(a.height, b.height) * 0.5;
+const isVisibleCard = <Person>(card: FamilyTreeLayoutCard<Person>) => !card.hiddenCard;
 const hasCardBetweenPair = <Person>(
   pair: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>],
   cards: FamilyTreeLayoutCard<Person>[],
 ) => {
   const [first, second] = pair;
   return cards.some((card) => {
+    if (!isVisibleCard(card)) return false;
     if (card.personId === first.personId || card.personId === second.personId) return false;
     if (!rowOverlap(first, card) || !rowOverlap(second, card)) return false;
     return card.x >= first.x + first.width && card.x + card.width <= second.x;
@@ -60,27 +62,54 @@ const createFamilyDescendantPath = (
 const createFamilyMultiParentPath = <Person>(
   parents: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>],
   children: FamilyTreeLayoutCard<Person>[],
+  cards: FamilyTreeLayoutCard<Person>[],
 ) => {
-  const parentPoints = parents.map(bottomCenterPoint);
+  const [first, second] = parents;
   const childPoints = children.map(topCenterPoint);
-  const parentClearY = Math.max(...parentPoints.map((point) => point.y));
+  const parentClearY = Math.max(bottomCenterPoint(first).y, bottomCenterPoint(second).y);
   const minChildY = Math.min(...childPoints.map((point) => point.y));
   const busY = roundTreeCoordinate(parentClearY + (minChildY - parentClearY) * 0.5);
-  const busPoints = [...parentPoints, ...childPoints];
-  const minBusX = Math.min(...busPoints.map((point) => point.x));
-  const maxBusX = Math.max(...busPoints.map((point) => point.x));
+  const parentY = roundTreeCoordinate((centerPoint(first).y + centerPoint(second).y) / 2);
+  const firstRight = roundTreeCoordinate(first.x + first.width);
+  const secondLeft = roundTreeCoordinate(second.x);
+  const midpointX = roundTreeCoordinate((firstRight + secondLeft) / 2);
+  const childXs = childPoints.map((point) => roundTreeCoordinate(point.x));
+  const minBusX = Math.min(firstRight, secondLeft, midpointX, ...childXs);
+  const maxBusX = Math.max(firstRight, secondLeft, midpointX, ...childXs);
+  const hasInterveningCard = hasCardBetweenPair(parents, cards);
+  const parentConnector = hasInterveningCard
+    ? [
+        `M ${firstRight} ${parentY} L ${firstRight} ${busY}`,
+        `M ${firstRight} ${busY} L ${secondLeft} ${busY}`,
+        `M ${secondLeft} ${parentY} L ${secondLeft} ${busY}`,
+      ]
+    : [
+        `M ${firstRight} ${parentY} L ${secondLeft} ${parentY}`,
+        `M ${midpointX} ${parentY} L ${midpointX} ${busY}`,
+      ];
 
   return [
-    ...parentPoints.map(
-      (point) =>
-        `M ${roundTreeCoordinate(point.x)} ${roundTreeCoordinate(point.y)} L ${roundTreeCoordinate(point.x)} ${busY}`,
-    ),
+    ...parentConnector,
     `M ${roundTreeCoordinate(minBusX)} ${busY} L ${roundTreeCoordinate(maxBusX)} ${busY}`,
     ...childPoints.map(
       (point) =>
         `M ${roundTreeCoordinate(point.x)} ${busY} L ${roundTreeCoordinate(point.x)} ${roundTreeCoordinate(point.y)}`,
     ),
   ].join(" ");
+};
+
+const connectorStartPoint = <Person>(
+  parents: FamilyTreeLayoutCard<Person>[],
+) => {
+  const visibleParents = parents.filter(isVisibleCard);
+  if (visibleParents.length > 0) {
+    return bottomCenterPoint(visibleParents[0]!);
+  }
+  const parentPoints = parents.map(centerPoint);
+  return {
+    x: parentPoints.reduce((sum, point) => sum + point.x, 0) / Math.max(parentPoints.length, 1),
+    y: parentPoints.reduce((sum, point) => sum + point.y, 0) / Math.max(parentPoints.length, 1),
+  };
 };
 
 export interface RouteFamilyEdgesOptions {
@@ -114,6 +143,8 @@ export function routeFamilyEdges<Person>(
       status,
       sourceId: first.personId,
       targetId: second.personId,
+      sourcePort: "right",
+      targetPort: "left",
     });
     if (status === "separated" || status === "divorced") {
       const markerCount = status === "divorced" ? 2 : 1;
@@ -128,6 +159,8 @@ export function routeFamilyEdges<Person>(
           status,
           sourceId: first.personId,
           targetId: second.personId,
+          sourcePort: "center",
+          targetPort: "center",
         });
       }
     }
@@ -158,6 +191,7 @@ export function routeFamilyEdges<Person>(
     id,
     kind,
     parentCards,
+    parentConnectors,
     parents,
     sourceId,
     start,
@@ -167,6 +201,7 @@ export function routeFamilyEdges<Person>(
     id: string;
     kind: string;
     parentCards?: [FamilyTreeLayoutCard<Person>, FamilyTreeLayoutCard<Person>];
+    parentConnectors?: FamilyTreeLayoutCard<Person>[];
     parents: PersonId[];
     sourceId?: PersonId;
     start: { x: number; y: number; clearY?: number };
@@ -180,13 +215,35 @@ export function routeFamilyEdges<Person>(
     if (parentCards) {
       edges.push({
         id,
-        path: createFamilyMultiParentPath(parentCards, children),
+        path: createFamilyMultiParentPath(parentCards, children, cards),
         kind,
         status,
         sourceId: sourceId ?? parents[0],
         targetId: children[0]?.personId,
+        sourcePort: "center",
+        targetPort: "top",
       });
       return;
+    }
+
+    if (parentConnectors && parentConnectors.length > 1) {
+      const connectorStart = connectorStartPoint(parentConnectors);
+      if (children.length === 1) {
+        const child = children[0];
+        if (!child) return;
+        addPersonEdge({
+          id,
+          path: createFamilyDescendantPath(connectorStart, topCenterPoint(child), lineShape),
+          kind,
+          status,
+          sourceId: sourceId ?? parents[0],
+          targetId: child.personId,
+          sourcePort: "center",
+          targetPort: "top",
+        });
+        return;
+      }
+      start = connectorStart;
     }
 
     if (children.length === 1) {
@@ -199,6 +256,8 @@ export function routeFamilyEdges<Person>(
         status,
         sourceId: sourceId ?? parents[0],
         targetId: child.personId,
+        sourcePort: "bottom",
+        targetPort: "top",
       });
       return;
     }
@@ -225,6 +284,8 @@ export function routeFamilyEdges<Person>(
       status,
       sourceId: sourceId ?? parents[0],
       targetId: children[0]?.personId,
+      sourcePort: "center",
+      targetPort: "top",
     });
   };
 
@@ -234,6 +295,7 @@ export function routeFamilyEdges<Person>(
       const visiblePartners = relationship.partners
         .map((partnerId) => cardsById.get(partnerId))
         .filter((card): card is FamilyTreeLayoutCard<Person> => Boolean(card))
+        .filter(isVisibleCard)
         .toSorted((a, b) => a.x - b.x);
       const baseId = relationship.id ?? `partnership-${relationshipIndex}`;
       for (let partnerIndex = 0; partnerIndex < visiblePartners.length - 1; partnerIndex += 1) {
@@ -260,16 +322,15 @@ export function routeFamilyEdges<Person>(
         if (parentAId && parentBId) {
           const pair = findOrderedPair(parentAId, parentBId);
           if (pair) {
-            const key = partnershipKey(parentAId, parentBId);
-            const hasInterveningCard = hasCardBetweenPair(pair, cards);
-            const hasPartnershipBar = drawnParentBars.has(key);
+            const visiblePair = pair.filter(isVisibleCard);
             addParentageGroupEdge({
               children: relationship.children
                 .map((childId) => cardsById.get(childId))
                 .filter((childCard): childCard is FamilyTreeLayoutCard<Person> => Boolean(childCard)),
               id: `${relationship.id ?? `parentage-${relationshipIndex}`}-${relationship.groupId ?? "ungrouped"}-${parentAId}-${parentBId}-${relationship.relation ?? "biological"}`,
               kind: relationship.relation ?? "biological",
-              parentCards: hasInterveningCard || !hasPartnershipBar ? pair : undefined,
+              parentCards: visiblePair.length === 2 ? pair : undefined,
+              parentConnectors: visiblePair.length === 2 ? undefined : pair,
               parents: [parentAId, parentBId],
               sourceId: relationship.groupId,
               start: parentageJoinPoint(pair),
@@ -311,6 +372,8 @@ export function routeFamilyEdges<Person>(
           status: relationship.status,
           sourceId: guardianId,
           targetId: childId,
+          sourcePort: "bottom",
+          targetPort: "top",
         });
       }
     }

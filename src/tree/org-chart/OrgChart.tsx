@@ -4,7 +4,7 @@ import type { CSSProperties, JSX, KeyboardEvent } from "react";
 import { useCallback, useMemo, useRef } from "react";
 
 import { TreeCanvas, TreeEdges, TreeNodeLayer, useCardMeasurements } from "../core";
-import { buildOrgChartLayout } from "./org-chart-layout";
+import { buildOrgChartLayoutFromNormalized } from "./org-chart-layout";
 import { normalizeOrgChartInput } from "./org-chart-graph";
 import type { OrgCardProps, OrgChartLayoutCard, OrgChartProps, OrgRenderCardProps, PersonId } from "./types";
 
@@ -123,7 +123,7 @@ export function OrgChart<Person, CardExtraProps extends object = Record<string, 
   const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
   const layout = useMemo(
     () =>
-      buildOrgChartLayout({
+      buildOrgChartLayoutFromNormalized({
         root: normalized.root,
         people: normalized.people,
         relationships: normalized.relationships,

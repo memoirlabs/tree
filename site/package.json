@@ -5,7 +5,7 @@
   "scripts": {
     "build": "bun --bun next build",
     "check": "bun run types:check && bun run lint && bun run build",
-    "ci": "bun run check",
+    "ci": "bun run --cwd .. build && bun run check",
     "deploy": "bunx vercel deploy --yes --no-wait",
     "deploy:prod": "bunx vercel deploy --prod --yes --no-wait",
     "dev": "bun --bun next dev",
@@ -15,7 +15,6 @@
     "lint": "oxlint"
   },
   "dependencies": {
-    "@memoir/tree": "0.5.7",
     "fumadocs-core": "16.10.7",
     "fumadocs-mdx": "15.0.13",
     "fumadocs-ui": "16.10.7",

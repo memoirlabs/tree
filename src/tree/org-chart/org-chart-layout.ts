@@ -6,6 +6,7 @@ import {
   topCenterPoint,
 } from "../../layout-engine";
 import { normalizeOrgChartInput } from "./org-chart-graph";
+import type { NormalizedOrgChartInput } from "./org-chart-graph";
 import { collectOrgChartSubtree, createOrgChartIndex } from "./org-chart-indexing";
 import type { OrgChartRelative } from "./org-chart-indexing";
 import type {
@@ -55,8 +56,11 @@ const groupByParent = <Person>(relatives: OrgChartRelative<Person>[]) => {
   return reportsByParent;
 };
 
-export function buildOrgChartLayout<Person>({
-  graph,
+interface BuildNormalizedOrgChartLayoutInput<Person>
+  extends NormalizedOrgChartInput<Person>,
+    Omit<BuildOrgChartLayoutInput<Person>, "graph" | "people" | "relationships" | "root"> {}
+
+export function buildOrgChartLayoutFromNormalized<Person>({
   root,
   people,
   relationships,
@@ -65,13 +69,9 @@ export function buildOrgChartLayout<Person>({
   spacing: spacingOverrides,
   maxDepth = null,
   lineShape = "orthogonal",
-}: BuildOrgChartLayoutInput<Person>): OrgChartLayoutResult<Person> {
+}: BuildNormalizedOrgChartLayoutInput<Person>): OrgChartLayoutResult<Person> {
   const estimatedCardSize = defaultEstimatedCardSize;
   const spacing = { ...defaultSpacing, ...spacingOverrides };
-  const normalized = normalizeOrgChartInput({ graph, people, relationships, root });
-  root = normalized.root;
-  people = normalized.people;
-  relationships = normalized.relationships;
   const index = createOrgChartIndex(people, relationships);
   const relatives = collectOrgChartSubtree(index, root, { collapsed, maxDepth });
   if (relatives.length === 0) {
@@ -165,4 +165,17 @@ export function buildOrgChartLayout<Person>({
     edges,
     bounds: createBoundsFromBoxes(cards, spacing.padding),
   };
+}
+
+export function buildOrgChartLayout<Person>({
+  root,
+  people,
+  relationships,
+  graph,
+  ...options
+}: BuildOrgChartLayoutInput<Person>): OrgChartLayoutResult<Person> {
+  return buildOrgChartLayoutFromNormalized({
+    ...normalizeOrgChartInput({ graph, people, relationships, root }),
+    ...options,
+  });
 }

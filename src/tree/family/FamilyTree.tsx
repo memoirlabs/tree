@@ -172,6 +172,9 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
   initialViewport,
   onViewportChange,
   spacing,
+  estimatedCardSize,
+  layoutMode,
+  shouldRenderPersonCard,
   limits,
   theme,
   treeApiRef,
@@ -200,6 +203,9 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
       graph={graph}
       selected={selected}
       spacing={spacing}
+      estimatedCardSize={estimatedCardSize}
+      layoutMode={layoutMode}
+      shouldRenderPersonCard={shouldRenderPersonCard}
       subject={subject}
     >
       <TreeCanvas

@@ -215,17 +215,20 @@ Common optional props:
 - `selected`: app-owned selected person ID.
 - `collapsed`: person IDs whose deeper ancestor or descendant rows should be hidden.
 - `limits`: visible-relative caps and generation depth; use `null` to disable a cap.
+- `estimatedCardSize`: first-pass card estimate before DOM measurement, defaulting to `{ width: 220, height: 80 }`.
+- `shouldRenderPersonCard`: explicit card-render predicate. Returning `false` keeps the person in layout and edge routing but skips card rendering and measurement. The subject always renders.
+- `layoutMode`: `"default"` or `"compact-family"`; compact mode keeps partners adjacent to the subject and separates sibling and partner clusters. It does not hide cards.
 - `onPersonClick`: card click and Enter/Space activation handler.
 - `onAddRelationship`: passed to cards for app-owned add-relative flows.
 - `getPersonLabel`: accessible card label builder.
 - `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
-Family layout is subject-centered and renders a bounded neighborhood: ancestor generations, the subject row with siblings and partners, and descendant generations. Lateral branches such as parent siblings, cousins, and nieces/nephews render only when `lateralFamilyGenerations` is above `0`. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair. A person renders at most once; direct roles such as parent, guardian, child, partner, and co-parent outrank lower-priority sibling and lateral paths.
+Family layout is subject-centered and renders a bounded neighborhood: ancestor generations, the subject row with separated sibling and partner clusters, and descendant generations. Lateral branches such as parent siblings, cousins, and nieces/nephews render only when `lateralFamilyGenerations` is above `0`. Partnership groups and child groups are layout inputs, so children from separate unions anchor to the correct visible parent pair. A person renders at most once; direct roles such as parent, guardian, child, partner, and co-parent outrank lower-priority sibling and lateral paths.
 
-Two-parent child groups join from the parent cards into a child bus. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row. The routing does not synthesize a relationship bar between two parents unless an explicit partnership group is visible.
+Two-parent child groups use a structural parent connector between the parent cards, then drop to a child bus. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row. Semantic spouse/partner bars still come only from explicit partnership groups.
 
-Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
+Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. Tree does not infer unknown or placeholder semantics from IDs, names, labels, or app-owned flags; use `shouldRenderPersonCard` when a person should be connector-only. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
 
 Default family spacing leaves room for union-centered parentage edges while keeping canvas padding small:
 

@@ -178,7 +178,7 @@ guardianshipLinks: [
 ];
 ```
 
-Unknown parent placeholders are display facts. A partnership with `relation: "unknown"` or `status: "unknown"` renders the placeholder without drawing a spouse bar. If the unknown person is also a co-parent, include a `parentChildLink` for that placeholder.
+Unknown parent placeholders are display facts. A partnership with `relation: "unknown"` or `status: "unknown"` renders the placeholder without drawing a spouse bar. Tree does not infer placeholder semantics from IDs, names, or labels; pass `shouldRenderPersonCard` when a person should remain connector-only. If the unknown person is also a co-parent, include a `parentChildLink` for that placeholder.
 
 ## Simple Family Mode
 
@@ -331,7 +331,7 @@ function LinkedTeamCard({ canEdit, href, person, depth, ...rootProps }: OrgCardP
 
 ## Layout And Viewport
 
-Family layout is subject-centered and neighborhood-based. It renders ancestor rows, a subject row with siblings and partners, and descendant rows. Partnership groups and child groups participate in layout before SVG edges are routed, so parent-child lines come from measured card positions.
+Family layout is subject-centered and neighborhood-based. It renders ancestor rows, a subject row with separated sibling and partner clusters, and descendant rows. Partnership groups and child groups participate in layout before SVG edges are routed, so parent-child lines come from measured card positions.
 
 Large families can become wide. Use `limits` to control the visible neighborhood:
 
@@ -355,6 +355,23 @@ Override spacing only when your card design needs a different density:
 ```tsx
 <FamilyTree graph={graph} spacing={{ row: 72, column: 20, padding: 24 }} />
 ```
+
+Pass `estimatedCardSize` when your custom cards are much smaller or larger than the default first-pass estimate of `220x80`:
+
+```tsx
+<FamilyTree graph={graph} estimatedCardSize={{ width: 88, height: 64 }} />
+```
+
+Any person can be connector-only. Pass `shouldRenderPersonCard` when a person should remain in layout and edge routing but not render a visible card. Tree never hides cards by guessing from `unknown`, placeholder-like names, or app-owned flags such as `isPlaceholder`.
+
+```tsx
+<FamilyTree
+  graph={graph}
+  shouldRenderPersonCard={(_person, personId) => personId !== "unknown-parent"}
+/>
+```
+
+Use `layoutMode="compact-family"` for compact subject-centered trees with spouse/partner cards adjacent to the subject, siblings on the opposite side, and children below the subject-partner union. Layout mode changes placement only; it does not hide cards.
 
 The default `interactionMode` is `"pan"`. Users can drag the canvas or non-interactive card surfaces with mouse, touch, or pen. Use `"pan-page-scroll"` when vertical touch should scroll the page, `"scroll"` for native scrollbars, or `"none"` for a static tree.
 

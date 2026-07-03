@@ -228,6 +228,15 @@ If the same person is both a parent and a guardian, model both facts. Tree keeps
 
 Unknown partner placeholders are display/layout facts, not automatic spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the placeholder card without drawing a horizontal partnership edge.
 
+Tree does not infer placeholder semantics from IDs, names, labels, or app-owned flags. Pass `shouldRenderPersonCard` when a person should act only as a connector point. The layout still uses that person for parentage and edge routing, but the card layer does not render a full card:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  shouldRenderPersonCard={(_person, personId) => personId !== "unknown"}
+/>
+```
+
 If the unknown placeholder is also an actual co-parent, include it in `parentChildLinks`:
 
 ```ts
@@ -340,6 +349,14 @@ Override `spacing` only when your cards need a different density:
 ```tsx
 <FamilyTree graph={graph} spacing={{ row: 72, column: 20, padding: 24 }} />
 ```
+
+Use `estimatedCardSize` when your custom cards are much smaller or larger than the package default first-pass estimate of `220x80`:
+
+```tsx
+<FamilyTree graph={graph} estimatedCardSize={{ width: 88, height: 64 }} />
+```
+
+Use `layoutMode="compact-family"` for compact subject-centered trees. It keeps the subject centered, places spouse/partner cards adjacent to the subject, and keeps siblings on the opposite side of the partner cluster. Layout mode changes placement only; it does not hide cards.
 
 ## Viewport
 

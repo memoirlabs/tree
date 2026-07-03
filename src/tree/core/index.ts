@@ -34,6 +34,7 @@ export type {
   TreeLayoutResult,
   TreeLineShape,
   TreePersonHandler,
+  TreePort,
   TreeRenderCard,
   TreeSpacing,
   TreeStylePreset,

@@ -19,6 +19,7 @@ export type {
   TreeInitialViewport,
   TreeInteractionMode,
   TreeLineShape,
+  TreePort,
   TreeStylePreset,
   TreeViewport,
 } from "../core";
@@ -186,6 +187,10 @@ export type FamilyTreeSize = TreeCardSize;
 
 export type FamilyTreePersonHandler<Person> = TreePersonHandler<Person>;
 
+export type FamilyTreeLayoutMode = "default" | "compact-family";
+
+export type FamilyTreeRenderCardPredicate<Person> = (person: Person, personId: PersonId) => boolean;
+
 export type FamilyTreeCardProps<Person, CardExtraProps extends object> =
   | CardExtraProps
   | ((person: Person, props: FamilyCardProps<Person>) => CardExtraProps);
@@ -209,6 +214,9 @@ export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<
   initialViewport?: TreeInitialViewport;
   onViewportChange?: (viewport: TreeViewport) => void;
   spacing?: Partial<FamilyTreeSpacing>;
+  estimatedCardSize?: Partial<FamilyTreeSize>;
+  layoutMode?: FamilyTreeLayoutMode;
+  shouldRenderPersonCard?: FamilyTreeRenderCardPredicate<Person>;
   limits?: Partial<FamilyNeighborhoodLimits>;
   theme?: TreeStylePreset;
   treeApiRef?: Ref<TreeApi>;

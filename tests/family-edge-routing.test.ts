@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { buildFamilyTreeLayout, rel } from "../src/index";
 import { routeFamilyEdges } from "../src/tree/family/family-edge-routing";
 import type { FamilyTreeLayoutCard } from "../src/tree/family/layout-types";
+import { pathSegments, segmentCrossesCardInterior } from "./helpers/geometry";
 
 const people = {
   childA: { id: "childA", name: "Child A" },
@@ -22,52 +23,14 @@ function firstLineY(path: string) {
   return Number(y);
 }
 
+function cardById(layout: ReturnType<typeof buildFamilyTreeLayout>, personId: string) {
+  const card = layout.cards.find((candidate) => candidate.personId === personId);
+  expect(card).toBeDefined();
+  return card!;
+}
+
 function edgeKind(layout: ReturnType<typeof buildFamilyTreeLayout>, idPrefix: string) {
   return layout.edges.find((edge) => edge.id.startsWith(idPrefix))?.kind;
-}
-
-function pathSegments(path: string) {
-  const tokens = path.split(/\s+/);
-  const segments: Array<{ x1: number; x2: number; y1: number; y2: number }> = [];
-  let current: { x: number; y: number } | null = null;
-
-  for (let index = 0; index < tokens.length; index += 1) {
-    const command = tokens[index];
-    if (command !== "M" && command !== "L") continue;
-    const x = Number(tokens[index + 1]);
-    const y = Number(tokens[index + 2]);
-    index += 2;
-    if (command === "L" && current) {
-      segments.push({ x1: current.x, y1: current.y, x2: x, y2: y });
-    }
-    current = { x, y };
-  }
-
-  return segments;
-}
-
-function segmentCrossesCardInterior(
-  segment: { x1: number; x2: number; y1: number; y2: number },
-  card: Pick<FamilyTreeLayoutCard<unknown>, "height" | "width" | "x" | "y">,
-) {
-  const left = card.x + 1;
-  const right = card.x + card.width - 1;
-  const top = card.y + 1;
-  const bottom = card.y + card.height - 1;
-
-  if (segment.y1 === segment.y2) {
-    const minX = Math.min(segment.x1, segment.x2);
-    const maxX = Math.max(segment.x1, segment.x2);
-    return segment.y1 > top && segment.y1 < bottom && maxX > left && minX < right;
-  }
-
-  if (segment.x1 === segment.x2) {
-    const minY = Math.min(segment.y1, segment.y2);
-    const maxY = Math.max(segment.y1, segment.y2);
-    return segment.x1 > left && segment.x1 < right && maxY > top && minY < bottom;
-  }
-
-  return false;
 }
 
 test("routes two-parent child groups below the parent cards", () => {
@@ -91,11 +54,6 @@ test("routes two-parent child groups below the parent cards", () => {
     },
   });
 
-  const parentBottom = Math.max(
-    ...layout.cards
-      .filter((card) => card.personId === "parentA" || card.personId === "parentB")
-      .map((card) => card.y + card.height),
-  );
   const parentCenterY = Math.max(
     ...layout.cards
       .filter((card) => card.personId === "parentA" || card.personId === "parentB")
@@ -110,8 +68,17 @@ test("routes two-parent child groups below the parent cards", () => {
 
   expect(childGroupEdge).toBeDefined();
   expect(firstMoveY(childGroupEdge?.path ?? "")).toBe(parentCenterY);
-  expect(firstLineY(childGroupEdge?.path ?? "")).toBeGreaterThanOrEqual(parentBottom);
-  expect(firstLineY(childGroupEdge?.path ?? "")).toBeGreaterThan((parentCenterY + childTop) / 2);
+  expect(firstLineY(childGroupEdge?.path ?? "")).toBe(parentCenterY);
+  const parentA = cardById(layout, "parentA");
+  const parentB = cardById(layout, "parentB");
+  const midpointX = (parentA.x + parentA.width + parentB.x) / 2;
+  expect(childGroupEdge?.path).toContain(
+    `M ${parentA.x + parentA.width} ${parentCenterY} L ${parentB.x} ${parentCenterY}`,
+  );
+  expect(childGroupEdge?.path).toContain(`M ${midpointX} ${parentCenterY} L ${midpointX}`);
+  expect(Math.max(...(childGroupEdge?.path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? []))).toBeGreaterThan(childTop);
+  expect(childGroupEdge?.sourcePort).toBe("center");
+  expect(childGroupEdge?.targetPort).toBe("top");
 });
 
 test("does not draw a relationship bar for two-parent parentage without an explicit partnership", () => {
@@ -131,16 +98,15 @@ test("does not draw a relationship bar for two-parent parentage without an expli
     },
   });
 
-  const parentBottom = Math.max(
-    ...layout.cards
-      .filter((card) => card.personId === "parentA" || card.personId === "parentB")
-      .map((card) => card.y + card.height),
-  );
   const parentageEdges = layout.edges.filter((edge) => edge.kind === "biological");
+  const parentA = cardById(layout, "parentA");
+  const parentB = cardById(layout, "parentB");
+  const parentCenterY = parentA.y + parentA.height / 2;
 
   expect(parentageEdges.some((edge) => edge.id.endsWith("-bar"))).toBe(false);
   expect(parentageEdges).toHaveLength(1);
-  expect(firstMoveY(parentageEdges[0]?.path ?? "")).toBe(parentBottom);
+  expect(firstMoveY(parentageEdges[0]?.path ?? "")).toBe(parentCenterY);
+  expect(parentageEdges[0]?.path).toContain(`M ${parentA.x + parentA.width} ${parentCenterY} L ${parentB.x} ${parentCenterY}`);
 });
 
 test("routes right-shifted single children below the parent cards", () => {
@@ -178,8 +144,8 @@ test("routes right-shifted single children below the parent cards", () => {
     (layoutEdge) => layoutEdge.targetId === "childA",
   );
 
-  expect(edge?.path).toBe("M 50 80 L 50 110 M 170 80 L 170 110 M 50 110 L 290 110 M 290 110 L 290 140");
-  expect(firstLineY(edge?.path ?? "")).toBeGreaterThan(80);
+  expect(edge?.path).toBe("M 100 40 L 120 40 M 110 40 L 110 110 M 100 110 L 290 110 M 290 110 L 290 140");
+  expect(firstLineY(edge?.path ?? "")).toBe(40);
 });
 
 test("draws explicit partnership bars before inferred parentage bars", () => {
@@ -317,8 +283,8 @@ test("routes non-adjacent parentage around intervening cards", () => {
     (layoutEdge) => layoutEdge.targetId === "childA",
   );
   expect(edge).toBeDefined();
-  expect(edge?.path).toContain("M 50 80 L 50 120");
-  expect(edge?.path).toContain("M 290 80 L 290 120");
+  expect(edge?.path).toContain("M 100 40 L 100 120");
+  expect(edge?.path).toContain("M 240 40 L 240 120");
   expect(edge?.path).not.toContain("M 100 40 L 240 40");
   expect(pathSegments(edge?.path ?? "").some((segment) => segmentCrossesCardInterior(segment, cards[1]!))).toBe(false);
 });

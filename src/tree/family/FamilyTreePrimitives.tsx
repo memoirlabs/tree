@@ -10,7 +10,7 @@ import {
   useCardMeasurements,
 } from "../core";
 import { normalizeFamilyInput } from "./family-graph";
-import { buildFamilyTreeLayout } from "./family-layout";
+import { buildFamilyTreeLayoutFromNormalized } from "./family-layout";
 import type {
   FamilyGraph,
   FamilyCardProps,
@@ -47,6 +47,9 @@ export interface FamilyTreeProviderProps<Person> {
   readOnly?: boolean;
   selected?: PersonId;
   spacing?: Partial<FamilyTreeSpacing>;
+  estimatedCardSize?: FamilyTreeProps<Person>["estimatedCardSize"];
+  layoutMode?: FamilyTreeProps<Person>["layoutMode"];
+  shouldRenderPersonCard?: FamilyTreeProps<Person>["shouldRenderPersonCard"];
   limits?: FamilyTreeProps<Person>["limits"];
 }
 
@@ -107,6 +110,9 @@ const createMeasurementKey = (
   subject: PersonId,
   relationships: FamilyRelationship[],
   collapsed?: PersonId[],
+  estimatedCardSize?: FamilyTreeProps<unknown>["estimatedCardSize"],
+  layoutMode?: FamilyTreeProps<unknown>["layoutMode"],
+  hasRenderPredicate?: boolean,
 ) => {
   const relationshipKey = relationships
     .map((relationship) => {
@@ -119,7 +125,14 @@ const createMeasurementKey = (
       return `r:${relationship.parents.join(",")}>${relationship.children.join(",")}`;
     })
     .join("|");
-  return `${subject}::${collapsed?.join(",") ?? ""}::${relationshipKey}`;
+  return [
+    subject,
+    collapsed?.join(",") ?? "",
+    layoutMode ?? "default",
+    hasRenderPredicate ?? false,
+    `${estimatedCardSize?.width ?? ""}x${estimatedCardSize?.height ?? ""}`,
+    relationshipKey,
+  ].join("::");
 };
 
 export function TreeProvider<Person>(props: TreeProviderProps<Person>): JSX.Element {
@@ -141,6 +154,9 @@ function FamilyTreeProvider<Person>({
   readOnly = false,
   selected,
   spacing,
+  estimatedCardSize,
+  layoutMode = "default",
+  shouldRenderPersonCard,
 }: FamilyTreeProviderProps<Person>): JSX.Element {
   const normalized = useMemo(
     () => normalizeFamilyInput({ graph, people, relationships, subject }),
@@ -149,21 +165,41 @@ function FamilyTreeProvider<Person>({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const collapsedIds = useMemo(() => new Set(collapsed ?? []), [collapsed]);
   const layoutSpacing = useMemo(() => createLayoutSpacing(spacing), [spacing]);
-  const measureKey = createMeasurementKey(normalized.subject, normalized.relationships, collapsed);
+  const measureKey = createMeasurementKey(
+    normalized.subject,
+    normalized.relationships,
+    collapsed,
+    estimatedCardSize,
+    layoutMode,
+    Boolean(shouldRenderPersonCard),
+  );
   const measurements = useCardMeasurements(containerRef, measureKey);
   const layout = useMemo(
     () =>
-      buildFamilyTreeLayout({
+      buildFamilyTreeLayoutFromNormalized({
         subject: normalized.subject,
         people: normalized.people,
         relationships: normalized.relationships,
         collapsed,
         measurements,
+        estimatedCardSize,
+        layoutMode,
+        shouldRenderPersonCard,
         limits,
         lineShape,
         spacing: layoutSpacing,
       }),
-    [collapsed, layoutSpacing, limits, lineShape, measurements, normalized],
+    [
+      collapsed,
+      estimatedCardSize,
+      layoutMode,
+      layoutSpacing,
+      limits,
+      lineShape,
+      measurements,
+      normalized,
+      shouldRenderPersonCard,
+    ],
   );
   const value = useMemo<FamilyTreePrimitiveContext<Person>>(
     () => ({
@@ -207,12 +243,16 @@ export function TreeCanvas({
   viewport,
 }: TreeCanvasProps): JSX.Element {
   const context = useTreeLayout();
+  const visibleCards = useMemo(
+    () => context.layout.cards.filter((card) => !card.hiddenCard),
+    [context.layout.cards],
+  );
 
   return (
     <CoreTreeCanvas
       anchorId={context.subject}
       bounds={context.layout.bounds}
-      cards={context.layout.cards}
+      cards={visibleCards}
       className={className}
       ariaLabel={ariaLabel}
       containerRef={context.containerRef}
@@ -261,6 +301,10 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
   cardProps,
 }: TreeNodeLayerProps<Person, CardExtraProps>): JSX.Element {
   const context = useTreeLayout<Person>();
+  const visibleCards = useMemo(
+    () => context.layout.cards.filter((card) => !card.hiddenCard),
+    [context.layout.cards],
+  );
   const {
     collapsedIds,
     getPersonLabel,
@@ -348,7 +392,7 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
   return (
     <CoreTreeNodeLayer<Person, FamilyTreeLayoutCard<Person>, FamilyCardProps<Person> & CardExtraProps>
       card={card}
-      cards={context.layout.cards}
+      cards={visibleCards}
       getCardProps={getCardProps}
       getPositionerProps={() => ({
         "data-family-card-positioner": "",

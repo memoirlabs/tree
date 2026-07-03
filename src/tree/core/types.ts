@@ -21,6 +21,8 @@ export interface TreeLayoutCardBase<Person> extends TreeCardSize {
   y: number;
 }
 
+export type TreePort = "top" | "right" | "bottom" | "left" | "center";
+
 export interface TreeLayoutEdge {
   id: string;
   path: string;
@@ -28,6 +30,8 @@ export interface TreeLayoutEdge {
   status?: string;
   sourceId?: PersonId;
   targetId?: PersonId;
+  sourcePort?: TreePort;
+  targetPort?: TreePort;
 }
 
 export interface TreeLayoutResult<Person, Card extends TreeLayoutCardBase<Person> = TreeLayoutCardBase<Person>> {

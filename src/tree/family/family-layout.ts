@@ -1,6 +1,7 @@
 import { buildLayeredTreeLayout, roundTreeCoordinate } from "../../layout-engine";
 import { routeFamilyEdges } from "./family-edge-routing";
 import { normalizeFamilyInput } from "./family-graph";
+import type { NormalizedFamilyInput } from "./family-graph";
 import { collectFamilyNeighborhood, createFamilyIndex } from "./family-indexing";
 import { createFamilyLayerBoxes, createFamilyLayoutCards } from "./family-layered-layout";
 import { createFamilyLayoutLayers, createFamilyRelativeRows } from "./family-row-planning";
@@ -18,6 +19,38 @@ const defaultSpacing: FamilyTreeSpacing = {
   row: 104,
   column: 40,
   padding: 24,
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
+
+const resolveEstimatedCardSize = (size: Partial<FamilyTreeSize> | undefined): FamilyTreeSize => ({
+  width: size?.width ?? defaultEstimatedCardSize.width,
+  height: size?.height ?? defaultEstimatedCardSize.height,
+});
+
+const hasBooleanFlag = (person: unknown, key: string) => isRecord(person) && person[key] === true;
+
+const collectHiddenCardIds = <Person>({
+  people,
+  shouldRenderPersonCard,
+  subject,
+}: {
+  people: Record<PersonId, Person>;
+  shouldRenderPersonCard?: (person: Person, personId: PersonId) => boolean;
+  subject: PersonId;
+}) => {
+  const hiddenCardIds = new Set<PersonId>();
+
+  for (const personId of Object.keys(people)) {
+    const person = people[personId];
+    if (person === undefined) continue;
+    if (personId === subject) continue;
+    if (hasBooleanFlag(person, "hiddenCard") || shouldRenderPersonCard?.(person, personId) === false) {
+      hiddenCardIds.add(personId);
+    }
+  }
+
+  return hiddenCardIds;
 };
 
 const centerSubjectInBounds = (
@@ -149,22 +182,24 @@ const shouldHideCollapsedRelative = <Person>(
   return false;
 };
 
-export function buildFamilyTreeLayout<Person>({
+interface BuildNormalizedFamilyTreeLayoutInput<Person>
+  extends NormalizedFamilyInput<Person>,
+    Omit<BuildFamilyTreeLayoutInput<Person>, "graph" | "people" | "relationships" | "subject"> {}
+
+export function buildFamilyTreeLayoutFromNormalized<Person>({
   subject,
   people,
   relationships,
-  graph,
   collapsed = [],
   measurements = {},
+  estimatedCardSize: estimatedCardSizeOverrides,
   spacing: spacingOverrides,
+  layoutMode = "default",
+  shouldRenderPersonCard,
   limits,
   lineShape = "orthogonal",
-}: BuildFamilyTreeLayoutInput<Person>): FamilyTreeLayoutResult<Person> {
-  const normalized = normalizeFamilyInput({ graph, people, relationships, subject });
-  subject = normalized.subject;
-  people = normalized.people;
-  relationships = normalized.relationships;
-  const estimatedCardSize = defaultEstimatedCardSize;
+}: BuildNormalizedFamilyTreeLayoutInput<Person>): FamilyTreeLayoutResult<Person> {
+  const estimatedCardSize = resolveEstimatedCardSize(estimatedCardSizeOverrides);
   const spacing = { ...defaultSpacing, ...spacingOverrides };
   const index = createFamilyIndex(people, relationships);
   const neighborhood = collectFamilyNeighborhood(index, subject, limits);
@@ -176,7 +211,7 @@ export function buildFamilyTreeLayout<Person>({
     };
   }
 
-  const rows = createFamilyRelativeRows(neighborhood);
+  const rows = createFamilyRelativeRows(neighborhood, layoutMode);
 
   const relativesById = new Map<PersonId, ComputedRelation>();
   for (const row of rows) {
@@ -195,12 +230,13 @@ export function buildFamilyTreeLayout<Person>({
 
   const placementByPerson = createPlacementByPerson(neighborhood.relationships);
   const personGap = Math.min(spacing.column, 40);
-  const layers = createFamilyLayoutLayers(neighborhood, visibleRows);
+  const hiddenCardIds = collectHiddenCardIds({ people, shouldRenderPersonCard, subject });
+  const layers = createFamilyLayoutLayers(neighborhood, visibleRows, layoutMode);
   const layeredLayout = buildLayeredTreeLayout({
-    layers: createFamilyLayerBoxes(layers, measurements, estimatedCardSize, personGap),
+    layers: createFamilyLayerBoxes(layers, measurements, estimatedCardSize, personGap, hiddenCardIds),
     spacing,
   });
-  const cards = createFamilyLayoutCards(layeredLayout.boxes, measurements, estimatedCardSize, personGap);
+  const cards = createFamilyLayoutCards(layeredLayout.boxes, measurements, estimatedCardSize, personGap, hiddenCardIds);
 
   const subjectCard = cards.find((card) => card.personId === subject);
   const subjectShift = subjectCard ? -(subjectCard.x + subjectCard.width / 2) : 0;
@@ -233,4 +269,17 @@ export function buildFamilyTreeLayout<Person>({
     edges: routeFamilyEdges(cards, relationships, { lineShape }),
     bounds: createSubjectCenteredBounds(cards, subject, spacing.padding),
   };
+}
+
+export function buildFamilyTreeLayout<Person>({
+  subject,
+  people,
+  relationships,
+  graph,
+  ...options
+}: BuildFamilyTreeLayoutInput<Person>): FamilyTreeLayoutResult<Person> {
+  return buildFamilyTreeLayoutFromNormalized({
+    ...normalizeFamilyInput({ graph, people, relationships, subject }),
+    ...options,
+  });
 }

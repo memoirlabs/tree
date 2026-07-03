@@ -205,6 +205,70 @@ describe("tree primitives", () => {
     expect(markup).toContain(">Manage</button>");
   });
 
+  test("renders all family cards by default", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree card={FamilyCard} people={people} relationships={relationships} subject="henry" />,
+    );
+
+    expect(markup).toContain("Henry");
+    expect(markup).toContain("Carol");
+    expect(markup).toContain("James");
+    expect(markup).toContain("Emma");
+    expect(markup).toContain("Ava");
+  });
+
+  test("always renders the subject even when the render predicate returns false", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree
+        card={FamilyCard}
+        people={people}
+        relationships={relationships}
+        shouldRenderPersonCard={() => false}
+        subject="henry"
+      />,
+    );
+
+    expect(markup).toContain("Henry");
+    expect(markup).not.toContain("Carol");
+    expect(markup).not.toContain("James");
+    expect(markup).not.toContain("Emma");
+    expect(markup).not.toContain("Ava");
+  });
+
+  test("does not render connector-only placeholder parent cards", () => {
+    const renderedIds: string[] = [];
+    function TrackingFamilyCard(props: FamilyCardProps<Person>) {
+      renderedIds.push(props.personId);
+      return <FamilyCard {...props} />;
+    }
+
+    const markup = renderToStaticMarkup(
+      <FamilyTree
+        card={TrackingFamilyCard}
+        people={{
+          ...people,
+          unknownParent: { id: "unknownParent", name: "Unknown parent", isPlaceholder: true },
+        }}
+        relationships={[
+          rel.partner("henry", "unknownParent", { relation: "unknown", status: "unknown" }),
+          rel.children(["henry", "unknownParent"], ["ava"], {
+            relation: "unknown",
+            status: "unknown",
+          }),
+        ]}
+        shouldRenderPersonCard={(_person, personId) => personId !== "unknownParent"}
+        subject="henry"
+      />,
+    );
+
+    expect(markup).toContain("Henry");
+    expect(markup).toContain("Ava");
+    expect(markup).not.toContain("Unknown parent");
+    expect(markup).not.toContain("data-family-measure-id=\"unknownParent\"");
+    expect(markup).toContain("data-family-edge");
+    expect(renderedIds).not.toContain("unknownParent");
+  });
+
   test("renders configurable styled cards without custom card boilerplate", () => {
     const markup = renderToStaticMarkup(
       <FamilyTree<Person, { radius: "round"; shadow: "flat" }>
