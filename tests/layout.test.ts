@@ -421,7 +421,7 @@ test("separates sibling and spouse clusters in compact family layout", () => {
   expect((henry?.x ?? 0) - ((charlie?.x ?? 0) + (charlie?.width ?? 0))).toBeGreaterThan(20);
 });
 
-test("omits descendant coparent cards by default", () => {
+test("includes descendant coparent cards by default", () => {
   const layout = buildFamilyTreeLayout({
     graph: {
       people: {
@@ -448,12 +448,11 @@ test("omits descendant coparent cards by default", () => {
   });
 
   const cardIds = layout.cards.map((card) => card.personId);
-  expect(cardIds).toEqual(expect.arrayContaining(["henry", "spouse", "child", "grandchild"]));
-  expect(cardIds).not.toContain("unknownOtherParent");
+  expect(cardIds).toEqual(expect.arrayContaining(["henry", "spouse", "child", "grandchild", "unknownOtherParent"]));
   expect(layout.edges.some((edge) => edge.targetId === "grandchild")).toBe(true);
 });
 
-test("can opt into descendant coparent cards", () => {
+test("can opt out of descendant coparent cards", () => {
   const layout = buildFamilyTreeLayout({
     graph: {
       people: {
@@ -471,11 +470,10 @@ test("can opt into descendant coparent cards", () => {
         { groupId: "child-family", parentId: "child", childId: "grandchild" },
       ],
     },
-    layoutPolicy: { descendantCoparents: "include" },
+    layoutPolicy: { descendantCoparents: "omit" },
   });
 
-  const unknownOtherParent = layout.cards.find((card) => card.personId === "unknownOtherParent");
-  expect(unknownOtherParent?.relation.label).toBe("coparent");
+  expect(layout.cards.find((card) => card.personId === "unknownOtherParent")).toBeUndefined();
 });
 
 test("balances multiple subject partners by default", () => {

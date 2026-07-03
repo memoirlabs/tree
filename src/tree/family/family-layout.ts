@@ -22,7 +22,7 @@ const defaultSpacing: FamilyTreeSpacing = {
 };
 
 export const defaultFamilyTreeLayoutPolicy = {
-  descendantCoparents: "omit",
+  descendantCoparents: "include",
   subjectPartnerPlacement: "balanced",
 } as const satisfies Required<FamilyTreeLayoutPolicy>;
 
