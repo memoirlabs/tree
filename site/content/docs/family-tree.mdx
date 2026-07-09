@@ -290,7 +290,7 @@ Use `cardProps` for typed app-owned card inputs:
 />
 ```
 
-Graph-mode cards also receive placement metadata:
+Graph-mode cards also receive placement and person metadata:
 
 ```ts
 placement?: {
@@ -299,9 +299,16 @@ placement?: {
   guardianshipLinkIds: string[];
   visibleRelationshipIds: string[];
 };
+
+metadata?: {
+  kind?: "person" | "unknown-slot";
+  slotRole?: "parent" | "partner" | "child";
+  groupId?: string;
+  linkIds?: string[];
+};
 ```
 
-Use that metadata when your card needs to open the exact relationship editor that placed the person.
+Use `placement` and `metadata` when your card needs to open the exact relationship editor or add/link flow that placed the person. Labels are for display; mutation intent should come from structural metadata.
 
 ## Selection And Editing Hooks
 
@@ -311,8 +318,11 @@ Tree does not mutate your graph. Use handlers to open your app UI:
 <FamilyTree
   graph={graph}
   selected={selectedPersonId}
-  onPersonClick={(_person, personId) => setSelectedPersonId(personId)}
-  onAddRelationship={(_person, personId) => openAddRelativeDialog(personId)}
+  onPersonClick={(_person, personId, context) => {
+    setSelectedPersonId(personId);
+    openActionSheet(context);
+  }}
+  onAddRelationship={(_person, personId, context) => openAddRelativeDialog(personId, context)}
   readOnly={!canEditFamily}
 />
 ```

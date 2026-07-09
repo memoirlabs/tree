@@ -7,7 +7,6 @@ import type {
   TreeCardSize,
   TreeInteractionMode,
   TreeLineShape,
-  TreePersonHandler,
   TreeStylePreset,
   TreeViewport,
 } from "../core";
@@ -63,12 +62,23 @@ export interface FamilyGuardianshipLink {
   order?: number;
 }
 
+export type FamilyPersonKind = "person" | "unknown-slot";
+export type FamilySlotRole = "parent" | "partner" | "child";
+
+export interface FamilyPersonMetadata {
+  kind?: FamilyPersonKind;
+  slotRole?: FamilySlotRole;
+  groupId?: string;
+  linkIds?: string[];
+}
+
 export interface FamilyGraph<Person = unknown> {
   people: PeopleById<Person>;
   subject: PersonId;
   partnershipGroups: FamilyPartnershipGroup[];
   parentChildLinks: FamilyParentChildLink[];
   guardianshipLinks?: FamilyGuardianshipLink[];
+  personMetadata?: Record<PersonId, FamilyPersonMetadata>;
 }
 
 export interface FamilyPlacementMetadata {
@@ -161,19 +171,43 @@ export interface FamilyNeighborhoodLimits {
   grandchildren: number | null;
 }
 
+export interface FamilyActionContext<Person> {
+  person: Person;
+  personId: PersonId;
+  subject: PersonId;
+  relation: ComputedRelation;
+  placement?: FamilyPlacementMetadata;
+  metadata?: FamilyPersonMetadata;
+}
+
+export type FamilyTreePersonHandler<Person> = (
+  person: Person,
+  personId: PersonId,
+  context: FamilyActionContext<Person>,
+) => void;
+
+export interface FamilyCardActionHandler<Person> {
+  (): void;
+  (person: Person, personId: PersonId, context: FamilyActionContext<Person>): void;
+}
+
 export interface FamilyCardProps<Person> extends HTMLAttributes<HTMLElement> {
   person: Person;
   personId: PersonId;
   relation: ComputedRelation;
+  metadata?: FamilyPersonMetadata;
   selected: boolean;
   focused: boolean;
   collapsed: boolean;
   readOnly: boolean;
   placement?: FamilyPlacementMetadata;
-  onAddRelationship?: FamilyTreePersonHandler<Person>;
+  onAddRelationship?: FamilyCardActionHandler<Person>;
   className?: string;
   style?: CSSProperties;
   "data-family-card"?: string;
+  "data-node-kind"?: FamilyPersonKind;
+  "data-placement-group-id"?: string;
+  "data-slot-role"?: FamilySlotRole;
   "data-tree-card"?: string;
   "data-focused"?: string;
   "data-person-id"?: string;
@@ -184,8 +218,6 @@ export interface FamilyCardProps<Person> extends HTMLAttributes<HTMLElement> {
 }
 
 export type FamilyTreeSize = TreeCardSize;
-
-export type FamilyTreePersonHandler<Person> = TreePersonHandler<Person>;
 
 export type FamilyTreeLayoutMode = "default" | "compact-family";
 export type FamilyTreeBoundsMode = "subject" | "content";

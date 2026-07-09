@@ -331,6 +331,21 @@ function LinkedTeamCard({ canEdit, href, person, depth, ...rootProps }: OrgCardP
 />
 ```
 
+Family graph cards also receive structural `placement` and `metadata`. Use those fields for add/link/edit flows instead of inferring mutation intent from rendered labels:
+
+```ts
+personMetadata: {
+  "unknown-parent": {
+    kind: "unknown-slot",
+    slotRole: "partner",
+    groupId: "alex-unknown",
+    linkIds: ["unknown-riley"],
+  },
+}
+```
+
+`onPersonClick` and `onAddRelationship` receive the same context as a third argument, while existing two-argument handlers continue to work.
+
 ## Layout And Viewport
 
 Family layout is subject-centered and neighborhood-based. It renders ancestor rows, a subject row with separated sibling and partner clusters, and descendant rows. Partnership groups and child groups participate in layout before SVG edges are routed, so parent-child lines come from measured card positions.
@@ -423,6 +438,9 @@ Useful selectors include:
 - `[data-tree-edge]`
 - `[data-family-card]`
 - `[data-family-edge]`
+- `[data-node-kind]`
+- `[data-slot-role]`
+- `[data-placement-group-id]`
 - `[data-org-card]`
 - `[data-org-edge]`
 - `[data-selected]`
@@ -465,6 +483,7 @@ All supported root exports are documented in the site API reference.
 - Org model helpers: `createOrgChartIndex`, `collectOrgChartSubtree`
 - Core surface and styling helpers: `TreeSurface`, `treeStylePresets`, `getTreeStyleName`
 - Public types: graph types, relationship types, component prop types, card prop types, layout result types, primitive prop types, viewport types, styling types, and helper option types
+- Structural family action types: `FamilyPersonMetadata`, `FamilyActionContext`, and related slot/kind helper types
 - Stylesheet: `@memoir/tree/styles.css`
 
 The package does not expose a generic graph editor API. The lower-level exports exist so apps can compose family render layers, run tests without React, or bridge older family layout data into the current graph model.

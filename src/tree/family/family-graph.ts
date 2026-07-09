@@ -2,6 +2,7 @@ import type {
   FamilyGraph,
   FamilyGuardianshipRelationship,
   FamilyParentageRelationship,
+  FamilyPersonMetadata,
   FamilyPartnershipRelationship,
   FamilyRelationship,
   PeopleById,
@@ -12,6 +13,7 @@ export interface NormalizedFamilyInput<Person> {
   subject: PersonId;
   people: PeopleById<Person>;
   relationships: FamilyRelationship[];
+  personMetadata?: Record<PersonId, FamilyPersonMetadata>;
 }
 
 const parentChildLinkId = (parentId: PersonId, childId: PersonId, index: number) =>
@@ -106,6 +108,7 @@ export function normalizeFamilyInput<Person>({
       subject: graph.subject,
       people: graph.people,
       relationships: graphToFamilyRelationships(graph),
+      personMetadata: graph.personMetadata,
     };
   }
 

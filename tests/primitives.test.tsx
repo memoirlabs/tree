@@ -12,7 +12,7 @@ import {
   rel,
   useTreeLayout,
 } from "../src/index";
-import type { FamilyCardProps } from "../src/index";
+import type { FamilyActionContext, FamilyCardProps, FamilyGraph } from "../src/index";
 
 type Person = {
   id?: string;
@@ -267,6 +267,153 @@ describe("tree primitives", () => {
     expect(markup).not.toContain("data-family-measure-id=\"unknownParent\"");
     expect(markup).toContain("data-family-edge");
     expect(renderedIds).not.toContain("unknownParent");
+  });
+
+  test("passes graph person metadata to layout cards and rendered card props", () => {
+    let capturedProps: FamilyCardProps<Person> | undefined;
+    function TrackingFamilyCard(props: FamilyCardProps<Person>) {
+      if (props.personId === "unknownParent") {
+        capturedProps = props;
+      }
+      return <FamilyCard {...props} />;
+    }
+
+    const graph: FamilyGraph<Person> = {
+      subject: "henry",
+      people: {
+        henry: { id: "henry", name: "Henry" },
+        unknownParent: { id: "unknownParent", name: "Unknown parent" },
+        ava: { id: "ava", name: "Ava" },
+      },
+      partnershipGroups: [
+        {
+          id: "henry-unknown",
+          partners: ["henry", "unknownParent"],
+          relation: "unknown",
+          status: "unknown",
+        },
+      ],
+      parentChildLinks: [
+        {
+          id: "henry-ava",
+          groupId: "henry-unknown",
+          parentId: "henry",
+          childId: "ava",
+        },
+        {
+          id: "unknown-ava",
+          groupId: "henry-unknown",
+          parentId: "unknownParent",
+          childId: "ava",
+          relation: "unknown",
+        },
+      ],
+      personMetadata: {
+        unknownParent: {
+          kind: "unknown-slot",
+          slotRole: "partner",
+          groupId: "henry-unknown",
+          linkIds: ["unknown-ava"],
+        },
+      },
+    };
+
+    const layout = buildFamilyTreeLayout({ graph });
+    const unknownCard = layout.cards.find((card) => card.personId === "unknownParent");
+    const markup = renderToStaticMarkup(<FamilyTree card={TrackingFamilyCard} graph={graph} />);
+
+    expect(unknownCard?.metadata).toEqual({
+      kind: "unknown-slot",
+      slotRole: "partner",
+      groupId: "henry-unknown",
+      linkIds: ["unknown-ava"],
+    });
+    expect(capturedProps?.metadata).toEqual(unknownCard?.metadata);
+    expect(markup).toContain("data-node-kind=\"unknown-slot\"");
+    expect(markup).toContain("data-slot-role=\"partner\"");
+    expect(markup).toContain("data-placement-group-id=\"henry-unknown\"");
+  });
+
+  test("passes structural context through family action callbacks", () => {
+    let capturedProps: FamilyCardProps<Person> | undefined;
+    let clickedContext: FamilyActionContext<Person> | undefined;
+    let addContext: FamilyActionContext<Person> | undefined;
+    function TrackingFamilyCard(props: FamilyCardProps<Person>) {
+      if (props.personId === "unknownParent") {
+        capturedProps = props;
+      }
+      return <FamilyCard {...props} />;
+    }
+
+    const graph: FamilyGraph<Person> = {
+      subject: "henry",
+      people: {
+        henry: { id: "henry", name: "Henry" },
+        unknownParent: { id: "unknownParent", name: "Unknown parent" },
+        ava: { id: "ava", name: "Ava" },
+      },
+      partnershipGroups: [
+        {
+          id: "henry-unknown",
+          partners: ["henry", "unknownParent"],
+          relation: "unknown",
+          status: "unknown",
+        },
+      ],
+      parentChildLinks: [
+        {
+          id: "henry-ava",
+          groupId: "henry-unknown",
+          parentId: "henry",
+          childId: "ava",
+        },
+      ],
+      personMetadata: {
+        unknownParent: {
+          kind: "unknown-slot",
+          slotRole: "partner",
+          groupId: "henry-unknown",
+        },
+      },
+    };
+
+    renderToStaticMarkup(
+      <FamilyTree
+        card={TrackingFamilyCard}
+        graph={graph}
+        onAddRelationship={(_person, _personId, context) => {
+          addContext = context;
+        }}
+        onPersonClick={(_person, _personId, context) => {
+          clickedContext = context;
+        }}
+      />,
+    );
+
+    capturedProps?.onClick?.({} as never);
+    capturedProps?.onAddRelationship?.();
+
+    expect(clickedContext).toMatchObject({
+      personId: "unknownParent",
+      subject: "henry",
+      metadata: {
+        kind: "unknown-slot",
+        slotRole: "partner",
+        groupId: "henry-unknown",
+      },
+      placement: {
+        partnershipGroupIds: ["henry-unknown"],
+      },
+    });
+    expect(addContext).toMatchObject({
+      personId: "unknownParent",
+      subject: "henry",
+      metadata: {
+        kind: "unknown-slot",
+        slotRole: "partner",
+        groupId: "henry-unknown",
+      },
+    });
   });
 
   test("renders configurable styled cards without custom card boilerplate", () => {

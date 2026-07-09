@@ -12,6 +12,7 @@ import {
 import { normalizeFamilyInput } from "./family-graph";
 import { buildFamilyTreeLayoutFromNormalized } from "./family-layout";
 import type {
+  FamilyActionContext,
   FamilyGraph,
   FamilyCardProps,
   FamilyRelationship,
@@ -191,6 +192,7 @@ function FamilyTreeProvider<Person>({
         subject: normalized.subject,
         people: normalized.people,
         relationships: normalized.relationships,
+        personMetadata: normalized.personMetadata,
         collapsed,
         measurements,
         estimatedCardSize,
@@ -331,16 +333,16 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
   } = context;
 
   const handleFamilyClick = useCallback(
-    (person: Person, personId: PersonId) => {
-      onPersonClick?.(person, personId);
+    (context: FamilyActionContext<Person>) => {
+      onPersonClick?.(context.person, context.personId, context);
     },
     [onPersonClick],
   );
   const handleFamilyKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLElement>, person: Person, personId: PersonId) => {
+    (event: KeyboardEvent<HTMLElement>, context: FamilyActionContext<Person>) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
-      onPersonClick?.(person, personId);
+      onPersonClick?.(context.person, context.personId, context);
     },
     [onPersonClick],
   );
@@ -351,10 +353,19 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
       const isFocused = selected ? isSelected : layoutCard.personId === subject;
       const personLabel = getPersonLabel?.(layoutCard.person, layoutCard.personId) ?? layoutCard.personId;
       const relationLabel = isFocused && layoutCard.personId === subject ? "subject" : layoutCard.relation.label;
+      const actionContext: FamilyActionContext<Person> = {
+        person: layoutCard.person,
+        personId: layoutCard.personId,
+        subject,
+        relation: layoutCard.relation,
+        placement: layoutCard.placement,
+        metadata: layoutCard.metadata,
+      };
       const treeCardProps: FamilyCardProps<Person> = {
         person: layoutCard.person,
         personId: layoutCard.personId,
         relation: layoutCard.relation,
+        metadata: layoutCard.metadata,
         placement: layoutCard.placement,
         selected: isSelected,
         focused: isFocused,
@@ -364,20 +375,23 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
         onAddRelationship:
           readOnly || !onAddRelationship
             ? undefined
-            : () => onAddRelationship(layoutCard.person, layoutCard.personId),
+            : () => onAddRelationship(layoutCard.person, layoutCard.personId, actionContext),
         "aria-selected": isSelected || undefined,
         "aria-label": `${personLabel}, ${relationLabel}`,
         "data-focused": isFocused ? "" : undefined,
         "data-family-card": "",
+        "data-node-kind": layoutCard.metadata?.kind,
+        "data-placement-group-id": layoutCard.metadata?.groupId,
+        "data-slot-role": layoutCard.metadata?.slotRole,
         "data-tree-card": "",
         "data-person-id": layoutCard.personId,
         "data-relation": layoutCard.relation.label,
         "data-generation": layoutCard.relation.generation,
         "data-selected": isSelected ? "" : undefined,
         "data-side": layoutCard.relation.side,
-        onClick: onPersonClick ? () => handleFamilyClick(layoutCard.person, layoutCard.personId) : undefined,
+        onClick: onPersonClick ? () => handleFamilyClick(actionContext) : undefined,
         onKeyDown: onPersonClick
-          ? (event) => handleFamilyKeyDown(event, layoutCard.person, layoutCard.personId)
+          ? (event) => handleFamilyKeyDown(event, actionContext)
           : undefined,
         role: onPersonClick ? "button" : undefined,
         tabIndex: onPersonClick ? 0 : undefined,

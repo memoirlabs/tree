@@ -33,8 +33,11 @@ import {
   treeStylePresets,
 } from "@memoir/tree";
 import type {
+  FamilyActionContext,
+  FamilyCardActionHandler,
   FamilyCardProps,
   FamilyGraph,
+  FamilyPersonMetadata,
   OrgCardProps,
   OrgChartGraph,
   TreeApi,
@@ -132,7 +135,7 @@ For selected-card add flows, keep relation permissions and dialogs in your app. 
 
 Recommended graph-mode props:
 
-- `graph`: graph-shaped family facts with `people`, `subject`, `partnershipGroups`, `parentChildLinks`, and optional `guardianshipLinks`.
+- `graph`: graph-shaped family facts with `people`, `subject`, `partnershipGroups`, `parentChildLinks`, optional `guardianshipLinks`, and optional `personMetadata`.
 
 When `graph` is provided, `FamilyTree` uses the graph's `people`, `subject`, and relationships derived from graph links.
 
@@ -172,6 +175,14 @@ interface FamilyGraph<Person = unknown> {
   partnershipGroups: FamilyPartnershipGroup[];
   parentChildLinks: FamilyParentChildLink[];
   guardianshipLinks?: FamilyGuardianshipLink[];
+  personMetadata?: Record<PersonId, FamilyPersonMetadata>;
+}
+
+interface FamilyPersonMetadata {
+  kind?: "person" | "unknown-slot";
+  slotRole?: "parent" | "partner" | "child";
+  groupId?: string;
+  linkIds?: string[];
 }
 
 interface FamilyPartnershipGroup {
@@ -220,8 +231,8 @@ Common optional props:
 - `layoutMode`: `"default"` or `"compact-family"`; compact mode keeps partners adjacent to the subject and separates sibling and partner clusters. It does not hide cards.
 - `layoutPolicy`: optional placement choices. `subjectPartnerPlacement` is `"balanced"` by default and may be set to `"after-subject"`. `descendantCoparents` is `"include"` by default and may be set to `"omit"`.
 - `boundsMode`: `"subject"` or `"content"`; defaults to `"subject"` for the interactive canvas. Use `"content"` for export surfaces that should tightly fit rendered cards and edges.
-- `onPersonClick`: card click and Enter/Space activation handler.
-- `onAddRelationship`: passed to cards for app-owned add-relative flows.
+- `onPersonClick`: card click and Enter/Space activation handler. Family trees pass a structural action context as the third argument.
+- `onAddRelationship`: passed to cards for app-owned add-relative flows. Family trees pass the same structural action context as the third argument.
 - `getPersonLabel`: accessible card label builder.
 - `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
@@ -471,6 +482,9 @@ Family graph and relationship types:
 - `FamilyPartnershipGroup`: app-owned partnership/co-parent/unknown-parent group.
 - `FamilyParentChildLink`: app-owned parent-to-child lineage link.
 - `FamilyGuardianshipLink`: app-owned guardian-to-child link.
+- `FamilyPersonMetadata`: optional structural metadata for rendered people or unknown slots.
+- `FamilyActionContext`: third callback argument for family card actions; includes person, subject, relation, placement, and metadata.
+- `FamilyCardActionHandler`: bound action callback type passed to family cards for add flows.
 - `FamilyRelationship`: simple-mode relationship union.
 - `FamilyParentageRelationship`: normalized/simple parentage relationship.
 - `FamilyPartnershipRelationship`: normalized/simple partnership relationship.

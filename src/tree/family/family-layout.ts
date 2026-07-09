@@ -241,6 +241,7 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
   subject,
   people,
   relationships,
+  personMetadata,
   collapsed = [],
   measurements = {},
   estimatedCardSize: estimatedCardSizeOverrides,
@@ -316,6 +317,7 @@ export function buildFamilyTreeLayoutFromNormalized<Person>({
   for (const card of cards) {
     card.x = roundTreeCoordinate(card.x + offsetX);
     card.y = roundTreeCoordinate(card.y + offsetY);
+    card.metadata = personMetadata?.[card.personId];
     card.placement = placementByPerson.get(card.personId) ?? emptyPlacement();
   }
   if (boundsMode === "subject") {

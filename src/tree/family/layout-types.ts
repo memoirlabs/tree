@@ -2,6 +2,7 @@ import type { TreeBounds, TreeCardSize, TreeLayoutCardBase, TreeLayoutEdge } fro
 import type {
   ComputedRelation,
   FamilyNeighborhoodLimits,
+  FamilyPersonMetadata,
   FamilyPlacementMetadata,
   FamilyRelationship,
   FamilyGraph,
@@ -15,6 +16,7 @@ import type {
 
 export interface FamilyTreeLayoutCard<Person> extends TreeLayoutCardBase<Person> {
   relation: ComputedRelation;
+  metadata?: FamilyPersonMetadata;
   placement?: FamilyPlacementMetadata;
   hiddenCard?: boolean;
 }
