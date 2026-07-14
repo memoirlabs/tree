@@ -128,6 +128,24 @@ describe("tree primitives", () => {
     expect(markup).toContain("tabindex=\"0\"");
   });
 
+  test("supports app-owned accessible relationship labels", () => {
+    const markup = renderToStaticMarkup(
+      <FamilyTree
+        card={FamilyCard}
+        getRelationLabel={({ relation }) =>
+          relation.label === "partner" ? "spouse" : undefined
+        }
+        onPersonClick={() => undefined}
+        people={people}
+        relationships={relationships}
+        subject="henry"
+      />,
+    );
+
+    expect(markup).toContain('aria-label="Emma, spouse"');
+    expect(markup).not.toContain('aria-label="Emma, partner"');
+  });
+
   test("renders a pan-only tree surface", () => {
     const markup = renderToStaticMarkup(
       <FamilyTree
@@ -311,7 +329,7 @@ describe("tree primitives", () => {
       personMetadata: {
         unknownParent: {
           kind: "unknown-slot",
-          slotRole: "partner",
+          slotRole: "parent",
           groupId: "henry-unknown",
           linkIds: ["unknown-ava"],
         },
@@ -321,17 +339,21 @@ describe("tree primitives", () => {
     const layout = buildFamilyTreeLayout({ graph });
     const unknownCard = layout.cards.find((card) => card.personId === "unknownParent");
     const markup = renderToStaticMarkup(<FamilyTree card={TrackingFamilyCard} graph={graph} />);
+    const defaultMarkup = renderToStaticMarkup(<FamilyTree graph={graph} />);
 
     expect(unknownCard?.metadata).toEqual({
       kind: "unknown-slot",
-      slotRole: "partner",
+      slotRole: "parent",
       groupId: "henry-unknown",
       linkIds: ["unknown-ava"],
     });
     expect(capturedProps?.metadata).toEqual(unknownCard?.metadata);
     expect(markup).toContain("data-node-kind=\"unknown-slot\"");
-    expect(markup).toContain("data-slot-role=\"partner\"");
+    expect(markup).toContain("data-slot-role=\"parent\"");
     expect(markup).toContain("data-placement-group-id=\"henry-unknown\"");
+    expect(markup).toContain('aria-label="Unknown parent, parent"');
+    expect(markup).not.toContain('aria-label="Unknown parent, partner"');
+    expect(defaultMarkup).toContain(">parent</small>");
   });
 
   test("passes structural context through family action callbacks", () => {
@@ -371,7 +393,7 @@ describe("tree primitives", () => {
       personMetadata: {
         unknownParent: {
           kind: "unknown-slot",
-          slotRole: "partner",
+          slotRole: "parent",
           groupId: "henry-unknown",
         },
       },
@@ -398,7 +420,7 @@ describe("tree primitives", () => {
       subject: "henry",
       metadata: {
         kind: "unknown-slot",
-        slotRole: "partner",
+        slotRole: "parent",
         groupId: "henry-unknown",
       },
       placement: {
@@ -410,7 +432,7 @@ describe("tree primitives", () => {
       subject: "henry",
       metadata: {
         kind: "unknown-slot",
-        slotRole: "partner",
+        slotRole: "parent",
         groupId: "henry-unknown",
       },
     });

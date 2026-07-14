@@ -308,6 +308,11 @@ metadata?: {
 };
 ```
 
+Use `slotRole: "parent"` for a dotted missing-parent card in a
+child-bearing group. Tree uses that explicit metadata in its default card and
+accessible relationship wording; it does not guess the role from an ID or
+display name.
+
 Use `placement` and `metadata` when your card needs to open the exact relationship editor or add/link flow that placed the person. Labels are for display; mutation intent should come from structural metadata.
 
 ## Selection And Editing Hooks

@@ -8,6 +8,8 @@ export {
   getFamilyChildPlacementGroupIds,
   getFamilyPartnershipGroupIds,
   graphToFamilyRelationships,
+  formatFamilyRelationLabel,
+  getDefaultFamilyRelationLabel,
   rel,
 } from "./tree/family/index";
 export { graphToOrgReportingRelationships, org } from "./tree/org-chart/index";
@@ -94,6 +96,7 @@ export type {
   FamilyTreePersonHandler,
   FamilyTreeProps,
   FamilyTreeRenderCardPredicate,
+  FamilyTreeRelationLabeler,
   FamilyTreeSize,
   FamilyTreeSpacing,
   FamilySlotRole,

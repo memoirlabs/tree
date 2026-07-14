@@ -563,7 +563,7 @@ test("graph mode keeps a half-sibling's other parent in the parent row", () => {
   expect(layout.edges.some((edge) => edge.id.includes("alex-drew") && edge.targetId === "finn")).toBe(true);
 });
 
-test("graph mode includes spouse parents without labeling them as direct parents", () => {
+test("graph mode labels a spouse's parents as non-direct parents", () => {
   const graph: FamilyGraph = {
     people,
     subject: "alex",
@@ -577,12 +577,12 @@ test("graph mode includes spouse parents without labeling them as direct parents
   const drew = layout.cards.find((card) => card.personId === "drew");
 
   expect(neighborhood?.parents.find((relative) => relative.personId === "drew")?.relation).toMatchObject({
-    label: "partner-parent",
+    label: "parent",
     generation: -1,
     side: "other",
   });
-  expect(drew?.relation).toMatchObject({ label: "partner-parent", generation: -1, side: "other" });
-  expect(drew?.relation.label).not.toBe("parent");
+  expect(drew?.relation).toMatchObject({ label: "parent", generation: -1, side: "other" });
+  expect(drew?.relation.side).not.toBe("ancestor");
   expect(layout.edges.some((edge) => edge.sourceId === "drew" && edge.targetId === "blair")).toBe(true);
 });
 

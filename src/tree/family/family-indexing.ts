@@ -405,7 +405,7 @@ const collectAncestorGenerations = <Person>(
               side: "other",
             }),
             createRelatives(index, partnerParentIds, {
-              label: "partner-parent",
+              label: "parent",
               generation: -generation,
               side: "other",
             }),

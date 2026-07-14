@@ -1,6 +1,10 @@
 export { DefaultFamilyCard, FamilyTree, StyledFamilyCard } from "./FamilyTree";
 export { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider, useTreeLayout } from "./FamilyTreePrimitives";
 export { rel } from "./family-rel";
+export {
+  formatFamilyRelationLabel,
+  getDefaultFamilyRelationLabel,
+} from "./relation-labels";
 export { graphToFamilyRelationships } from "./family-graph";
 export {
   getFamilyChildBearingGroupIds,
@@ -52,6 +56,7 @@ export type {
   FamilyTreePersonHandler,
   FamilyTreeProps,
   FamilyTreeRenderCardPredicate,
+  FamilyTreeRelationLabeler,
   FamilyTreeSize,
   FamilyTreeSpacing,
   FamilySlotRole,

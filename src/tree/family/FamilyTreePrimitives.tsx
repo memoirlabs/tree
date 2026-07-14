@@ -11,6 +11,7 @@ import {
 } from "../core";
 import { normalizeFamilyInput } from "./family-graph";
 import { buildFamilyTreeLayoutFromNormalized } from "./family-layout";
+import { getDefaultFamilyRelationLabel } from "./relation-labels";
 import type {
   FamilyActionContext,
   FamilyGraph,
@@ -19,6 +20,7 @@ import type {
   FamilyTreeCardProps,
   FamilyTreePersonHandler,
   FamilyTreeProps,
+  FamilyTreeRelationLabeler,
   FamilyTreeSpacing,
   PeopleById,
   PersonId,
@@ -45,6 +47,7 @@ export interface FamilyTreeProviderProps<Person> {
   onPersonClick?: FamilyTreeProps<Person>["onPersonClick"];
   onAddRelationship?: FamilyTreePersonHandler<Person>;
   getPersonLabel?: (person: Person, personId: PersonId) => string;
+  getRelationLabel?: FamilyTreeRelationLabeler<Person>;
   readOnly?: boolean;
   selected?: PersonId;
   spacing?: Partial<FamilyTreeSpacing>;
@@ -67,6 +70,7 @@ export interface FamilyTreePrimitiveContext<Person> {
   onPersonClick?: FamilyTreeProps<Person>["onPersonClick"];
   onAddRelationship?: FamilyTreePersonHandler<Person>;
   getPersonLabel?: (person: Person, personId: PersonId) => string;
+  getRelationLabel?: FamilyTreeRelationLabeler<Person>;
   readOnly: boolean;
   selected?: PersonId;
   subject: PersonId;
@@ -156,6 +160,7 @@ function FamilyTreeProvider<Person>({
   collapsed,
   lineShape = "orthogonal",
   getPersonLabel,
+  getRelationLabel,
   limits,
   onAddRelationship,
   onPersonClick,
@@ -226,13 +231,25 @@ function FamilyTreeProvider<Person>({
       layout,
       lineShape,
       getPersonLabel,
+      getRelationLabel,
       onAddRelationship,
       onPersonClick,
       readOnly,
       selected,
       subject: normalized.subject,
     }),
-    [collapsedIds, layout, lineShape, getPersonLabel, onAddRelationship, onPersonClick, readOnly, selected, normalized.subject],
+    [
+      collapsedIds,
+      getPersonLabel,
+      getRelationLabel,
+      layout,
+      lineShape,
+      normalized.subject,
+      onAddRelationship,
+      onPersonClick,
+      readOnly,
+      selected,
+    ],
   );
 
   return <TreePrimitiveContextObject.Provider value={value as TreePrimitiveContext<unknown>}>{children}</TreePrimitiveContextObject.Provider>;
@@ -325,6 +342,7 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
   const {
     collapsedIds,
     getPersonLabel,
+    getRelationLabel,
     onAddRelationship,
     onPersonClick,
     readOnly,
@@ -352,7 +370,6 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
       const isSelected = selected === layoutCard.personId;
       const isFocused = selected ? isSelected : layoutCard.personId === subject;
       const personLabel = getPersonLabel?.(layoutCard.person, layoutCard.personId) ?? layoutCard.personId;
-      const relationLabel = isFocused && layoutCard.personId === subject ? "subject" : layoutCard.relation.label;
       const actionContext: FamilyActionContext<Person> = {
         person: layoutCard.person,
         personId: layoutCard.personId,
@@ -361,6 +378,9 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
         placement: layoutCard.placement,
         metadata: layoutCard.metadata,
       };
+      const relationLabel =
+        getRelationLabel?.(actionContext) ??
+        getDefaultFamilyRelationLabel(actionContext);
       const treeCardProps: FamilyCardProps<Person> = {
         person: layoutCard.person,
         personId: layoutCard.personId,
@@ -408,6 +428,7 @@ export function TreeNodeLayer<Person, CardExtraProps extends object = Record<str
       cardProps,
       collapsedIds,
       getPersonLabel,
+      getRelationLabel,
       handleFamilyClick,
       handleFamilyKeyDown,
       onAddRelationship,

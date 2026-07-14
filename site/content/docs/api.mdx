@@ -83,6 +83,8 @@ Runtime exports:
 - `rel`: family simple-mode relationship helpers.
 - `org`: org simple-mode reporting helpers.
 - `graphToFamilyRelationships`: converts `FamilyGraph` links into renderable family relationships.
+- `formatFamilyRelationLabel`: converts a computed relation token into default human-facing wording.
+- `getDefaultFamilyRelationLabel`: resolves default wording from a structural family action context.
 - `graphToOrgReportingRelationships`: converts `OrgChartGraph` links into renderable reporting relationships.
 - `createFamilyIndex`: indexes family relationships for lookup and neighborhood collection.
 - `collectFamilyNeighborhood`: derives a subject-centered family neighborhood from an index.
@@ -234,6 +236,7 @@ Common optional props:
 - `onPersonClick`: card click and Enter/Space activation handler. Family trees pass a structural action context as the third argument.
 - `onAddRelationship`: passed to cards for app-owned add-relative flows. Family trees pass the same structural action context as the third argument.
 - `getPersonLabel`: accessible card label builder.
+- `getRelationLabel`: context-aware accessible relationship label builder. It changes wording without changing computed relationship data; return `undefined` to use Tree's default.
 - `viewport`, `initialViewport`, `defaultViewport`, `onViewportChange`, `treeApiRef`: viewport control.
 - `interactionMode`, `spacing`, `lineShape`, `theme`, `className`, `style`, `cardClassName`, `edgeClassName`: rendering and styling controls.
 
@@ -395,6 +398,8 @@ Buttons, links, inputs, selects, textareas, contenteditable elements, and elemen
 Use these in tests, previews, or custom renderers:
 
 - `graphToFamilyRelationships(graph)`
+- `formatFamilyRelationLabel(label, metadata?)`
+- `getDefaultFamilyRelationLabel(context)`
 - `graphToOrgReportingRelationships(graph)`
 - `createFamilyIndex(people, relationships)`
 - `collectFamilyNeighborhood(index, subject, limits?)`
@@ -504,6 +509,7 @@ Family component and neighborhood types:
 - `FamilyCardProps<Person>`: props passed to custom family cards.
 - `FamilyTreeCardProps<Person, CardExtraProps>`: typed `cardProps` input for family cards.
 - `FamilyTreePersonHandler<Person>`: family person handler signature.
+- `FamilyTreeRelationLabeler<Person>`: context-aware accessible relationship label builder.
 - `FamilyTreeSize`: family card measurement shape.
 - `FamilyTreeSpacing`: family row/column/padding spacing shape.
 - `FamilyNeighborhoodLimits`: visible-family caps and generation limits.

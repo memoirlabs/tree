@@ -337,7 +337,7 @@ Family graph cards also receive structural `placement` and `metadata`. Use those
 personMetadata: {
   "unknown-parent": {
     kind: "unknown-slot",
-    slotRole: "partner",
+    slotRole: "parent",
     groupId: "alex-unknown",
     linkIds: ["unknown-riley"],
   },
@@ -345,6 +345,20 @@ personMetadata: {
 ```
 
 `onPersonClick` and `onAddRelationship` receive the same context as a third argument, while existing two-argument handlers continue to work.
+
+Use `getRelationLabel` when product wording differs from Tree's computed
+relationship name. The returned text is used in each card's generated
+accessible label without changing structural relationship data. Return
+`undefined` to keep Tree's default wording:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  getRelationLabel={({ relation }) =>
+    relation.label === "partner" ? "spouse" : undefined
+  }
+/>
+```
 
 ## Layout And Viewport
 

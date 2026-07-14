@@ -3,6 +3,7 @@
 import type { CSSProperties, JSX } from "react";
 
 import { TreeCanvas, TreeEdges, TreeNodeLayer, TreeProvider } from "./FamilyTreePrimitives";
+import { formatFamilyRelationLabel } from "./relation-labels";
 import type { FamilyCardProps, FamilyTreeProps, PersonId } from "./types";
 
 export type StyledFamilyCardRadius = CSSProperties["borderRadius"] | "square" | "soft" | "round" | "pill";
@@ -113,6 +114,8 @@ export function StyledFamilyCard<Person>({
   focused: _focused,
   collapsed: _collapsed,
   readOnly: _readOnly,
+  metadata,
+  placement: _placement,
   onAddRelationship: _onAddRelationship,
   ...props
 }: StyledFamilyCardProps<Person>): JSX.Element {
@@ -144,7 +147,9 @@ export function StyledFamilyCard<Person>({
         />
       ) : null}
       <strong style={defaultNameStyle}>{getDefaultPersonLabel(person, personId)}</strong>
-      <small style={defaultRelationStyle}>{relation.label}</small>
+      <small style={defaultRelationStyle}>
+        {formatFamilyRelationLabel(relation.label, metadata)}
+      </small>
     </article>
   );
 }
@@ -181,6 +186,7 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
   theme,
   treeApiRef,
   getPersonLabel,
+  getRelationLabel,
   selected,
   collapsed,
   readOnly = false,
@@ -195,6 +201,7 @@ export function FamilyTree<Person, CardExtraProps extends object = Record<string
       type="family"
       collapsed={collapsed}
       getPersonLabel={resolvePersonLabel}
+      getRelationLabel={getRelationLabel}
       limits={limits}
       lineShape={lineShape}
       onAddRelationship={onAddRelationship}

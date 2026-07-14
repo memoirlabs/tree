@@ -32,6 +32,8 @@ const expectedRuntimeExports = [
   "getFamilyChildPlacementGroupIds",
   "getFamilyPartnershipGroupIds",
   "graphToFamilyRelationships",
+  "formatFamilyRelationLabel",
+  "getDefaultFamilyRelationLabel",
   "rel",
   "graphToOrgReportingRelationships",
   "org",

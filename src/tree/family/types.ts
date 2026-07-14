@@ -141,7 +141,6 @@ export type ComputedRelationLabel =
   | "cousin"
   | "niece-nephew"
   | "partner"
-  | "partner-parent"
   | "coparent"
   | "guardian"
   | "relative"
@@ -229,6 +228,10 @@ export interface FamilyTreeLayoutPolicy {
 
 export type FamilyTreeRenderCardPredicate<Person> = (person: Person, personId: PersonId) => boolean;
 
+export type FamilyTreeRelationLabeler<Person> = (
+  context: FamilyActionContext<Person>,
+) => string | undefined;
+
 export type FamilyTreeCardProps<Person, CardExtraProps extends object> =
   | CardExtraProps
   | ((person: Person, props: FamilyCardProps<Person>) => CardExtraProps);
@@ -261,6 +264,7 @@ export interface FamilyTreeProps<Person, CardExtraProps extends object = Record<
   theme?: TreeStylePreset;
   treeApiRef?: Ref<TreeApi>;
   getPersonLabel?: (person: Person, personId: PersonId) => string;
+  getRelationLabel?: FamilyTreeRelationLabeler<Person>;
   selected?: PersonId;
   collapsed?: PersonId[];
   readOnly?: boolean;
