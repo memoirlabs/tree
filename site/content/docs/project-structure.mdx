@@ -144,6 +144,11 @@ export function addChildToGroup(graph: FamilyGraph<Person>, groupId: string): Fa
 
 That helper returns a new graph. React re-renders `FamilyTree` from the new state, and your app can persist the same graph JSON.
 
+Keep generated family slots in the same graph data module. Represent a missing
+parent with `personMetadata` using `kind: "unknown-slot"` and
+`slotRole: "parent"`; do not parse IDs, names, or rendered relationship labels
+to recover structural intent in actions.
+
 Keep layout options close to the route or panel that owns the experience:
 
 ```tsx

@@ -9,13 +9,14 @@ For production apps, use graph mode. It gives every person, partnership, parent-
 
 ## The Mental Model
 
-A family tree graph has five concepts:
+A family tree graph has six concepts:
 
 - `people`: records keyed by person ID.
 - `subject`: the person whose neighborhood should be centered.
 - `partnershipGroups`: visible partner, spouse, co-parent, or unknown-parent groups.
 - `parentChildLinks`: one parent-to-child lineage record per parent.
 - `guardianshipLinks`: optional non-parent caregiver links.
+- `personMetadata`: optional structural metadata for people and placeholder slots.
 
 ```tsx
 import { FamilyTree, type FamilyGraph } from "@memoir/tree";
@@ -230,9 +231,45 @@ If the same person is both a parent and a guardian, model both facts. Tree keeps
 
 ## Unknown Parents
 
-Unknown partner placeholders are display/layout facts, not automatic spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the placeholder card without drawing a horizontal partnership edge.
+Unknown parent slots are explicit graph facts, not automatic spouse bars. Add
+the placeholder person, its unknown group and parent-child link, and structural
+metadata describing the slot:
 
-Tree does not infer placeholder semantics from IDs, names, labels, or app-owned flags. Pass `shouldRenderPersonCard` when a person should act only as a connector point. The layout still uses that person for parentage and edge routing, but the card layer does not render a full card:
+```ts
+const graph: FamilyGraph<Person> = {
+  people: {
+    self: { id: "self", name: "Self" },
+    unknown: { id: "unknown", name: "Unknown parent" },
+    child: { id: "child", name: "Child" },
+  },
+  subject: "self",
+  partnershipGroups: [
+    { id: "self-unknown", partners: ["self", "unknown"], relation: "unknown" },
+  ],
+  parentChildLinks: [
+    { id: "self-child", groupId: "self-unknown", parentId: "self", childId: "child" },
+    { id: "unknown-child", groupId: "self-unknown", parentId: "unknown", childId: "child", relation: "unknown" },
+  ],
+  personMetadata: {
+    unknown: {
+      kind: "unknown-slot",
+      slotRole: "parent",
+      groupId: "self-unknown",
+      linkIds: ["unknown-child"],
+    },
+  },
+};
+```
+
+The unknown group keeps the placeholder in layout without drawing a horizontal
+partnership edge. The metadata produces stable structural data attributes and
+the default accessible relationship wording `"parent"`. There is no combined
+relationship token for this case.
+
+Tree does not infer placeholder semantics from IDs, names, labels, or app-owned
+flags. Pass `shouldRenderPersonCard` only when a person should act as a
+connector point. The layout still uses that person for parentage and edge
+routing, but the card layer does not render a full card:
 
 ```tsx
 <FamilyTree
@@ -241,22 +278,8 @@ Tree does not infer placeholder semantics from IDs, names, labels, or app-owned 
 />
 ```
 
-If the unknown placeholder is also an actual co-parent, include it in `parentChildLinks`:
-
-```ts
-people: {
-  self: { id: "self", name: "Self" },
-  unknown: { id: "unknown", name: "Unknown parent" },
-  child: { id: "child", name: "Child" },
-},
-partnershipGroups: [
-  { id: "self-unknown", partners: ["self", "unknown"], relation: "unknown" },
-],
-parentChildLinks: [
-  { id: "self-child", groupId: "self-unknown", parentId: "self", childId: "child" },
-  { id: "unknown-child", groupId: "self-unknown", parentId: "unknown", childId: "child", relation: "unknown" },
-];
-```
+If the unknown placeholder is a parent of a child, include its own
+`parentChildLink`, as in the complete example above.
 
 ## Custom Cards
 
@@ -314,6 +337,24 @@ accessible relationship wording; it does not guess the role from an ID or
 display name.
 
 Use `placement` and `metadata` when your card needs to open the exact relationship editor or add/link flow that placed the person. Labels are for display; mutation intent should come from structural metadata.
+
+Use `getRelationLabel` when app wording differs from Tree's defaults. Check
+explicit slot metadata before applying a broader label override:
+
+```tsx
+<FamilyTree
+  graph={graph}
+  getRelationLabel={({ relation, metadata }) => {
+    if (metadata?.kind === "unknown-slot" && metadata.slotRole === "parent") {
+      return "parent";
+    }
+
+    return relation.label === "partner" ? "spouse" : undefined;
+  }}
+/>
+```
+
+Returning `undefined` delegates to Tree's metadata-aware default wording.
 
 ## Selection And Editing Hooks
 

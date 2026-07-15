@@ -244,7 +244,22 @@ Family layout is subject-centered and renders a bounded neighborhood: ancestor g
 
 Two-parent child groups use a structural parent connector between the parent cards, then drop to a child bus. Multi-child groups split through a horizontal bus centered in the clear vertical gap between the parent cards and child row. Semantic spouse/partner bars still come only from explicit partnership groups.
 
-Unknown partner placeholders are display/layout facts, not real spouse bars. A partnership with `relation: "unknown"` or `status: "unknown"` renders the visible placeholder card without drawing a horizontal partnership edge. Tree does not infer unknown or placeholder semantics from IDs, names, labels, or app-owned flags; use `shouldRenderPersonCard` when a person should be connector-only. If that placeholder is also an actual co-parent, include it in the child `parentChildLinks` or `rel.children([...parents], children)` parent list so the parentage edge connects from both parents.
+Unknown parent slots are explicit graph facts, not real spouse bars. Include the
+placeholder in `people`, connect it through an unknown partnership group and
+its own `parentChildLink`, and set `personMetadata[personId]` to
+`{ kind: "unknown-slot", slotRole: "parent", groupId, linkIds }`. The metadata
+produces stable structural data attributes and default accessible wording of
+`"parent"`. A group with `relation: "unknown"` or `status: "unknown"` keeps the
+slot in layout without drawing a horizontal partnership edge. Tree does not
+infer placeholder semantics from IDs, names, labels, or app-owned flags; use
+`shouldRenderPersonCard` only when the person should be connector-only.
+
+`ComputedRelationLabel` contains `self`, `parent`, `grandparent`, `ancestor`,
+`aunt-uncle`, `child`, `grandchild`, `descendant`, `sibling`, `half-sibling`,
+`cousin`, `niece-nephew`, `partner`, `coparent`, `guardian`, `relative`, and
+`unknown`. An unknown parent slot and a spouse or partner's parent both use the
+existing `parent` relationship wording; there is no combined token for either
+case.
 
 Default family spacing leaves room for union-centered parentage edges while keeping canvas padding small:
 
@@ -482,7 +497,7 @@ Core layout primitive types:
 
 Family graph and relationship types:
 
-- `FamilyGraph<Person>`: graph-mode family input with people, subject, partnerships, parent-child links, and optional guardianship links.
+- `FamilyGraph<Person>`: graph-mode family input with people, subject, partnerships, parent-child links, optional guardianship links, and optional structural person metadata.
 - `FamilyGraphPerson<Person>`: person wrapper type for graph-adjacent integrations.
 - `FamilyPartnershipGroup`: app-owned partnership/co-parent/unknown-parent group.
 - `FamilyParentChildLink`: app-owned parent-to-child lineage link.
@@ -499,7 +514,7 @@ Family graph and relationship types:
 - `GuardianshipRelation`: `"guardian"`, `"foster"`, or `"unknown"`.
 - `FamilyRelationshipStatus`: `"current"`, `"former"`, `"divorced"`, `"separated"`, or `"unknown"`.
 - `ComputedRelation`: relation label, generation, and side assigned to a rendered family card.
-- `ComputedRelationLabel`: possible family card relation labels.
+- `ComputedRelationLabel`: the documented family card relation tokens listed in the FamilyTree behavior section; parent roles use `parent` rather than a synthesized combined token.
 - `ComputedRelationSide`: `"self"`, `"ancestor"`, `"descendant"`, `"sibling"`, `"partner"`, or `"other"`.
 - `FamilyPlacementMetadata`: relationship IDs associated with a rendered family card.
 

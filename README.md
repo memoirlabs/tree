@@ -23,6 +23,8 @@ It is not a graph editor, database, form builder, auth system, or React Flow rep
 
 ## Install
 
+Current stable release: `@memoir/tree@0.8.0`.
+
 ```bash
 bun add @memoir/tree
 ```
@@ -42,6 +44,7 @@ Use graph mode for real family apps. The graph is plain app-owned state:
 - `partnershipGroups`: spouse, partner, co-parent, or unknown-parent groups.
 - `parentChildLinks`: one parent-to-child lineage link per parent.
 - `guardianshipLinks`: optional caregiver links that are not parentage.
+- `personMetadata`: optional structural metadata for people and placeholder slots.
 
 ```tsx
 import { FamilyTree, type FamilyGraph } from "@memoir/tree";
@@ -180,7 +183,29 @@ guardianshipLinks: [
 ];
 ```
 
-Unknown parent placeholders are display facts. A partnership with `relation: "unknown"` or `status: "unknown"` renders the placeholder without drawing a spouse bar. Tree does not infer placeholder semantics from IDs, names, or labels; pass `shouldRenderPersonCard` when a person should remain connector-only. If the unknown person is also a co-parent, include a `parentChildLink` for that placeholder.
+Unknown parent slots are explicit graph facts. Include the placeholder person in
+`people`, connect it through an unknown partnership group and parent-child link,
+and describe its structural role with `personMetadata`:
+
+```ts
+personMetadata: {
+  "unknown-parent": {
+    kind: "unknown-slot",
+    slotRole: "parent",
+    groupId: "alex-unknown",
+    linkIds: ["unknown-riley"],
+  },
+}
+```
+
+That metadata gives the card stable `data-node-kind`, `data-slot-role`, and
+placement attributes and makes its default accessible relationship wording
+`"parent"`. Tree does not infer placeholder semantics from IDs, names, labels,
+or app-owned flags. A partnership with `relation: "unknown"` or
+`status: "unknown"` keeps the placeholder in layout without drawing a spouse
+bar. Use `shouldRenderPersonCard` only when the slot should remain a
+connector-only layout point. If the unknown person is a parent of a child,
+include its own `parentChildLink`.
 
 ## Simple Family Mode
 
@@ -354,11 +379,18 @@ accessible label without changing structural relationship data. Return
 ```tsx
 <FamilyTree
   graph={graph}
-  getRelationLabel={({ relation }) =>
-    relation.label === "partner" ? "spouse" : undefined
-  }
+  getRelationLabel={({ relation, metadata }) => {
+    if (metadata?.kind === "unknown-slot" && metadata.slotRole === "parent") {
+      return "parent";
+    }
+
+    return relation.label === "partner" ? "spouse" : undefined;
+  }}
 />
 ```
+
+Handle explicit slot metadata before broader relation wording. Returning
+`undefined` delegates to Tree's metadata-aware default.
 
 ## Layout And Viewport
 
@@ -489,6 +521,7 @@ All supported root exports are documented in the site API reference.
 - Components: `FamilyTree`, `OrgChart`, `DefaultFamilyCard`, `StyledFamilyCard`, `DefaultOrgCard`
 - Family primitives: `TreeProvider`, `TreeCanvas`, `TreeEdges`, `TreeNodeLayer`, `useTreeLayout`
 - Relationship helpers: `rel`, `org`
+- Relationship label helpers: `formatFamilyRelationLabel`, `getDefaultFamilyRelationLabel`
 - Graph converters: `graphToFamilyRelationships`, `graphToOrgReportingRelationships`
 - Family model helpers: `createFamilyIndex`, `collectFamilyNeighborhood`, `defaultFamilyNeighborhoodLimits`
 - Family graph helpers: `getFamilyPartnershipGroupIds`, `getFamilyChildBearingGroupIds`, `getFamilyChildPlacementGroupIds`

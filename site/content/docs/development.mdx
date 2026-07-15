@@ -189,6 +189,24 @@ Use tree callbacks to open your app UI:
 
 The third callback argument is a structural action context with the subject, computed relation, placement IDs, and optional graph `personMetadata`. Use it for add/link/edit intent instead of deriving mutations from display labels.
 
+For a generated missing-parent card, persist its role in the graph instead of
+encoding it in an ID or display name:
+
+```ts
+personMetadata: {
+  "unknown-parent": {
+    kind: "unknown-slot",
+    slotRole: "parent",
+    groupId: "alex-unknown",
+    linkIds: ["unknown-child"],
+  },
+}
+```
+
+This metadata drives structural card attributes, action context, and Tree's
+default `"parent"` accessible wording. Custom `getRelationLabel` callbacks
+should handle explicit slot metadata before broader wording overrides.
+
 `readOnly` prevents add-relationship actions from being passed into cards. It does not block selection.
 
 ## Viewport Interaction

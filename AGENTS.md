@@ -68,6 +68,8 @@ Main exports include:
 - `createFamilyIndex`
 - `collectFamilyNeighborhood`
 - `defaultFamilyNeighborhoodLimits`
+- `formatFamilyRelationLabel`
+- `getDefaultFamilyRelationLabel`
 
 Important types include:
 
@@ -76,6 +78,9 @@ Important types include:
 - `OrgChartProps`
 - `OrgCardProps`
 - `FamilyTreeCardProps`
+- `FamilyActionContext`
+- `FamilyPersonMetadata`
+- `FamilyTreeRelationLabeler`
 - `FamilyNeighborhoodLimits`
 - `TreeViewport`
 - `TreeApi`
@@ -102,6 +107,8 @@ Accessibility should be built into the API layer:
 - Preserve `getPersonLabel` for readable card labels.
 - Preserve keyboard activation for clickable cards.
 - Preserve `aria-selected`, `data-selected`, and `data-focused`.
+- Preserve `personMetadata` and its `data-node-kind`, `data-slot-role`, and placement attributes for structural slots.
+- Preserve metadata-aware default relationship wording and the `getRelationLabel` override contract.
 - Be careful with native `<button>` wrappers because custom cards may contain nested buttons. Prefer passing accessible props to the card root unless a larger API redesign is explicitly requested.
 
 ## Viewport

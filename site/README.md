@@ -1,6 +1,6 @@
 # @memoir/tree Site
 
-This is the single website for `@memoir/tree`, a lightweight React family-tree library with custom cards, CSS-variable styling, panning controls, accessibility props, and explicit family-neighborhood limits.
+This is the single website for `@memoir/tree`, a lightweight React family-tree library with custom cards, CSS-variable styling, panning controls, accessibility props, explicit structural slot metadata, and bounded family neighborhoods.
 
 - `/` is the library landing page with a simple rendered family tree demo.
 - `/docs` is the Fumadocs documentation.
